@@ -9,3 +9,8 @@ build:
 run:
 	@echo "Running server..."
 	@go run ${MAIN}
+
+# clear logs files
+clear-logs:
+	@echo "Clearing logs..."
+	@rm -rf logs

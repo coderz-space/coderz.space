@@ -30,6 +30,8 @@ func getEnvVariable(key string) string {
 const envFilePath = ".env"
 
 type Config struct {
+	AppName     string
+	Version     string
 	Environment Environment
 	Port        string
 	DB_URL      string
@@ -43,6 +45,9 @@ func LoadConfig() *Config {
 	}
 
 	config := &Config{
+
+		AppName:     getEnvVariable("APP_NAME"),
+		Version:     getEnvVariable("VERSION"),
 		Environment: Environment(getEnvVariable("ENVIRONMENT")),
 		Port:        getEnvVariable("PORT"),
 		DB_URL:      getEnvVariable("DB_URL"),
