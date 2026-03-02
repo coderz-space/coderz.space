@@ -37,9 +37,9 @@ type Config struct {
 	LOG_LEVEL   string
 }
 
-func LoadConfig() (*Config, error) {
+func LoadConfig() *Config {
 	if err := godotenv.Load(envFilePath); err != nil {
-		return nil, err
+		panic(fmt.Errorf("failed to load environment variables: %v", err))
 	}
 
 	config := &Config{
@@ -51,8 +51,8 @@ func LoadConfig() (*Config, error) {
 	}
 
 	if !config.Environment.isValid() {
-		return nil, fmt.Errorf("invalid environment: %s", config.Environment)
+		panic(fmt.Errorf("invalid environment: %s", config.Environment))
 	}
 
-	return config, nil
+	return config
 }
