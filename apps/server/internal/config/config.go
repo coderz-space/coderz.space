@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Environment string
@@ -30,13 +32,36 @@ func getEnvVariable(key string) string {
 const envFilePath = ".env"
 
 type Config struct {
-	AppName     string
-	Version     string
-	Environment Environment
-	Port        string
-	DB_URL      string
-	JWT_SECRET  string
-	LOG_LEVEL   string
+	AppName        string
+	Version        string
+	Environment    Environment
+	Port           string
+	DB_URL         string
+	JWT_SECRET     string
+	LOG_LEVEL      zapcore.Level
+	FILE_LOG_LEVEL zapcore.Level
+	FrontendOrigin string
+}
+
+func parseLevel(level string) zapcore.Level {
+	switch level {
+	case "debug":
+		return zap.DebugLevel
+	case "info":
+		return zap.InfoLevel
+	case "warn":
+		return zap.WarnLevel
+	case "error":
+		return zap.ErrorLevel
+	case "dpanic":
+		return zap.DPanicLevel
+	case "panic":
+		return zap.PanicLevel
+	case "fatal":
+		return zap.FatalLevel
+	default:
+		return zap.InfoLevel
+	}
 }
 
 func LoadConfig() *Config {
@@ -46,13 +71,15 @@ func LoadConfig() *Config {
 
 	config := &Config{
 
-		AppName:     getEnvVariable("APP_NAME"),
-		Version:     getEnvVariable("VERSION"),
-		Environment: Environment(getEnvVariable("ENVIRONMENT")),
-		Port:        getEnvVariable("PORT"),
-		DB_URL:      getEnvVariable("DB_URL"),
-		JWT_SECRET:  getEnvVariable("JWT_SECRET"),
-		LOG_LEVEL:   getEnvVariable("LOG_LEVEL"),
+		AppName:        getEnvVariable("APP_NAME"),
+		Version:        getEnvVariable("VERSION"),
+		Environment:    Environment(getEnvVariable("ENVIRONMENT")),
+		Port:           getEnvVariable("PORT"),
+		DB_URL:         getEnvVariable("DB_URL"),
+		JWT_SECRET:     getEnvVariable("JWT_SECRET"),
+		LOG_LEVEL:      parseLevel(getEnvVariable("LOG_LEVEL")),
+		FILE_LOG_LEVEL: parseLevel(getEnvVariable("FILE_LOG_LEVEL")),
+		FrontendOrigin: getEnvVariable("FRONTEND_ORIGIN"),
 	}
 
 	if !config.Environment.isValid() {

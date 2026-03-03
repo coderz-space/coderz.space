@@ -1,20 +1,21 @@
 package logger
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/DSAwithGautam/CodeConquerers/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func NewLogger(config *config.Config) *zap.Logger {
+var Logger *zap.Logger
 
-	// ----- Encoders -----
+func Initialize(config *config.Config) {
+
 	consoleEncoder := zapcore.NewConsoleEncoder(zapcore.EncoderConfig{
 		TimeKey:      "ts",
-		LevelKey:     config.LOG_LEVEL,
+		LevelKey:     "level",
 		MessageKey:   "msg",
 		CallerKey:    "caller",
 		EncodeTime:   zapcore.ISO8601TimeEncoder,
@@ -24,7 +25,7 @@ func NewLogger(config *config.Config) *zap.Logger {
 
 	fileEncoder := zapcore.NewJSONEncoder(zapcore.EncoderConfig{
 		TimeKey:       "ts",
-		LevelKey:      config.LOG_LEVEL,
+		LevelKey:      "level",
 		MessageKey:    "msg",
 		CallerKey:     "caller",
 		StacktraceKey: "stacktrace",
@@ -33,26 +34,78 @@ func NewLogger(config *config.Config) *zap.Logger {
 		EncodeCaller:  zapcore.ShortCallerEncoder,
 	})
 
-	// ----- Outputs -----
-	consoleWS := zapcore.AddSync(os.Stdout)
-
-	// -------  lumberjack ---------
-	if err := os.MkdirAll("logs", 0755); err != nil {
-		panic(fmt.Errorf("failed to create directories: %w", err))
+	fileWriter := &lumberjack.Logger{
+		Filename:   "logs/app.log",
+		MaxSize:    100,
+		MaxBackups: 5,
+		MaxAge:     7,
+		Compress:   true,
 	}
-	file, err := os.OpenFile("logs/app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
+
+	core := zapcore.NewTee(
+		zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), config.LOG_LEVEL),
+		zapcore.NewCore(fileEncoder, zapcore.AddSync(fileWriter), config.FILE_LOG_LEVEL),
+	)
+
+	Logger = zap.New(
+		core,
+		zap.AddCaller(),
+		zap.AddStacktrace(zap.ErrorLevel),
+		zap.ErrorOutput(zapcore.AddSync(os.Stderr)), // handle zap internal errors
+	).With(
+		zap.String("service", "myapp"),
+		zap.String("env", os.Getenv("APP_ENV")),
+	)
+}
+
+func Sync() error {
+	if Logger != nil {
+		return Logger.Sync()
 	}
-	fileWS := zapcore.AddSync(file)
+	return nil
+}
 
-	// ----- Cores -----
-	consoleCore := zapcore.NewCore(consoleEncoder, consoleWS, zapcore.DebugLevel)
-	fileCore := zapcore.NewCore(fileEncoder, fileWS, zapcore.InfoLevel)
+// Convenience functions for logging
+func Debug(msg string, fields ...zap.Field) {
+	if Logger != nil {
+		Logger.Debug(msg, fields...)
+	}
+}
 
-	// ----- Tee -----
-	core := zapcore.NewTee(consoleCore, fileCore)
+func Info(msg string, fields ...zap.Field) {
+	if Logger != nil {
+		Logger.Info(msg, fields...)
+	}
+}
 
-	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.ErrorLevel))
-	return logger
+func Warn(msg string, fields ...zap.Field) {
+	if Logger != nil {
+		Logger.Warn(msg, fields...)
+	}
+}
+
+func Error(msg string, fields ...zap.Field) {
+	if Logger != nil {
+		Logger.Error(msg, fields...)
+	}
+}
+
+func Fatal(msg string, fields ...zap.Field) {
+	if Logger != nil {
+		Logger.Fatal(msg, fields...)
+	}
+}
+
+func Panic(msg string, fields ...zap.Field) {
+	if Logger != nil {
+		Logger.Panic(msg, fields...)
+	}
+}
+
+// WithFields returns a logger with predefined fields
+func WithFields(fields ...zap.Field) *zap.Logger {
+	if Logger != nil {
+		return Logger.With(fields...)
+	}
+	return nil
 }
