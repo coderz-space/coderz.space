@@ -4,6 +4,8 @@ Coderz Space is a structured bootcamp management platform that enables mentors t
 
 It is designed to replace fragmented tools like spreadsheets and chat-based tracking with a focused, role-based system built specifically for DSA and development bootcamps.
 
+DESIGN : [excalidraw](https://excalidraw.com/#room=b80233bfe803d969ff0d,bmQ033XOkOwzEq01vslqSQ)
+
 ---
 
 ## What It Enables
