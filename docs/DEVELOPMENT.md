@@ -18,3 +18,18 @@ make swagger
 [TEST API Docs - Swagger UI](http://localhost:8080/swagger/index.html) (Local)
 
 ## Backend Setup
+
+
+
+
+```bash
+handler
+   ↓
+service
+   ↓
+repository
+   ↓
+sqlc (Queries)
+   ↓
+database
+```

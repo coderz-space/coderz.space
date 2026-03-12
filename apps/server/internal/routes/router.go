@@ -13,11 +13,9 @@ func RegisterRoutes(e *echo.Group, di *container.Container) {
 	// health check api :
 	e.GET("/health", healthCheck)
 
-	r := e.Group("/api")
-
 	// Public routes
-	auth.RegisterPublicRoutes(r, di.AuthHandler)
-	auth.RegisterProtectedRoutes(r, di.AuthHandler, di.Config)
+	auth.RegisterPublicRoutes(e, di.AuthHandler)
+	auth.RegisterProtectedRoutes(e, di.AuthHandler, di.Config)
 
 	// Protected routes
 
