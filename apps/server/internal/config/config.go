@@ -38,6 +38,7 @@ type Config struct {
 	Port           string
 	DB_URL         string
 	JWT_SECRET     string
+	JWT_EXPIRES    string
 	LOG_LEVEL      zapcore.Level
 	FILE_LOG_LEVEL zapcore.Level
 	FrontendOrigin string
@@ -77,6 +78,7 @@ func LoadConfig() *Config {
 		Port:           getEnvVariable("PORT"),
 		DB_URL:         getEnvVariable("DB_URL"),
 		JWT_SECRET:     getEnvVariable("JWT_SECRET"),
+		JWT_EXPIRES:    getEnvVariable("JWT_EXPIRES"),
 		LOG_LEVEL:      parseLevel(getEnvVariable("LOG_LEVEL")),
 		FILE_LOG_LEVEL: parseLevel(getEnvVariable("FILE_LOG_LEVEL")),
 		FrontendOrigin: getEnvVariable("FRONTEND_ORIGIN"),

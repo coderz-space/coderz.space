@@ -2,14 +2,15 @@ package main
 
 import (
 	"net/http"
-	"time"
 
-	"github.com/DSAwithGautam/CodeConquerers/internal/common/logger"
-	"github.com/DSAwithGautam/CodeConquerers/internal/common/middleware"
-	config "github.com/DSAwithGautam/CodeConquerers/internal/config"
-	"github.com/DSAwithGautam/CodeConquerers/internal/container"
+	"github.com/DSAwithGautam/Coderz.space/internal/common/logger"
+	"github.com/DSAwithGautam/Coderz.space/internal/common/middleware"
+	config "github.com/DSAwithGautam/Coderz.space/internal/config"
+	"github.com/DSAwithGautam/Coderz.space/internal/container"
+	"github.com/DSAwithGautam/Coderz.space/internal/routes"
 	"github.com/labstack/echo/v5"
 	echoMiddleware "github.com/labstack/echo/v5/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger"
 	"go.uber.org/zap"
 )
 
@@ -38,17 +39,12 @@ func main() {
 	e.Use(middleware.ZapLogger())
 	e.Use(middleware.Recovery())
 
-	// health check api :
-	e.GET("/health", func(c *echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]any{
-			"status":      "ok",
-			"service":     cfg.AppName,
-			"version":     cfg.Version,
-			"environment": cfg.Environment,
-			"database":    "nil",
-			"timestamp":   time.Now().UTC().Format(time.RFC3339),
-		})
-	})
+	// swagger docs
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
+
+	// register routes
+	router := e.Group("")
+	routes.RegisterRoutes(router, di)
 
 	if err := e.Start(":" + cfg.Port); err != nil {
 		logger.Fatal("failed to start server", zap.Error(err))

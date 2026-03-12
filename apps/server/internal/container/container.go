@@ -1,7 +1,8 @@
 package container
 
 import (
-	"github.com/DSAwithGautam/CodeConquerers/internal/config"
+	"github.com/DSAwithGautam/Coderz.space/internal/config"
+	"github.com/DSAwithGautam/Coderz.space/internal/modules/auth"
 	"go.uber.org/zap"
 )
 
@@ -11,19 +12,21 @@ type Container struct {
 	Config *config.Config
 	Logger *zap.Logger
 
-	// services
-
-	// handlers
-
-	// repositories
-
-	// database
+	// auth
+	AuthHandler *auth.Handler
+	AuthService *auth.Service
 }
 
 func NewContainer(config *config.Config, logger *zap.Logger) (*Container, error) {
+
+	authService := auth.NewService()
+	authHandler := auth.NewHandler(authService, config)
+
 	container := &Container{
-		Config: config,
-		Logger: logger,
+		Config:      config,
+		Logger:      logger,
+		AuthHandler: authHandler,
+		AuthService: authService,
 	}
 	return container, nil
 }
