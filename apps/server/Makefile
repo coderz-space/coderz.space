@@ -1,4 +1,4 @@
-.PHONY: build run clear-logs swagger
+.PHONY: build run clear-logs swagger sqlc
 
 MAIN="cmd/main.go"
 
@@ -27,3 +27,9 @@ swagger:
 clear-swagger:
 	@echo "Clearing swagger docs..."
 	@rm -rf swagger
+
+
+# Database : 
+sqlc:
+	@echo "Generating sqlc queries..."
+	sqlc generate -f db/sqlc.yaml
