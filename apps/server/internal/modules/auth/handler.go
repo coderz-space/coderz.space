@@ -1,23 +1,23 @@
 package auth
 
-import "github.com/DSAwithGautam/Coderz.space/internal/config"
+import (
+	"github.com/labstack/echo/v5"
+)
 
 type Handler struct {
 	service *Service
-	config  *config.Config
 }
 
-func NewHandler(service *Service, config *config.Config) *Handler {
+func NewHandler(service *Service) *Handler {
 	return &Handler{
 		service: service,
-		config:  config,
 	}
 }
 
-// func (h *Handler) SignIn(c *echo.Context) error {
-// 	var req LoginRequest
-// 	if err := c.Bind(&req); err != nil {
-// 		return response.NewResponse(c, http.StatusBadRequest, "Invalid request", nil, err, "error")
-// 	}
-// 	return response.NewResponse(c, http.StatusOK, "Login successful", nil, nil, "success")
-// }
+func (h *Handler) SignIn(c *echo.Context, body SignInRequest) error {
+	return nil
+}
+
+func (h *Handler) Register(c *echo.Context, body RegisterRequest) error {
+	return nil
+}
