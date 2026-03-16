@@ -1,11 +1,13 @@
 # Data Model
 
-Database architecture consists of **4 layers**:
+Database architecture consists of **6 layers**:
 
-1. Organization structure
-2. Learning content
-3. Assignment system
-4. Tracking / interaction
+1. Organization Layer
+2. Bootcamp Layer
+3. Problem content Layer
+4. Assignment system
+5. Tracking / interaction
+6. Analytics
 
 ---
 
@@ -97,19 +99,61 @@ Supports multiple login methods such as **email/password** and **Google OAuth**.
 
 ## 2. Bootcamp Layer
 
+#### Why this design is important ?
+
+This allows multiple bootcamps in one organization.
+```go
+Algo University
+   ├── DSA Bootcamp
+   ├── Backend Bootcamp
+   └── System Design Cohort
+```
+
+Users can join multiple bootcamps :
+```go
+Suraj
+   ├── DSA Bootcamp
+   └── Backend Bootcamp
+```
+
+Users can have Different roles in different bootcamps
+```go
+Suraj
+   Mentor in Bootcamp A
+   Mentee in Bootcamp B
+```
+
+
 ### 1. Bootcamp
 
-A learning program under an organization.
-Example:
+Represents a structured learning program inside an organization. A bootcamp groups mentors and mentees working toward a common learning goal such as a DSA cohort or a system design training.
+Examples:
 
-- "6 Week DSA Bootcamp"
-- "System Design Cohort"
+- 8 Week DSA Bootcamp
+- Graph Algorithms Sprint
+- Backend Engineering Cohort
 
-Bootcamp belongs to:
+A bootcamp belongs to an **organization**.
 
-- Organization
+| Field           | Type      | Notes                               |
+| --------------- | --------- | ----------------------------------- |
+| id              | UUID      | PK                                  |
+| organization_id | UUID      | FK → organizations.id, NOT NULL     |
+| name            | string    | Bootcamp name, NOT NULL             |
+| description     | text      | Optional description of the program |
+| start_date      | date      | nullable                            |
+| end_date        | date      | nullable                            |
+| is_active       | boolean   | default true                        |
+| created_at      | timestamp | NOT NULL, default CURRENT_TIMESTAMP |
+| updated_at      | timestamp | NOT NULL, default CURRENT_TIMESTAMP |
+#### Constraints
+
+- **FOREIGN KEY:**  
+    `organization_id → organizations.id`
 
 ### 2. bootcamp_enrollment
+
+Represents a user's participation in a specific bootcamp.
 
 Join table between **Bootcamp and OrganizationMember**.
 Reason:  
@@ -119,64 +163,258 @@ Tracks:
 - mentor / mentee role within bootcamp
 - active / inactive
 
-A member of one organization cannot join the bootcamp of another organization uless he joins that organization.
+A member of one organization cannot join the bootcamp of another organization unless he joins that organization.
+A user might belong to an organization but **not participate in every bootcamp**.
+
+```go
+Org Members
+Suraj
+Rahul
+Priya
+
+Bootcamp: DSA Cohort
+
+Participants:
+Suraj
+Rahul
+```
+
+
+| Field                  | Type      | Notes                                  |
+| ---------------------- | --------- | -------------------------------------- |
+| id                     | UUID      | PK                                     |
+| bootcamp_id            | UUID      | FK → bootcamps.id, NOT NULL            |
+| organization_member_id | UUID      | FK → organization_members.id, NOT NULL |
+| role                   | enum      | ENUM('mentor','mentee'), NOT NULL      |
+| enrolled_at            | timestamp | NOT NULL, default CURRENT_TIMESTAMP    |
+
+
+#### Constraints
+
+- **FOREIGN KEY:**  
+    `bootcamp_id → bootcamps.id`
+    
+- **FOREIGN KEY:**  
+    `organization_member_id → organization_members.id`
+    
+- **UNIQUE:**  
+    `(bootcamp_id, organization_member_id)`  
+    Prevents duplicate enrollments.
+
+- **Role Values**
+	Roles inside a bootcamp may differ from organization roles.
+	Examples:
+	- **mentor** → guides students, assigns problems
+	- **mentee** → solves assigned problems
 
 ---
 
-## 3. Learning Content Layer
+## 3. Problem Content Layer
+
+This layer represents the **question bank mentors use to create assignments**.
+The important principle here is:
+Problems should be **reusable** across assignments, bootcamps, and mentees.
+
+so this layer will contains : 
+```go
+problems
+tags
+problem_tags
+problem_resources
+```
+
+
 
 ### 1. Problem
 
-Master question bank.
-Mentors create these.
-Example:
+Represents a coding or conceptual problem in the organization's master question bank. Mentors create these problems and use them when assigning tasks to mentees.
+Problems belong to an **organization** so that it can be reused across multiple bootcamps in an organization.
 
+Example:
 - Two Sum
 - LRU Cache
 - Design Twitter
 
-Belongs to:
+| Field           | Type      | Notes                                  |
+| --------------- | --------- | -------------------------------------- |
+| id              | UUID      | PK                                     |
+| organization_id | UUID      | FK → organizations.id, NOT NULL        |
+| created_by      | UUID      | FK → organization_members.id, NOT NULL |
+| title           | string    | Problem title, NOT NULL                |
+| description     | text      | Problem statement                      |
+| difficulty      | enum      | ENUM('easy','medium','hard'), NOT NULL |
+| external_link   | string    | Optional external problem reference    |
+| created_at      | timestamp | NOT NULL, default CURRENT_TIMESTAMP    |
+| updated_at      | timestamp | NOT NULL, default CURRENT_TIMESTAMP    |
+#### Constraints
 
-- Organization (important for multi tenant)
+FOREIGN KEY:  
+`organization_id → organizations.id`
 
-### 2. problem_resources
+FOREIGN KEY:  
+`created_by → organization_members.id`
 
-Optional resources attached to a problem.
+
+### 2. Tags
+
+**Description:**  
+Represents a concept or topic used to categorize problems. Tags allow mentors and mentees to filter problems based on concepts such as algorithms, data structures, or system design topics.
 
 Examples:
+- binary-search
+- sliding-window
+- bit-manipulation
+- cap-theorem
+- dynamic-programming
+- graphs
+    
+Tags are **global to the organization**.
 
-- YouTube link
-- Blog
-- Docs
-- Article
+| Field           | Type      | Notes                               |
+| --------------- | --------- | ----------------------------------- |
+| id              | UUID      | PK                                  |
+| organization_id | UUID      | FK → organizations.id               |
+| name            | string    | Tag name, NOT NULL                  |
+| created_at      | timestamp | NOT NULL, default CURRENT_TIMESTAMP |
+#### Constraints
+
+UNIQUE:
+	(organization_id, name)
+	Prevents duplicate tags in the same organization.
+
+FOREIGN KEY:
+	organization_id → organizations.id
+
+
+
+### 3. Problem tags : 
+
+**Description:**  
+Join table connecting **problems and tags**, allowing each problem to have multiple tags and each tag to be used by many problems.
+
+| Field      | Type      | Notes                               |
+| ---------- | --------- | ----------------------------------- |
+| problem_id | UUID      | FK → problems.id, NOT NULL          |
+| tag_id     | UUID      | FK → tags.id, NOT NULL              |
+| created_at | timestamp | NOT NULL, default CURRENT_TIMESTAMP |
+#### Constraints
+
+PRIMARY KEY:
+	(problem_id, tag_id)
+
+FOREIGN KEY:
+	problem_id → problems.id  
+	tag_id → tags.id
+
+
+### 4. problem_resources
+
+**Description:**  
+Optional learning resources attached to a problem to help mentees understand concepts or solutions.
+Examples:
+- YouTube explanation
+- Blog article
+- Documentation
+- Editorial
 
 Relationship:  
 Problem → many resources
+
+| Field      | Type      | Notes                               |
+| ---------- | --------- | ----------------------------------- |
+| id         | UUID      | PK                                  |
+| problem_id | UUID      | FK → problems.id, NOT NULL          |
+| title      | string    | Resource title                      |
+| url        | string    | Resource link                       |
+| created_at | timestamp | NOT NULL, default CURRENT_TIMESTAMP |
+#### Constraints
+
+FOREIGN KEY:
+	problem_id → problems.id
 
 ---
 
 ## 4. Assignment layer
 
-Personalized deadlines
+The main principles we follow:
+1. **Problem sets should be reusable**
+2. **Assignments should be per mentee**
+3. **Deadlines should be flexible**
 
+Personalized deadlines
 - Mentor can assign the same assignment group to two students with different deadlines.
 
-Reusable problem set :
-
-- Mentor creates `Graph fundamentals` and reuses it across multiple batches.
+It includes the following tables : 
+```go
+assignment_groups
+assignment_group_problems
+assignments
+assignment_problems
+```
 
 ### 1. Assignment Group
 
-Represents a **set of problems**.
+**Description:**  
+Represents a set of problems created by a mentor with a defined deadline duration. This acts as a reusable template that can be assigned to multiple mentees.
+
+Examples:
+- Sliding Window Practice
+- Graph Algorithms Sprint
+- Week 1 DSA
+- Dynamic Programming Set
+
+An assignment group belongs to a **bootcamp**.
+
+| Field         | Type      | Notes                                             |
+| ------------- | --------- | ------------------------------------------------- |
+| id            | UUID      | PK                                                |
+| bootcamp_id   | UUID      | FK → bootcamps.id, NOT NULL                       |
+| created_by    | UUID      | FK → organization_members.id, NOT NULL            |
+| title         | string    | Assignment set name, NOT NULL                     |
+| description   | text      | Optional explanation                              |
+| deadline_days | integer   | Number of days allowed to complete the assignment |
+| created_at    | timestamp | NOT NULL, default CURRENT_TIMESTAMP               |
+| updated_at    | timestamp | NOT NULL, default CURRENT_TIMESTAMP               |
+
+#### Constraints
+
+FOREIGN KEY  
+`bootcamp_id → bootcamps.id`
+
+FOREIGN KEY  
+`created_by → organization_members.id`
+
 
 ### 2. AssignmentGroupProblem
 
-Join table : AssignmentGroup ↔ Problem
+**Description:**  
+Join table connecting problems to an assignment group.  
+Defines which problems belong to a specific assignment group.
+
+This allows **reusing problems across many assignments**.
+
+| Field               | Type      | Notes                               |
+| ------------------- | --------- | ----------------------------------- |
+| assignment_group_id | UUID      | FK → assignment_groups.id, NOT NULL |
+| problem_id          | UUID      | FK → problems.id, NOT NULL          |
+| position            | integer   | Optional ordering of problems       |
+| created_at          | timestamp | NOT NULL, default CURRENT_TIMESTAMP |
+#### Constraints
+
+PRIMARY KEY
+	(assignment_group_id, problem_id)
+
+FOREIGN KEY
+	assignment_group_id → assignment_groups.id  
+	problem_id → problems.id
 
 ### 3. assignment
 
-Represents the **assignment for a specific mentee**.
-Because mentors may assign the same group to different mentees.
+**Description:**  
+Represents an **assignment instance for a specific mentee**.  
+Created when a mentor assigns an assignment group to a mentee.
+
+Each mentee gets their **own assignment instance**, allowing personalized deadlines and progress tracking.
 
 ```go
 AssignmentGroup: Graph Practice
@@ -184,13 +422,90 @@ Assigned to: Suraj
 Deadline: 12 March
 ```
 
+| Field                  | Type      | Notes                                   |
+| ---------------------- | --------- | --------------------------------------- |
+| id                     | UUID      | PK                                      |
+| assignment_group_id    | UUID      | FK → assignment_groups.id               |
+| bootcamp_enrollment_id | UUID      | FK → bootcamp_enrollments.id            |
+| assigned_by            | UUID      | FK → organization_members.id            |
+| assigned_at            | timestamp | default CURRENT_TIMESTAMP               |
+| deadline_at            | timestamp | Calculated based on assignment duration |
+| status                 | enum      | ENUM('active','completed','expired')    |
+| created_at             | timestamp | default CURRENT_TIMESTAMP               |
+| updated_at             | timestamp | default CURRENT_TIMESTAMP               |
+
+#### Constraints
+
+FOREIGN KEY
+	assignment_group_id → assignment_groups.id
+
+FOREIGN KEY
+	bootcamp_enrollment_id → bootcamp_enrollments.id
+
+FOREIGN KEY
+	assigned_by → organization_members.id
+
 ### 4. assignment problem
 
-Tracks **each problem inside the assignment**.
+**Description:**  
+Represents the **problems assigned within a specific assignment instance**.
+
+This table tracks **mentee progress per problem**.
+
+#### Status Values
+
+- pending
+- attempted
+- completed
+
+| Field         | Type      | Notes                                   |
+| ------------- | --------- | --------------------------------------- |
+| id            | UUID      | PK                                      |
+| assignment_id | UUID      | FK → assignments.id                     |
+| problem_id    | UUID      | FK → problems.id                        |
+| status        | enum      | ENUM('pending','attempted','completed') |
+| solution_link | string    | Optional link to solution               |
+| notes         | text      | Optional notes from mentee              |
+| completed_at  | timestamp | nullable                                |
+| created_at    | timestamp | default CURRENT_TIMESTAMP               |
+| updated_at    | timestamp | default CURRENT_TIMESTAMP               |
+
+#### Constraints
+
+FOREIGN KEY
+	assignment_id → assignments.id  
+	problem_id → problems.id
+
+UNIQUE
+	(assignment_id, problem_id)
+
+Prevents duplicate problems in the same assignment.
+
 
 ---
 
-## 5. Progress Tractking Layer
+### Flow : 
+
+
+
+
+### Note :
+
+#### 1. Why do we have 2 fields to track deadline ? One in `assignment_group` and other in `assignment`.
+
+One is a **template rule**, the other is a **real deadline for a specific mentee**.
+`assignment_groups.deadline_days` :
+- This defines the **default duration of the task set**.
+	It belongs to the **template created by the mentor** and not tied to any specific mentee.
+`assignments.deadline_at` :
+	- This is the actual deadline for a specific mentee.
+
+
+
+
+---
+
+## 5. Progress Tracking Layer
 
 ### 1. Submission
 
