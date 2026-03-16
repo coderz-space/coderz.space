@@ -110,3 +110,5 @@ android/local.properties
 
 *.pid
 docker-data/
+.obsidian
+.excalidraw
