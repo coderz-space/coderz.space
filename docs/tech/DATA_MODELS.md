@@ -327,6 +327,7 @@ Problem → many resources
 | title      | string    | Resource title                      |
 | url        | string    | Resource link                       |
 | created_at | timestamp | NOT NULL, default CURRENT_TIMESTAMP |
+|            |           |                                     |
 #### Constraints
 
 FOREIGN KEY:
@@ -484,11 +485,6 @@ Prevents duplicate problems in the same assignment.
 
 ---
 
-### Flow : 
-
-
-
-
 ### Note :
 
 #### 1. Why do we have 2 fields to track deadline ? One in `assignment_group` and other in `assignment`.
@@ -507,29 +503,33 @@ One is a **template rule**, the other is a **real deadline for a specific mentee
 
 ## 5. Progress Tracking Layer
 
-### 1. Submission
+### 1. Doubt
 
-Tracks mentee progress on an assigned problem.
-Example:
+Description:  
+Represents a question or doubt raised by a mentee while solving an assigned problem.
+Doubts allow mentors to track **problematic questions across mentees** and identify commonly difficult concepts.
+A doubt is linked to a specific **assignment problem**.
 
-- completed
-- attempted
-- pending
+| Field                 | Type      | Notes                                  |
+| --------------------- | --------- | -------------------------------------- |
+| id                    | UUID      | PK                                     |
+| assignment_problem_id | UUID      | FK → assignment_problems.id            |
+| raised_by             | UUID      | FK → organization_members.id           |
+| message               | text      | Description of the doubt               |
+| resolved              | boolean   | default false                          |
+| resolved_by           | UUID      | FK → organization_members.id, nullable |
+| resolved_at           | timestamp | nullable                               |
+| created_at            | timestamp | default CURRENT_TIMESTAMP              |
+## Constraints
 
-Contains optional:
+FOREIGN KEY:
+	assignment_problem_id → assignment_problems.id
 
-- solution link
-- notes
+FOREIGN KEY:
+	raised_by → organization_members.id
 
-### 2. Doubt
-
-If a mentee highlights a problem.
-Example:  
-"I don't understand sliding window here."
-Linked to:
-
-- AssignmentProblem
-- User
+FOREIGN KEY:
+	resolved_by → organization_members.id
 
 ---
 
@@ -537,29 +537,127 @@ Linked to:
 
 ### 1. LeaderboardEntry
 
-Tracks score per user per bootcamp.
+Description:  
+Represents aggregated performance metrics of a mentee within a bootcamp. This table stores periodic snapshots used for leaderboards and mentor analytics dashboards.
+This prevents recalculating heavy analytics every time.
+
 Example metrics:
-
-- problems solved
+- total problems solved
+- completion rate
 - streak
-- weekly score
+- rank
+
+| Field                  | Type      | Notes                        |
+| ---------------------- | --------- | ---------------------------- |
+| id                     | UUID      | PK                           |
+| bootcamp_id            | UUID      | FK → bootcamps.id            |
+| bootcamp_enrollment_id | UUID      | FK → bootcamp_enrollments.id |
+| problems_completed     | integer   | total completed problems     |
+| problems_attempted     | integer   | attempted problems           |
+| completion_rate        | float     | percentage completion        |
+| streak_days            | integer   | current solving streak       |
+| score                  | integer   | leaderboard score            |
+| rank                   | integer   | rank within bootcamp         |
+| calculated_at          | timestamp | when metrics were generated  |
+#### Constraints
+
+FOREIGN KEY
+	bootcamp_id → bootcamps.id
+
+FOREIGN KEY
+	bootcamp_enrollment_id → bootcamp_enrollments.id
+
+UNIQUE
+	(bootcamp_id, bootcamp_enrollment_id)
 
 ### 2. Poll
 
-Mentor polls problems to see difficulty.
-Example:  
-"Was LRU Cache hard?"
+Description:  
+Mentors can create polls to determine which problems were difficult for the cohort.
+Example:
+	Was LRU Cache difficult?
+
+| Field       | Type      | Notes                        |
+| ----------- | --------- | ---------------------------- |
+| id          | UUID      | PK                           |
+| bootcamp_id | UUID      | FK → bootcamps.id            |
+| problem_id  | UUID      | FK → problems.id             |
+| question    | string    | poll question                |
+| created_by  | UUID      | FK → organization_members.id |
+| created_at  | timestamp | default CURRENT_TIMESTAMP    |
+
+Foreign Key: 
+```go
+bootcamp_id → bootcamps.id
+problem_id → problems.id
+created_by → organization_members.id
+```
 
 ### 3. PollVote
 
-User vote on poll.
+Description:  
+Stores votes from mentees on a poll.
+Example options:
+- easy
+- medium
+- hard
 
-### 2. Poll
+| Field      | Type      | Notes                        |
+| ---------- | --------- | ---------------------------- |
+| id         | UUID      | PK                           |
+| poll_id    | UUID      | FK → polls.id                |
+| voter_id   | UUID      | FK → bootcamp_enrollments.id |
+| vote       | enum      | ENUM('easy','medium','hard') |
+| created_at | timestamp | default CURRENT_TIMESTAMP    |
+|            |           |                              |
 
-Mentor polls problems to see difficulty.
-Example:  
-"Was LRU Cache hard?"
+#### Constraints
 
-### 3. PollVote
+FOREIGN KEY
+	poll_id → polls.id  
+	voter_id → bootcamp_enrollments.id
 
-User vote on poll.
+UNIQUE
+	(poll_id, voter_id)
+
+Each mentee votes once per poll.
+
+
+---
+## NOTE :
+
+1. Never hard delete important entities like:
+	- problems
+	- assignments
+	- bootcamps
+	
+	Because deleting them can break historical data.
+	Instead add : `archived_at TIMESTAMP NULL`
+	meaning : 
+
+```go
+archived_at = NULL → active
+archived_at != NULL → archived
+```
+
+
+2. Add created_by for important entities : 
+
+`created_by UUID → organization_members.id`
+
+Add this to :
+```go
+bootcamps
+assignment_groups
+problems
+tags
+```
+
+You can easily build features like:
+Mentor dashboard:
+```go
+Show problems created by Suraj
+Show assignments created by Rahul
+```
+
+
