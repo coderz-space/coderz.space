@@ -68,17 +68,14 @@ pnpm-debug.log*
 
 
 #######################################
-# Flutter (mobile/)
+# React Native (mobile/)
 #######################################
 
-# Flutter/Dart
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub/
-.pub-cache/
-build/
+apps/mobile/node_modules/
+apps/mobile/android/build/
+apps/mobile/android/.gradle/
+apps/mobile/ios/build/
+apps/mobile/ios/Pods/
 
 # iOS
 ios/Pods/
