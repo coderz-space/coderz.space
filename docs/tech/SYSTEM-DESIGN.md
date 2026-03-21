@@ -1,4 +1,26 @@
-# Modules :
+
+# Role : 
+
+[Check the Excalidraw Design](https://excalidraw.com/?element=O2KF6A5GBUGksl_cd2GJ4#room=b80233bfe803d969ff0d,bmQ033XOkOwzEq01vslqSQ)
+![Role Hierarchy](assets/role_image.png)
+
+```go
+- user → A registered account in the platform (not a role)
+
+- super_admin → Manages the whole Coderz Space
+  - approves organization creation
+  - platform-level moderation
+
+- admin → Creator of the organization
+  - manages members and bootcamps
+
+- mentor → Assign problems and review progress
+	- will also manage mentee, ie add, remove mentee in a bootcamp.
+	- 
+
+- mentee → Students participating in bootcamps
+```
+
 
 
 # 1. AUTH Module : 
@@ -162,31 +184,26 @@ erDiagram
 
 
 
-# 3. Role : 
-
-[Check the Excalidraw Design](https://excalidraw.com/?element=O2KF6A5GBUGksl_cd2GJ4#room=b80233bfe803d969ff0d,bmQ033XOkOwzEq01vslqSQ)
-![Role Hierarchy](assets/role_image.png)
-
-```go
-- user → A registered account in the platform (not a role)
-
-- super_admin → Manages the whole Coderz Space
-  - approves organization creation
-  - platform-level moderation
-
-- admin → Creator of the organization
-  - manages members and bootcamps
-
-- mentor → Assign problems and review progress
-	- will also manage mentee, ie add, remove mentee in a bootcamp.
-	- 
-
-- mentee → Students participating in bootcamps
-```
 
 
 
-# 4. Bootcamp Module
+# 3. Bootcamp Module
+
+### Role hierarchy
+
+- **super_admin**: can act across all organizations.
+- **org_admin**: manages bootcamps and enrollments only inside their organization.
+- **mentor / mentee**: can read bootcamp data only when they are part of that organization or bootcamp.
+
+### Important invariants
+
+- A bootcamp always belongs to exactly one organization.
+- A bootcamp enrollment is valid only if the user is already an **organization member** of the same organization.
+- `(bootcamp_id, organization_member_id)` must be unique.
+- `bootcamp_enrollment.role` is **bootcamp-scoped** and does **not** have to match org-level role.
+- `start_date <= end_date` when both are present.
+- `is_active=false` means the bootcamp is closed for new participation, but historical data stays intact. This is the safer production choice.
+
 
 #### Why this design is important ?
 
@@ -298,7 +315,7 @@ Rahul
 
 ---
 
-# 5. Problem Content Module
+# 4. Problem Content Module
 
 This layer represents the **question bank mentors use to create assignments**.
 The important principle here is:
@@ -495,7 +512,7 @@ erDiagram
 
 
 
-# 6. Assignment layer
+# 5. Assignment layer
 
 
 Assignment groups are reusable templates inside a bootcamp. Assignments are per-mentee instances created from those templates. That means one group can be assigned to many mentees with different deadlines, while each mentee still gets separate progress tracking. That is exactly why the model has both template-level and instance-level deadline fields.
@@ -697,7 +714,7 @@ erDiagram
 ```
 
 
-# 7. Progress Tracking Layer
+# 6. Progress Tracking Layer
 
 ### 1. Doubt
 
@@ -756,7 +773,7 @@ erDiagram
 
 
 
-# 6. Analytics Layer
+# 7. Analytics Layer
 
 
 ### Role hierarchy

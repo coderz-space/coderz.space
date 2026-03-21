@@ -438,20 +438,6 @@ erDiagram
         timestamp enrolled_at
     }
 ```
-### Role hierarchy
-
-- **super_admin**: can act across all organizations.
-- **org_admin**: manages bootcamps and enrollments only inside their organization.
-- **mentor / mentee**: can read bootcamp data only when they are part of that organization or bootcamp.
-
-### Important invariants
-
-- A bootcamp always belongs to exactly one organization.
-- A bootcamp enrollment is valid only if the user is already an **organization member** of the same organization.
-- `(bootcamp_id, organization_member_id)` must be unique.
-- `bootcamp_enrollment.role` is **bootcamp-scoped** and does **not** have to match org-level role.
-- `start_date <= end_date` when both are present.
-- `is_active=false` means the bootcamp is closed for new participation, but historical data stays intact. This is the safer production choice.
 
 
 ## 1. CREATE BOOTCAMP : `POST /orgs/{org_id}/b`

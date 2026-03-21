@@ -1,46 +1,15 @@
 
 
-# Mentee Flow : 
-
-Must for MVP : 
-- View assigned problems
-- Update status (pending → completed)
-- Add solution link
-- Mark doubt
-
-```mermaid
-flowchart TD
-    A[Signup/Login] --> B[Enter Dashboard]
-    B --> C[View Bootcamps]
-    C --> D[Join Bootcamp]
-    D --> E[View Assignments]
-    E --> F[Solve Problems]
-    F --> G[Mark Complete / Add Solution]
-    G --> H[Track Progress]
-    G --> I[Mark Doubt]
-```
+![Role](assets/role_image.png)
 
 
+# High Level Role Flow : 
 
-# Mentor Flow : 
-
-
-```mermaid
-flowchart TD
-    A[Login] --> B[Create Bootcamp]
-    B --> C[Add Mentees]
-    C --> D[Create Assignments]
-    D --> E[Attach Problems]
-    E --> F[Track Progress]
-    F --> G[Review Submissions]
-```
+[excalidraw](https://excalidraw.com/?element=YX0v11V30-nZyfoTa4rVC#room=b80233bfe803d969ff0d,bmQ033XOkOwzEq01vslqSQ)
+![High Level USER flow](high_level_user_flow.png)
 
 
-# Admin 
+# USER Flow : 
 
-```mermaid
-flowchart TD
-    A[Login] --> B[Manage Members]
-    B --> C[Approve Mentor Requests]
-    B --> D[Change Roles]
-```
+[excalidraw diagram](https://excalidraw.com/?element=6MOcnXIz_r4FF4lQ8OiLF#room=b80233bfe803d969ff0d,bmQ033XOkOwzEq01vslqSQ)
+![USER Flow Diagram](user_flow.png)
