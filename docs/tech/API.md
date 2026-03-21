@@ -1626,6 +1626,876 @@ For production clarity, I recommend **rejecting delete when in use** unless you 
 | 12  | `/assignments/{assignment_id}/problems`              |    GET | Admin, Mentor, Mentee(own), Super_admin(read-only) | 12) List problems inside an assignment instance    |
 | 13  | `/assignments/{assignment_id}/problems/{problem_id}` |  PATCH | Admin, Mentor, Mentee(own)                         | 13) Update progress for one assigned problem       |
 
+## 1) List Assignment Groups
+
+#### URL
+
+`GET /b/{bootcamp_id}/agroups`
+
+#### Purpose
+
+List all assignment groups inside a bootcamp.
+
+#### Access Control
+
+- **Admin**: yes
+- **Mentor**: yes
+- **Mentee**: no
+- **Super_admin**: yes, read-only
+
+#### Headers
+
+- `Authorization: Bearer <jwt>` or `Cookie: access_token=<jwt>`
+- `Content-Type: application/json`
+
+#### Path Params
+
+- `bootcamp_id` UUID, required
+
+#### Query Params
+
+- `page` integer, optional, default `1`
+- `limit` integer, optional, default `20`
+- `q` string, optional, search by title
+- `created_by` UUID, optional
+- `sort` string, optional, e.g. `created_at_desc`
+
+#### Request Body
+
+None
+
+#### Validation Rules
+
+- Bootcamp must exist.
+- Caller must belong to the bootcamp’s organization.
+- Mentees must not access this endpoint.
+
+#### Success Response
+
+{  
+  "data": [  
+    {  
+      "id": "uuid",  
+      "bootcamp_id": "uuid",  
+      "title": "Graph Algorithms Sprint",  
+      "description": "Weekly graph practice set",  
+      "deadline_days": 7,  
+      "created_by": "uuid",  
+      "created_at": "2026-03-21T10:00:00Z"  
+    }  
+  ],  
+  "page": 1,  
+  "limit": 20,  
+  "total": 12  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|UNAUTHORIZED|Missing or invalid token|
+|403|FORBIDDEN|No access to this bootcamp|
+|404|NOT_FOUND|Bootcamp does not exist|
+|422|VALIDATION_ERROR|Bad pagination/filter input|
+
+---
+
+## 2) Create Assignment Group
+
+#### URL
+
+`POST /b/{bootcamp_id}/agroups`
+
+#### Purpose
+
+Create a reusable assignment template for a bootcamp.
+
+#### Access Control
+
+- **Admin**: yes
+- **Mentor**: yes
+- **Mentee**: no
+- **Super_admin**: no
+
+#### Headers
+
+- `Authorization: Bearer <jwt>` or `Cookie: access_token=<jwt>`
+- `Content-Type: application/json`
+- `Idempotency-Key` recommended
+
+#### Path Params
+
+- `bootcamp_id` UUID, required
+
+#### Query Params
+
+None
+
+#### Request Body
+
+{  
+  "title": "Week 1 DSA",  
+  "description": "Core array and string problems",  
+  "deadline_days": 7  
+}
+
+#### Validation Rules
+
+- `title` required, 3–150 chars
+- `deadline_days` required, integer, `>= 1`
+- `description` optional, max reasonable text length
+- Title should be unique within the bootcamp if you want to keep the UI clean
+- `created_by` must come from auth context
+
+#### Success Response
+
+{  
+  "id": "uuid",  
+  "bootcamp_id": "uuid",  
+  "title": "Week 1 DSA",  
+  "description": "Core array and string problems",  
+  "deadline_days": 7,  
+  "created_by": "uuid",  
+  "created_at": "2026-03-21T10:00:00Z",  
+  "updated_at": "2026-03-21T10:00:00Z"  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|400|BAD_REQUEST|Malformed JSON|
+|401|UNAUTHORIZED|Missing or invalid token|
+|403|FORBIDDEN|Not allowed to create in this bootcamp|
+|404|NOT_FOUND|Bootcamp does not exist|
+|422|VALIDATION_ERROR|Invalid title or deadline_days|
+|409|CONFLICT|Duplicate group title, if enforced|
+
+---
+
+## 3) Get Assignment Group Details
+
+#### URL
+
+`GET /agroups/{agroup_id}`
+
+#### Purpose
+
+Fetch one assignment group with metadata.
+
+#### Access Control
+
+- **Admin**: yes
+- **Mentor**: yes
+- **Mentee**: no
+- **Super_admin**: yes, read-only
+
+#### Headers
+
+- `Authorization: Bearer <jwt>` or `Cookie: access_token=<jwt>`
+
+#### Path Params
+
+- `agroup_id` UUID, required
+
+#### Query Params
+
+None
+
+#### Request Body
+
+None
+
+#### Validation Rules
+
+- Assignment group must exist
+- Caller must be in same tenant scope
+
+#### Success Response
+
+{  
+  "id": "uuid",  
+  "bootcamp_id": "uuid",  
+  "title": "Graph Algorithms Sprint",  
+  "description": "Weekly graph practice set",  
+  "deadline_days": 10,  
+  "created_by": "uuid",  
+  "created_at": "2026-03-21T10:00:00Z",  
+  "updated_at": "2026-03-21T10:00:00Z"  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|UNAUTHORIZED|Missing or invalid token|
+|403|FORBIDDEN|No access to this group|
+|404|NOT_FOUND|Group does not exist|
+
+---
+
+## 4) Update Assignment Group
+
+#### URL
+
+`PATCH /agroups/{agroup_id}`
+
+#### Purpose
+
+Update group metadata, not ownership.
+
+#### Access Control
+
+- **Admin**: yes
+- **Mentor**: yes
+- **Mentee**: no
+- **Super_admin**: no
+
+#### Headers
+
+- `Authorization: Bearer <jwt>` or `Cookie: access_token=<jwt>`
+- `Content-Type: application/json`
+
+#### Path Params
+
+- `agroup_id` UUID, required
+
+#### Query Params
+
+None
+
+#### Request Body
+
+{  
+  "title": "Graph Algorithms Sprint - Updated",  
+  "description": "Updated description",  
+  "deadline_days": 14  
+}
+
+#### Validation Rules
+
+- `title` optional, if present 3–150 chars
+- `deadline_days` optional, if present `>= 1`
+- `bootcamp_id` and `created_by` are immutable
+- Do not retroactively alter existing assignments by changing `deadline_days`
+
+#### Success Response
+
+{  
+  "id": "uuid",  
+  "bootcamp_id": "uuid",  
+  "title": "Graph Algorithms Sprint - Updated",  
+  "description": "Updated description",  
+  "deadline_days": 14,  
+  "created_by": "uuid",  
+  "created_at": "2026-03-21T10:00:00Z",  
+  "updated_at": "2026-03-21T11:00:00Z"  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|400|BAD_REQUEST|Malformed JSON|
+|401|UNAUTHORIZED|Missing or invalid token|
+|403|FORBIDDEN|Not allowed to edit this group|
+|404|NOT_FOUND|Group does not exist|
+|422|VALIDATION_ERROR|Invalid input|
+
+---
+
+## 5) Delete Assignment Group
+
+#### URL
+
+`DELETE /agroups/{agroup_id}`
+
+#### Purpose
+
+Remove an assignment group only if it is safe to do so.
+
+#### Access Control
+
+- **Admin**: yes
+- **Mentor**: yes
+- **Mentee**: no
+- **Super_admin**: no
+
+#### Headers
+
+- `Authorization: Bearer <jwt>` or `Cookie: access_token=<jwt>`
+
+#### Path Params
+
+- `agroup_id` UUID, required
+
+#### Query Params
+
+None
+
+#### Request Body
+
+None
+
+#### Validation Rules
+
+- Do not delete if assignments already exist unless you have soft-delete support
+- If you need auditability, soft delete is better than hard delete
+
+#### Success Response
+
+`204 No Content`
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|UNAUTHORIZED|Missing or invalid token|
+|403|FORBIDDEN|Not allowed to delete this group|
+|404|NOT_FOUND|Group does not exist|
+|409|CONFLICT|Group is already used by assignments|
+
+---
+
+## 6) List Problems in an Assignment Group
+
+#### URL
+
+`GET /agroups/{agroup_id}/problems`
+
+#### Purpose
+
+Return the ordered problem set inside a group.
+
+#### Access Control
+
+- **Admin**: yes
+- **Mentor**: yes
+- **Mentee**: no
+- **Super_admin**: yes, read-only
+
+#### Headers
+
+- `Authorization: Bearer <jwt>` or `Cookie: access_token=<jwt>`
+
+#### Path Params
+
+- `agroup_id` UUID, required
+
+#### Query Params
+
+None
+
+#### Request Body
+
+None
+
+#### Validation Rules
+
+- Group must exist and be visible to caller
+
+#### Success Response
+
+{  
+  "agroup_id": "uuid",  
+  "problems": [  
+    {  
+      "problem_id": "uuid",  
+      "position": 1  
+    },  
+    {  
+      "problem_id": "uuid",  
+      "position": 2  
+    }  
+  ]  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|UNAUTHORIZED|Missing or invalid token|
+|403|FORBIDDEN|No access to this group|
+|404|NOT_FOUND|Group does not exist|
+
+---
+
+## 7) Replace Ordered Problems in an Assignment Group
+
+#### URL
+
+`PUT /agroups/{agroup_id}/problems`
+
+#### Purpose
+
+Replace the full ordered problem list for a group. This is cleaner than doing piecemeal position updates.
+
+#### Access Control
+
+- **Admin**: yes
+- **Mentor**: yes
+- **Mentee**: no
+- **Super_admin**: no
+
+#### Headers
+
+- `Authorization: Bearer <jwt>` or `Cookie: access_token=<jwt>`
+- `Content-Type: application/json`
+
+#### Path Params
+
+- `agroup_id` UUID, required
+
+#### Query Params
+
+None
+
+#### Request Body
+
+{  
+  "problems": [  
+    { "problem_id": "uuid", "position": 1 },  
+    { "problem_id": "uuid", "position": 2 }  
+  ]  
+}
+
+#### Validation Rules
+
+- Problem IDs must be unique
+- Positions must be unique, positive integers
+- Replace atomically in one transaction
+- Caller must own the bootcamp scope
+- If problems are scoped to org/bootcamp, validate that too
+
+#### Success Response
+
+{  
+  "agroup_id": "uuid",  
+  "problems": [  
+    { "problem_id": "uuid", "position": 1 },  
+    { "problem_id": "uuid", "position": 2 }  
+  ]  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|400|BAD_REQUEST|Bad payload shape|
+|401|UNAUTHORIZED|Missing or invalid token|
+|403|FORBIDDEN|Not allowed to modify this group|
+|404|NOT_FOUND|Group or problem not found|
+|409|CONFLICT|Duplicate problem or position|
+|422|VALIDATION_ERROR|Invalid positions|
+
+---
+
+## 8) Create Assignment for One Mentee
+
+#### URL
+
+`POST /assignments`
+
+#### Purpose
+
+Create one assignment instance for one bootcamp enrollment.
+
+#### Access Control
+
+- **Admin**: yes
+- **Mentor**: yes
+- **Mentee**: no
+- **Super_admin**: no
+
+#### Headers
+
+- `Authorization: Bearer <jwt>` or `Cookie: access_token=<jwt>`
+- `Content-Type: application/json`
+- `Idempotency-Key` recommended
+
+#### Path Params
+
+None
+
+#### Query Params
+
+None
+
+#### Request Body
+
+{  
+  "assignment_group_id": "uuid",  
+  "bootcamp_enrollment_id": "uuid",  
+  "deadline_at": "2026-03-12T18:30:00Z"  
+}
+
+#### Validation Rules
+
+- `assignment_group_id` required
+- `bootcamp_enrollment_id` required
+- `deadline_at` optional; if omitted, compute from `assigned_at + deadline_days`
+- Enrollment must belong to the same bootcamp as the assignment group
+- Enrollment must be active
+- Prevent duplicate active assignment for same group and same mentee unless your product explicitly allows repeats
+- `assigned_by` must come from auth context
+- On create, snapshot current group problems into `assignment_problems`
+
+#### Success Response
+
+{  
+  "id": "uuid",  
+  "assignment_group_id": "uuid",  
+  "bootcamp_enrollment_id": "uuid",  
+  "assigned_by": "uuid",  
+  "assigned_at": "2026-03-21T10:00:00Z",  
+  "deadline_at": "2026-03-28T10:00:00Z",  
+  "status": "active"  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|400|BAD_REQUEST|Malformed JSON|
+|401|UNAUTHORIZED|Missing or invalid token|
+|403|FORBIDDEN|Not allowed to assign in this bootcamp|
+|404|NOT_FOUND|Group or enrollment does not exist|
+|409|CONFLICT|Duplicate assignment or inactive enrollment|
+|422|VALIDATION_ERROR|Invalid deadline or scope mismatch|
+
+---
+
+## 9) List Assignments
+
+#### URL
+
+`GET /assignments`
+
+#### Purpose
+
+List assignments visible to the caller.
+
+#### Access Control
+
+- **Admin**: yes
+- **Mentor**: yes
+- **Mentee**: yes, but only own assignments
+- **Super_admin**: yes, read-only
+
+#### Headers
+
+- `Authorization: Bearer <jwt>` or `Cookie: access_token=<jwt>`
+
+#### Query Params
+
+- `bootcamp_id` UUID, optional
+- `assignment_group_id` UUID, optional
+- `bootcamp_enrollment_id` UUID, optional
+- `status` `active|completed|expired`, optional
+- `page` integer, optional
+- `limit` integer, optional
+- `sort` string, optional
+
+#### Request Body
+
+None
+
+#### Validation Rules
+
+- For mentees, ignore or reject filters that try to escape their own scope
+- For admins/mentors, scope must still stay inside their organization
+
+#### Success Response
+
+{  
+  "data": [  
+    {  
+      "id": "uuid",  
+      "assignment_group_id": "uuid",  
+      "bootcamp_enrollment_id": "uuid",  
+      "assigned_by": "uuid",  
+      "assigned_at": "2026-03-21T10:00:00Z",  
+      "deadline_at": "2026-03-28T10:00:00Z",  
+      "status": "active"  
+    }  
+  ],  
+  "page": 1,  
+  "limit": 20,  
+  "total": 48  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|UNAUTHORIZED|Missing or invalid token|
+|403|FORBIDDEN|Attempt to read outside allowed scope|
+|422|VALIDATION_ERROR|Invalid filters|
+
+---
+
+## 10) Get Assignment Details
+
+#### URL
+
+`GET /assignments/{assignment_id}`
+
+#### Purpose
+
+Fetch a single assignment instance with its current state.
+
+#### Access Control
+
+- **Admin**: yes
+- **Mentor**: yes
+- **Mentee**: yes, only own assignment
+- **Super_admin**: yes, read-only
+
+#### Headers
+
+- `Authorization: Bearer <jwt>` or `Cookie: access_token=<jwt>`
+
+#### Path Params
+
+- `assignment_id` UUID, required
+
+#### Query Params
+
+None
+
+#### Request Body
+
+None
+
+#### Validation Rules
+
+- Assignment must exist
+- Caller must own or supervise it through the bootcamp scope
+
+#### Success Response
+
+{  
+  "id": "uuid",  
+  "assignment_group": {  
+    "id": "uuid",  
+    "title": "Graph Algorithms Sprint",  
+    "deadline_days": 7  
+  },  
+  "bootcamp_enrollment_id": "uuid",  
+  "assigned_by": "uuid",  
+  "assigned_at": "2026-03-21T10:00:00Z",  
+  "deadline_at": "2026-03-28T10:00:00Z",  
+  "status": "active"  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|UNAUTHORIZED|Missing or invalid token|
+|403|FORBIDDEN|No access to this assignment|
+|404|NOT_FOUND|Assignment does not exist|
+
+---
+
+## 11) Update Assignment Deadline / Status
+
+#### URL
+
+`PATCH /assignments/{assignment_id}`
+
+#### Purpose
+
+Adjust the assignment lifecycle when a mentor or admin needs to extend, reopen, or close it.
+
+#### Access Control
+
+- **Admin**: yes
+- **Mentor**: yes
+- **Mentee**: no
+- **Super_admin**: no
+
+#### Headers
+
+- `Authorization: Bearer <jwt>` or `Cookie: access_token=<jwt>`
+- `Content-Type: application/json`
+
+#### Path Params
+
+- `assignment_id` UUID, required
+
+#### Query Params
+
+None
+
+#### Request Body
+
+{  
+  "deadline_at": "2026-04-01T18:30:00Z",  
+  "status": "active"  
+}
+
+#### Validation Rules
+
+- `deadline_at` optional, must be in the future or a sensible override
+- `status` optional, allowed values: `active`, `completed`, `expired`
+- Enforce valid state transitions
+- Do not let this endpoint rewrite the assignment group template
+- Keep a proper audit trail in the service layer
+
+#### Success Response
+
+{  
+  "id": "uuid",  
+  "deadline_at": "2026-04-01T18:30:00Z",  
+  "status": "active",  
+  "updated_at": "2026-03-21T11:00:00Z"  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|400|BAD_REQUEST|Invalid payload|
+|401|UNAUTHORIZED|Missing or invalid token|
+|403|FORBIDDEN|Not allowed to update this assignment|
+|404|NOT_FOUND|Assignment does not exist|
+|409|CONFLICT|Invalid status transition|
+|422|VALIDATION_ERROR|Invalid deadline/status|
+
+---
+
+## 12) List Problems in an Assignment Instance
+
+#### URL
+
+`GET /assignments/{assignment_id}/problems`
+
+#### Purpose
+
+Show the actual problems assigned to this mentee, with current progress.
+
+#### Access Control
+
+- **Admin**: yes
+- **Mentor**: yes
+- **Mentee**: yes, only own assignment
+- **Super_admin**: yes, read-only
+
+#### Headers
+
+- `Authorization: Bearer <jwt>` or `Cookie: access_token=<jwt>`
+
+#### Path Params
+
+- `assignment_id` UUID, required
+
+#### Query Params
+
+None
+
+#### Request Body
+
+None
+
+#### Validation Rules
+
+- Assignment must exist
+- Caller must be allowed to view it
+
+#### Success Response
+
+{  
+  "assignment_id": "uuid",  
+  "problems": [  
+    {  
+      "problem_id": "uuid",  
+      "status": "pending",  
+      "solution_link": null,  
+      "notes": null,  
+      "completed_at": null  
+    }  
+  ]  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|UNAUTHORIZED|Missing or invalid token|
+|403|FORBIDDEN|No access to this assignment|
+|404|NOT_FOUND|Assignment does not exist|
+
+---
+
+## 13) Update Problem Progress in an Assignment
+
+#### URL
+
+`PATCH /assignments/{assignment_id}/problems/{problem_id}`
+
+#### Purpose
+
+Update mentee progress for one assigned problem.
+
+#### Access Control
+
+- **Admin**: yes
+- **Mentor**: yes
+- **Mentee**: yes, only own assignment
+- **Super_admin**: no
+
+#### Headers
+
+- `Authorization: Bearer <jwt>` or `Cookie: access_token=<jwt>`
+- `Content-Type: application/json`
+
+#### Path Params
+
+- `assignment_id` UUID, required
+- `problem_id` UUID, required
+
+#### Query Params
+
+None
+
+#### Request Body
+
+{  
+  "status": "attempted",  
+  "solution_link": "https://github.com/user/solution",  
+  "notes": "Need to revisit two-pointer approach"  
+}
+
+#### Validation Rules
+
+- `status` allowed values: `pending`, `attempted`, `completed`
+- Mentee can only update their own assignment
+- Status should move forward logically
+- `completed_at` should be set automatically when status becomes `completed`
+- Do not allow duplicate problem rows; the schema already protects this.
+
+#### Success Response
+
+{  
+  "assignment_id": "uuid",  
+  "problem_id": "uuid",  
+  "status": "completed",  
+  "solution_link": "https://github.com/user/solution",  
+  "notes": "Done",  
+  "completed_at": "2026-03-21T12:00:00Z"  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|400|BAD_REQUEST|Invalid JSON or bad status|
+|401|UNAUTHORIZED|Missing or invalid token|
+|403|FORBIDDEN|Not owner or not allowed to update|
+|404|NOT_FOUND|Assignment/problem does not exist|
+|409|CONFLICT|Problem not part of this assignment|
+|422|VALIDATION_ERROR|Invalid status transition|
 
 
 # 6. PROGRESS Module : 
@@ -1638,6 +2508,336 @@ For production clarity, I recommend **rejecting delete when in use** unless you 
 | 4   | `/doubts/{id}/resolve` | PATCH  | mentor                | Resolve a doubt                          |
 | 5   | `/doubts/{id}`         | DELETE | admin, mentor         | Delete a doubt                           |
 | 6   | `/doubts/me`           | GET    | mentee                | Get all doubts raised by self            |
+
+
+
+
+## 1. Create Doubt
+
+#### URL
+
+`POST /doubts`
+
+#### Purpose
+
+Allows a mentee to raise a doubt against a specific assignment problem.
+
+#### Access Control
+
+- Only **mentee**
+- Must belong to same org + bootcamp
+
+#### Headers
+
+- Authorization: Bearer token / cookie
+
+#### Path Params
+
+- None
+
+### #### Query Params
+
+- None
+
+### #### Request Body
+
+{  
+  "assignment_problem_id": "uuid",  
+  "message": "I am not understanding the sliding window logic"  
+}
+
+### #### Validation Rules
+
+- `assignment_problem_id` must exist
+- Problem must be assigned to this mentee
+- `message` must be non-empty (min 10 chars recommended)
+- Prevent spam (rate limit per user)
+
+### #### Success Response
+
+{  
+  "id": "uuid",  
+  "resolved": false,  
+  "created_at": "timestamp"  
+}
+
+### #### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|400|INVALID_INPUT|Missing/invalid fields|
+|403|FORBIDDEN|Not assigned problem|
+|404|NOT_FOUND|Assignment problem not found|
+
+---
+
+## 2. List Doubts
+
+### #### URL
+
+`GET /doubts`
+
+### #### Purpose
+
+Retrieve doubts across organization for monitoring and mentoring.
+
+### #### Access Control
+
+- **admin, mentor only**
+
+### #### Headers
+
+- Authorization
+
+### #### Path Params
+
+- None
+
+### #### Query Params
+
+- `assignment_problem_id`
+- `resolved` (true/false)
+- `raised_by`
+- `limit`, `cursor`
+
+### #### Request Body
+
+- None
+
+### #### Validation Rules
+
+- Ensure org-level filtering
+- Pagination required (cursor-based)
+
+### #### Success Response
+
+{  
+  "data": [  
+    {  
+      "id": "uuid",  
+      "message": "...",  
+      "resolved": false  
+    }  
+  ],  
+  "next_cursor": "abc"  
+}
+
+### #### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|403|FORBIDDEN|Unauthorized role|
+
+---
+
+## 3. Get Doubt Details
+
+### #### URL
+
+`GET /doubts/{id}`
+
+### #### Purpose
+
+Fetch full details of a specific doubt.
+
+### #### Access Control
+
+- mentee → only own doubts
+- mentor/admin → all org doubts
+
+### #### Headers
+
+- Authorization
+
+### #### Path Params
+
+- `id` → doubt id
+
+### #### Query Params
+
+- None
+
+### #### Request Body
+
+- None
+
+### #### Validation Rules
+
+- Must belong to same org
+
+### #### Success Response
+
+{  
+  "id": "uuid",  
+  "message": "...",  
+  "resolved": false,  
+  "resolved_by": null,  
+  "created_at": "timestamp"  
+}
+
+### #### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|403|FORBIDDEN|Access denied|
+|404|NOT_FOUND|Doubt not found|
+
+---
+
+## 4. Resolve Doubt
+
+### #### URL
+
+`PATCH /doubts/{id}/resolve`
+
+### #### Purpose
+
+Marks a doubt as resolved by a mentor/admin.
+
+### #### Access Control
+
+- **mentor, admin only**
+
+### #### Headers
+
+- Authorization
+
+### #### Path Params
+
+- `id`
+
+### #### Query Params
+
+- None
+
+### #### Request Body
+
+{  
+  "note": "Explained sliding window with example"  
+}
+
+### #### Validation Rules
+
+- Cannot resolve already resolved doubt (idempotent allowed)
+- Resolver must belong to same org
+- Optional: store resolution note (recommended)
+
+### #### Success Response
+
+{  
+  "resolved": true,  
+  "resolved_at": "timestamp"  
+}
+
+### #### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|400|ALREADY_RESOLVED|Already resolved|
+|403|FORBIDDEN|Unauthorized|
+|404|NOT_FOUND|Doubt not found|
+
+---
+
+## 5. Delete Doubt
+
+### #### URL
+
+`DELETE /doubts/{id}`
+
+### #### Purpose
+
+Remove invalid or spam doubts.
+
+### #### Access Control
+
+- **admin, mentor**
+- mentee CANNOT delete (important for audit)
+
+### #### Headers
+
+- Authorization
+
+### #### Path Params
+
+- `id`
+
+### #### Query Params
+
+- None
+
+### #### Request Body
+
+- None
+
+### #### Validation Rules
+
+- Must belong to same org
+
+### #### Success Response
+
+{  
+  "message": "deleted"  
+}
+
+### #### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|403|FORBIDDEN|Not allowed|
+|404|NOT_FOUND|Not found|
+
+---
+
+## 6. Get My Doubts
+
+### #### URL
+
+`GET /doubts/me`
+
+### #### Purpose
+
+Fetch doubts raised by the logged-in mentee.
+
+### #### Access Control
+
+- **mentee only**
+
+### #### Headers
+
+- Authorization
+
+### #### Path Params
+
+- None
+
+### #### Query Params
+
+- `resolved`
+- `limit`, `cursor`
+
+### #### Request Body
+
+- None
+
+### #### Validation Rules
+
+- Must map user → organization_member correctly
+
+### #### Success Response
+
+{  
+  "data": [...],  
+  "next_cursor": "abc"  
+}
+
+### #### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|403|FORBIDDEN|Not a mentee|
+
+---
 
 # 7. ANALYTICS Module : 
 
@@ -1652,3 +2852,567 @@ For production clarity, I recommend **rejecting delete when in use** unless you 
 | `6. /orgs/{org_id}/bootcamps/{bootcamp_id}/polls/{poll_id}/vote`        |  `PUT` | `mentee`                                | Create or update the mentee’s single vote. |
 | `7. /orgs/{org_id}/bootcamps/{bootcamp_id}/polls/{poll_id}/results`     |  `GET` | `super_admin / admin / mentor`          | Read aggregated poll results.              |
 | `8. /orgs/{org_id}/bootcamps/{bootcamp_id}/polls/{poll_id}/votes`       |  `GET` | `super_admin / admin / mentor`          | Read raw poll votes for audit/moderation.  |
+
+## 1. Bootcamp leaderboard snapshot
+
+#### URL
+
+`GET /orgs/{org_id}/bootcamps/{bootcamp_id}/leaderboard`
+
+#### Purpose
+
+Returns the ranked leaderboard snapshot for a bootcamp. This is read-only analytics data; do not recalculate ranks in the request path.
+
+#### Access Control
+
+- `super_admin`: allowed, read-only
+- `admin`: allowed
+- `mentor`: allowed
+- `mentee`: allowed only if enrolled in this bootcamp
+
+#### Headers
+
+- `Authorization: Bearer <access_token>` or auth cookie
+- `Accept: application/json`
+
+#### Path Params
+
+- `org_id` — UUID
+- `bootcamp_id` — UUID
+
+#### Query Params
+
+- `limit` — integer, default `20`, max `100`
+- `cursor` — opaque pagination cursor
+- `sort` — optional, default `rank`
+- `order` — optional, `asc|desc`, default `asc` for rank
+
+#### Request Body
+
+None.
+
+#### Validation Rules
+
+- `org_id` and `bootcamp_id` must be valid UUIDs.
+- Bootcamp must belong to the org.
+- Mentee must be enrolled in the bootcamp to view it.
+- `limit` must be between `1` and `100`.
+
+#### Success Response
+
+- `200 OK`
+
+{  
+  "data": [  
+    {  
+      "bootcamp_enrollment_id": "uuid",  
+      "rank": 1,  
+      "score": 980,  
+      "problems_completed": 42,  
+      "problems_attempted": 50,  
+      "completion_rate": 84.0,  
+      "streak_days": 11,  
+      "calculated_at": "2026-03-21T10:30:00Z"  
+    }  
+  ],  
+  "page": {  
+    "next_cursor": "opaque"  
+  }  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|`UNAUTHORIZED`|Missing or invalid token|
+|403|`FORBIDDEN`|Mentee not enrolled, or role not allowed|
+|404|`NOT_FOUND`|Org/bootcamp does not exist in this tenant|
+|422|`INVALID_CURSOR`|Cursor or pagination param is malformed|
+
+---
+
+## 2. Single mentee leaderboard entry
+
+#### URL
+
+`GET /orgs/{org_id}/bootcamps/{bootcamp_id}/leaderboard/{enrollment_id}`
+
+#### Purpose
+
+Returns one mentee’s leaderboard snapshot inside a bootcamp. Useful for mentor dashboards and mentee profile pages.
+
+#### Access Control
+
+- `super_admin`: allowed
+- `admin`: allowed
+- `mentor`: allowed
+- `mentee`: allowed only for their own enrollment
+
+#### Headers
+
+- `Authorization: Bearer <access_token>` or auth cookie
+
+#### Path Params
+
+- `org_id` — UUID
+- `bootcamp_id` — UUID
+- `enrollment_id` — UUID
+
+#### Query Params
+
+None.
+
+#### Request Body
+
+None.
+
+#### Validation Rules
+
+- Enrollment must belong to the bootcamp in the path.
+- Mentee can only read their own enrollment.
+- Do not infer membership from `enrollment_id` alone.
+
+#### Success Response
+
+- `200 OK`
+
+{  
+  "bootcamp_enrollment_id": "uuid",  
+  "rank": 12,  
+  "score": 640,  
+  "problems_completed": 21,  
+  "problems_attempted": 30,  
+  "completion_rate": 70.0,  
+  "streak_days": 4,  
+  "calculated_at": "2026-03-21T10:30:00Z"  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|`UNAUTHORIZED`|Missing or invalid token|
+|403|`FORBIDDEN`|Mentee tries to read another mentee’s entry|
+|404|`NOT_FOUND`|Entry, bootcamp, or org not found in tenant|
+|422|`INVALID_ID`|UUID malformed|
+
+---
+
+## 3. Create poll
+
+#### URL
+
+`POST /orgs/{org_id}/bootcamps/{bootcamp_id}/polls`
+
+#### Purpose
+
+Creates a poll tied to a problem in a bootcamp. This is a mentor action, not an admin or mentee action.
+
+#### Access Control
+
+- `mentor`: allowed
+- `admin`: not allowed unless you explicitly make admin a mentor too
+- `super_admin`: read-only only, not allowed here
+- `mentee`: not allowed
+
+#### Headers
+
+- `Authorization: Bearer <access_token>` or auth cookie
+- `Content-Type: application/json`
+- `Idempotency-Key: <optional>` — recommended for retry safety
+
+#### Path Params
+
+- `org_id` — UUID
+- `bootcamp_id` — UUID
+
+#### Query Params
+
+None.
+
+#### Request Body
+
+{  
+  "problem_id": "uuid",  
+  "question": "Was LRU Cache difficult?"  
+}
+
+#### Validation Rules
+
+- `problem_id` must be a valid UUID.
+- `question` required, trimmed, 10–240 chars.
+- The problem must be valid for this bootcamp/org boundary.
+- Creator must be an `organization_member` in the same org.
+- Reject empty, vague, or duplicate-looking questions at the application layer if you care about quality. The DB will not save you here.
+
+#### Success Response
+
+- `201 Created`
+
+{  
+  "id": "uuid",  
+  "bootcamp_id": "uuid",  
+  "problem_id": "uuid",  
+  "question": "Was LRU Cache difficult?",  
+  "created_by": "organization_member_uuid",  
+  "created_at": "2026-03-21T10:30:00Z"  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|`UNAUTHORIZED`|Missing or invalid token|
+|403|`FORBIDDEN`|Non-mentor tries to create|
+|404|`NOT_FOUND`|Bootcamp/problem not found in tenant|
+|409|`DUPLICATE_REQUEST`|Same idempotency key already processed|
+|422|`VALIDATION_ERROR`|Question too short/long or missing `problem_id`|
+
+---
+
+## 4. List polls in a bootcamp
+
+#### URL
+
+`GET /orgs/{org_id}/bootcamps/{bootcamp_id}/polls`
+
+#### Purpose
+
+Lists polls for a bootcamp so mentors and mentees can inspect or answer them.
+
+#### Access Control
+
+- `super_admin`: allowed
+- `admin`: allowed
+- `mentor`: allowed
+- `mentee`: allowed only if enrolled in the bootcamp
+
+#### Headers
+
+- `Authorization: Bearer <access_token>` or auth cookie
+
+#### Path Params
+
+- `org_id` — UUID
+- `bootcamp_id` — UUID
+
+#### Query Params
+
+- `limit` — integer, default `20`, max `100`
+- `cursor` — opaque cursor
+- `problem_id` — optional UUID filter
+- `created_by_me` — optional boolean
+
+#### Request Body
+
+None.
+
+#### Validation Rules
+
+- Bootcamp must belong to org.
+- Mentee must be enrolled.
+- Filter params must be well-typed.
+
+#### Success Response
+
+- `200 OK`
+
+{  
+  "data": [  
+    {  
+      "id": "uuid",  
+      "problem_id": "uuid",  
+      "question": "Was LRU Cache difficult?",  
+      "created_by": "organization_member_uuid",  
+      "created_at": "2026-03-21T10:30:00Z",  
+      "my_vote": "hard"  
+    }  
+  ],  
+  "page": {  
+    "next_cursor": "opaque"  
+  }  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|`UNAUTHORIZED`|Missing or invalid token|
+|403|`FORBIDDEN`|Mentee not enrolled|
+|404|`NOT_FOUND`|Org/bootcamp not found in tenant|
+|422|`INVALID_FILTER`|Bad query parameter|
+
+---
+
+## 5. Read poll details
+
+#### URL
+
+`GET /orgs/{org_id}/bootcamps/{bootcamp_id}/polls/{poll_id}`
+
+#### Purpose
+
+Returns poll metadata and the requester’s vote state. Keep raw vote totals out of this endpoint if you already have a dedicated results endpoint.
+
+#### Access Control
+
+- `super_admin`: allowed
+- `admin`: allowed
+- `mentor`: allowed
+- `mentee`: allowed only if enrolled in the bootcamp
+
+#### Headers
+
+- `Authorization: Bearer <access_token>` or auth cookie
+
+#### Path Params
+
+- `org_id` — UUID
+- `bootcamp_id` — UUID
+- `poll_id` — UUID
+
+#### Query Params
+
+None.
+
+#### Request Body
+
+None.
+
+#### Validation Rules
+
+- Poll must belong to the bootcamp in the path.
+- Mentee must be enrolled to view it.
+- Do not allow cross-bootcamp poll lookup by ID alone.
+
+#### Success Response
+
+- `200 OK`
+
+{  
+  "id": "uuid",  
+  "bootcamp_id": "uuid",  
+  "problem_id": "uuid",  
+  "question": "Was LRU Cache difficult?",  
+  "created_by": "organization_member_uuid",  
+  "created_at": "2026-03-21T10:30:00Z",  
+  "my_vote": "medium"  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|`UNAUTHORIZED`|Missing or invalid token|
+|403|`FORBIDDEN`|Mentee not enrolled|
+|404|`NOT_FOUND`|Poll/bootcamp/org not found in tenant|
+|422|`INVALID_ID`|UUID malformed|
+
+---
+
+## 6. Vote on a poll
+
+#### URL
+
+`PUT /orgs/{org_id}/bootcamps/{bootcamp_id}/polls/{poll_id}/vote`
+
+#### Purpose
+
+Creates or updates the mentee’s single vote for a poll. `PUT` is the right choice here because the resource is singular per poll per voter.
+
+#### Access Control
+
+- `mentee`: allowed only if enrolled in the bootcamp
+- `mentor/admin/super_admin`: not allowed
+
+#### Headers
+
+- `Authorization: Bearer <access_token>` or auth cookie
+- `Content-Type: application/json`
+
+#### Path Params
+
+- `org_id` — UUID
+- `bootcamp_id` — UUID
+- `poll_id` — UUID
+
+#### Query Params
+
+None.
+
+#### Request Body
+
+{  
+  "vote": "hard"  
+}
+
+#### Validation Rules
+
+- `vote` must be one of: `easy | medium | hard`
+- Voter must be enrolled in the bootcamp.
+- One vote per poll per mentee.
+- Poll must belong to the same bootcamp.
+- If auth is via cookie, CSRF protection is mandatory.
+
+#### Success Response
+
+- `201 Created` when first vote is saved
+- `200 OK` when existing vote is updated
+
+{  
+  "poll_id": "uuid",  
+  "voter_id": "bootcamp_enrollment_uuid",  
+  "vote": "hard",  
+  "created_at": "2026-03-21T10:40:00Z"  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|`UNAUTHORIZED`|Missing or invalid token|
+|403|`FORBIDDEN`|Non-mentee tries to vote, or not enrolled|
+|404|`NOT_FOUND`|Poll/bootcamp/org not found in tenant|
+|409|`ALREADY_VOTED`|If you choose strict create-only behavior instead of upsert|
+|422|`VALIDATION_ERROR`|Vote value invalid|
+
+---
+
+## 7. Read poll results
+
+#### URL
+
+`GET /orgs/{org_id}/bootcamps/{bootcamp_id}/polls/{poll_id}/results`
+
+#### Purpose
+
+Returns aggregated poll results for mentors and admins. Do not expose raw voter identities here.
+
+#### Access Control
+
+- `super_admin`: allowed
+- `admin`: allowed
+- `mentor`: allowed
+- `mentee`: not allowed
+
+#### Headers
+
+- `Authorization: Bearer <access_token>` or auth cookie
+
+#### Path Params
+
+- `org_id` — UUID
+- `bootcamp_id` — UUID
+- `poll_id` — UUID
+
+#### Query Params
+
+None.
+
+#### Request Body
+
+None.
+
+#### Validation Rules
+
+- Poll must belong to bootcamp.
+- Results must be computed from votes in the same tenant scope.
+
+#### Success Response
+
+- `200 OK`
+
+{  
+  "poll_id": "uuid",  
+  "total_votes": 38,  
+  "easy": 9,  
+  "medium": 14,  
+  "hard": 15,  
+  "percentages": {  
+    "easy": 23.68,  
+    "medium": 36.84,  
+    "hard": 39.48  
+  }  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|`UNAUTHORIZED`|Missing or invalid token|
+|403|`FORBIDDEN`|Mentee tries to access results|
+|404|`NOT_FOUND`|Poll/bootcamp/org not found in tenant|
+|422|`INVALID_ID`|UUID malformed|
+
+---
+
+## 8. Read raw poll votes
+
+#### URL
+
+`GET /orgs/{org_id}/bootcamps/{bootcamp_id}/polls/{poll_id}/votes`
+
+#### Purpose
+
+Returns raw vote rows for moderation, audit, or mentor debugging. This is not a mentee endpoint.
+
+#### Access Control
+
+- `super_admin`: allowed
+- `admin`: allowed
+- `mentor`: allowed
+- `mentee`: not allowed
+
+#### Headers
+
+- `Authorization: Bearer <access_token>` or auth cookie
+
+#### Path Params
+
+- `org_id` — UUID
+- `bootcamp_id` — UUID
+- `poll_id` — UUID
+
+#### Query Params
+
+- `limit` — integer, default `20`, max `100`
+- `cursor` — opaque cursor
+- `vote` — optional filter: `easy | medium | hard`
+
+#### Request Body
+
+None.
+
+#### Validation Rules
+
+- Must stay inside the same org and bootcamp.
+- Do not leak `voter_id` unless the caller has a legitimate moderation need.
+- If you do expose `voter_id`, only expose `bootcamp_enrollment_id`, not internal user identifiers.
+
+#### Success Response
+
+- `200 OK`
+
+{  
+  "data": [  
+    {  
+      "voter_id": "bootcamp_enrollment_uuid",  
+      "vote": "hard",  
+      "created_at": "2026-03-21T10:40:00Z"  
+    }  
+  ],  
+  "page": {  
+    "next_cursor": "opaque"  
+  }  
+}
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|`UNAUTHORIZED`|Missing or invalid token|
+|403|`FORBIDDEN`|Mentee tries to inspect raw votes|
+|404|`NOT_FOUND`|Poll/bootcamp/org not found in tenant|
+|422|`INVALID_FILTER`|Bad query parameter|
+
+---

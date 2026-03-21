@@ -1,19 +1,5 @@
 # Modules :
 
-Database architecture consists of 
-**6 layers**:
-
-1. Auth Module
-2. Organization Module
-3. Bootcamp Module
-4. Problem content Module
-5. Assignment system Module
-6. Tracking / interaction Module 
-7. Analytics Module : `V2`
-
----
-
-
 
 # 1. AUTH Module : 
 
@@ -711,7 +697,7 @@ erDiagram
 ```
 
 
-# 5. Progress Tracking Layer
+# 7. Progress Tracking Layer
 
 ### 1. Doubt
 
@@ -719,6 +705,14 @@ Description:
 Represents a question or doubt raised by a mentee while solving an assigned problem.
 Doubts allow mentors to track **problematic questions across mentees** and identify commonly difficult concepts.
 A doubt is linked to a specific **assignment problem**.
+
+#### Critical Invariants
+
+1. A doubt MUST belong to an **assignment_problem within the same org**
+2. `raised_by` MUST be a **mentee**
+3. `resolved_by` MUST be a **mentor/admin**
+4. A doubt can be resolved only once (idempotent operation)
+5. Cross-org access is strictly forbidden
 
 | Field                 | Type      | Notes                                  |
 | --------------------- | --------- | -------------------------------------- |
@@ -763,6 +757,26 @@ erDiagram
 
 
 # 6. Analytics Layer
+
+
+### Role hierarchy
+
+- `super_admin`: platform-level read-only access for this module. No writes to org business data.
+- `admin`: org owner. Can manage org/bootcamp business and read analytics.
+- `mentor`: can create polls, view results, inspect votes, and read leaderboard.
+- `mentee`: can read bootcamp-facing analytics and submit exactly one vote per poll.
+- `user` is not an authorization role. It is just the authenticated account identity.
+
+### Important invariants
+
+- Every request is tenant-scoped by both `org_id` and `bootcamp_id`.
+- A bootcamp must belong to the org in the path. No cross-org lookup is allowed.
+- `leaderboard_entries` is a derived snapshot table, not user-editable data.
+- One `leaderboard_entry` per `(bootcamp_id, bootcamp_enrollment_id)`.
+- One `poll_vote` per `(poll_id, voter_id)`.
+- `created_by` on poll must be an `organization_member` in the same org as the bootcamp.
+- `voter_id` must belong to a `bootcamp_enrollment` for the same bootcamp as the poll.
+- If an ID exists in another tenant, return `404`, not a leak-heavy `403`.
 
 ### 1. LeaderboardEntry
 
