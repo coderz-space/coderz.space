@@ -848,3 +848,817 @@ erDiagram
 | 403    | forbidden                 | Caller cannot manage this org                      |
 | 404    | enrollment_not_found      | Enrollment does not exist                          |
 | 409    | cannot_remove_last_mentor | If your business rule requires at least one mentor |
+
+
+
+# 4. PROBLEM CONTENT Module 
+
+| #   | URL                                                            | Method | Auth                               | Description                                   |
+| --- | -------------------------------------------------------------- | ------ | ---------------------------------- | --------------------------------------------- |
+| 1   | `/orgs/{org_id}/problems`                                      | POST   | admin, mentor                      | Create a new problem in the org question bank |
+| 2   | `/orgs/{org_id}/problems`                                      | GET    | super_admin, admin, mentor, mentee | List org problems with filters                |
+| 3   | `/orgs/{org_id}/problems/{problem_id}`                         | GET    | super_admin, admin, mentor, mentee | Get problem details                           |
+| 4   | `/orgs/{org_id}/problems/{problem_id}`                         | PATCH  | admin, mentor                      | Update a problem                              |
+| 5   | `/orgs/{org_id}/problems/{problem_id}`                         | DELETE | admin, mentor                      | Delete a problem                              |
+| 6   | `/orgs/{org_id}/tags`                                          | POST   | admin, mentor                      | Create a tag in the org                       |
+| 7   | `/orgs/{org_id}/tags`                                          | GET    | super_admin, admin, mentor, mentee | List org tags                                 |
+| 8   | `/orgs/{org_id}/tags/{tag_id}`                                 | PATCH  | admin, mentor                      | Rename a tag                                  |
+| 9   | `/orgs/{org_id}/tags/{tag_id}`                                 | DELETE | admin, mentor                      | Delete a tag                                  |
+| 10  | `/orgs/{org_id}/problems/{problem_id}/tags`                    | POST   | admin, mentor                      | Attach tags to a problem                      |
+| 11  | `/orgs/{org_id}/problems/{problem_id}/tags/{tag_id}`           | DELETE | admin, mentor                      | Detach a tag from a problem                   |
+| 12  | `/orgs/{org_id}/problems/{problem_id}/resources`               | POST   | admin, mentor                      | Add a learning resource to a problem          |
+| 13  | `/orgs/{org_id}/problems/{problem_id}/resources`               | GET    | super_admin, admin, mentor, mentee | List problem resources                        |
+| 14  | `/orgs/{org_id}/problems/{problem_id}/resources/{resource_id}` | PATCH  | admin, mentor                      | Update a resource                             |
+| 15  | `/orgs/{org_id}/problems/{problem_id}/resources/{resource_id}` | DELETE | admin, mentor                      | Remove a resource                             |
+
+
+## Entity Relationship : 
+
+
+```mermaid
+erDiagram
+    ORGANIZATIONS ||--o{ PROBLEMS : owns
+    ORGANIZATIONS ||--o{ TAGS : owns
+    ORGANIZATION_MEMBERS ||--o{ PROBLEMS : creates
+    PROBLEMS ||--o{ PROBLEM_RESOURCES : has
+    PROBLEMS ||--o{ PROBLEM_TAGS : mapped_by
+    TAGS ||--o{ PROBLEM_TAGS : mapped_by
+
+    ORGANIZATIONS {
+        uuid id PK
+        string name
+    }
+
+    ORGANIZATION_MEMBERS {
+        uuid id PK
+        uuid organization_id FK
+        uuid user_id FK
+        string role
+    }
+
+    PROBLEMS {
+        uuid id PK
+        uuid organization_id FK
+        uuid created_by FK
+        string title
+        text description
+        enum difficulty
+        string external_link
+    }
+
+    TAGS {
+        uuid id PK
+        uuid organization_id FK
+        string name
+    }
+
+    PROBLEM_TAGS {
+        uuid problem_id FK
+        uuid tag_id FK
+    }
+
+    PROBLEM_RESOURCES {
+        uuid id PK
+        uuid problem_id FK
+        string title
+        string url
+    }
+```
+
+
+## 1. CREATE PROBLEM :
+
+- **URL:** `POST /orgs/{org_id}/problems`
+- **Purpose:** Create a reusable problem in the org master question bank.
+- **Access Control:** `admin`, `mentor`
+
+#### Headers
+
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+- Cookie auth may also be accepted if your gateway supports it.
+
+#### Path Params
+
+- `org_id` — organization UUID
+
+#### Request Body
+
+```JSON
+{
+  "title": "Two Sum",
+  "description": "Given an array of integers, return indices of the two numbers such that they add up to a target.",
+  "difficulty": "easy",
+  "external_link": "https://leetcode.com/problems/two-sum"
+}
+```
+
+### Validation Rules
+
+- `title` required, trimmed, 3–200 chars
+- `description` optional
+- `difficulty` required, enum: `easy | medium | hard`
+- `external_link` optional, must be a valid URL if present
+- caller must be a member of the same organization
+- `title` uniqueness inside an org is recommended, but not mandatory unless you want strict dedupe
+- `created_by` is derived from the authenticated org member, never accepted from client
+
+#### Success Response
+
+- `201 Created`
+```json
+{
+  "id": "prob_uuid",
+  "organization_id": "org_uuid",
+  "created_by": "org_member_uuid",
+  "title": "Two Sum",
+  "description": "Given an array of integers, return indices of the two numbers such that they add up to a target.",
+  "difficulty": "easy",
+  "external_link": "https://leetcode.com/problems/two-sum",
+  "created_at": "2026-03-21T10:00:00Z",
+  "updated_at": "2026-03-21T10:00:00Z"
+}
+```
+
+#### Error :
+| Status | Code              | Condition                                            |
+| ------ | ----------------- | ---------------------------------------------------- |
+| 400    | invalid_body      | Bad JSON or validation failed                        |
+| 401    | unauthorized      | Missing or invalid token                             |
+| 403    | forbidden         | Caller is not allowed to create problems in this org |
+| 404    | org_not_found     | Organization does not exist                          |
+| 409    | duplicate_problem | Optional if you enforce title uniqueness             |
+
+## 2. LIST PROBLEMS: 
+
+- **URL:** `GET /orgs/{org_id}/problems`
+- **Purpose:** List reusable problems in the org question bank.
+- **Access Control:** `super_admin`, `admin`, `mentor`, `mentee`
+
+#### Headers
+- `Authorization: Bearer <token>`
+
+#### Path Params
+- `org_id` — organization UUID
+
+#### Query Params
+- `q` — search by title
+- `difficulty` — `easy | medium | hard`
+- `tag_id` — filter by tag
+- `page`
+- `limit`
+- `sort_by` — `created_at | title | difficulty`
+- `order` — `asc | desc`
+
+#### Success Response
+- `200 OK`
+
+```json
+{  
+  "items": [  
+    {  
+      "id": "prob_uuid",  
+      "title": "Two Sum",  
+      "difficulty": "easy",  
+      "external_link": "https://leetcode.com/problems/two-sum",  
+      "tag_count": 3,  
+      "resource_count": 2,  
+      "created_at": "2026-03-21T10:00:00Z"  
+    }  
+  ],  
+  "page": 1,  
+  "limit": 20,  
+  "total": 1  
+}
+```
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|unauthorized|Missing or invalid token|
+|403|forbidden|Caller cannot access this organization|
+|404|org_not_found|Organization does not exist|
+
+## 3. GET PROBLEM DETAILS :
+
+- **URL:** `GET /orgs/{org_id}/problems/{problem_id}`
+- **Purpose:** Fetch one problem with its tags and resources.
+- **Access Control:** `super_admin`, `admin`, `mentor`, `mentee`
+
+#### Headers
+- `Authorization: Bearer <token>`
+
+#### Path Params
+- `org_id` — organization UUID
+- `problem_id` — problem UUID
+
+#### Success Response
+- `200 OK`
+
+```json
+{  
+  "id": "prob_uuid",  
+  "organization_id": "org_uuid",  
+  "created_by": "org_member_uuid",  
+  "title": "Two Sum",  
+  "description": "Given an array of integers, return indices of the two numbers such that they add up to a target.",  
+  "difficulty": "easy",  
+  "external_link": "https://leetcode.com/problems/two-sum",  
+  "tags": [  
+    {  
+      "id": "tag_uuid_1",  
+      "name": "arrays"  
+    },  
+    {  
+      "id": "tag_uuid_2",  
+      "name": "hash-map"  
+    }  
+  ],  
+  "resources": [  
+    {  
+      "id": "res_uuid_1",  
+      "title": "Official Editorial",  
+      "url": "https://example.com/editorial"  
+    }  
+  ],  
+  "created_at": "2026-03-21T10:00:00Z",  
+  "updated_at": "2026-03-21T10:00:00Z"  
+}
+```
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|unauthorized|Missing or invalid token|
+|403|forbidden|Org access denied|
+|404|problem_not_found|Problem does not exist in this org|
+
+
+## 4) Update Problem
+
+- **URL:** `PATCH /orgs/{org_id}/problems/{problem_id}`
+- **Purpose:** Update problem metadata.
+- **Access Control:** `admin`, `mentor`
+
+#### Headers
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+
+#### Path Params
+- `org_id` — organization UUID
+- `problem_id` — problem UUID
+
+#### Request Body
+
+```json
+{  
+  "title": "Two Sum - Optimized",  
+  "description": "Updated statement",  
+  "difficulty": "easy",  
+  "external_link": "https://leetcode.com/problems/two-sum"  
+}
+```
+
+#### Validation Rules
+
+- all fields optional, but at least one field must be present
+- `title` length 3–200 if provided
+- `difficulty` enum if provided
+- URL must be valid if provided
+- problem must belong to the org in path
+- do not allow changing `organization_id` or `created_by`
+
+#### Success Response
+
+- `200 OK`
+```
+{  
+  "id": "prob_uuid",  
+  "organization_id": "org_uuid",  
+  "created_by": "org_member_uuid",  
+  "title": "Two Sum - Optimized",  
+  "description": "Updated statement",  
+  "difficulty": "easy",  
+  "external_link": "https://leetcode.com/problems/two-sum",  
+  "updated_at": "2026-03-21T10:15:00Z"  
+}
+```
+#### Errors
+
+| Status | Code              | Condition                                 |
+| ------ | ----------------- | ----------------------------------------- |
+| 400    | invalid_body      | No valid fields or bad values             |
+| 401    | unauthorized      | Missing or invalid token                  |
+| 403    | forbidden         | Caller cannot update problems in this org |
+| 404    | problem_not_found | Problem does not exist                    |
+| 409    | duplicate_problem | If title uniqueness is enforced           |
+
+
+## 5) Delete Problem
+
+- **URL:** `DELETE /orgs/{org_id}/problems/{problem_id}`
+- **Purpose:** Remove a problem from the org question bank.
+- **Access Control:** `admin`, `mentor`
+
+#### Headers
+- `Authorization: Bearer <token>`
+
+#### Path Params
+- `org_id` — organization UUID
+- `problem_id` — problem UUID
+
+#### Success Response
+- `204 No Content`
+
+#### Important rule
+Do not hard-delete if the problem is already used in assignments/submissions unless your system has a proper archival strategy. In production, soft delete is usually safer.
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|unauthorized|Missing or invalid token|
+|403|forbidden|Caller cannot delete problems in this org|
+|404|problem_not_found|Problem does not exist|
+|409|problem_in_use|Problem is referenced by assignments or submissions|
+
+---
+
+## 6) Create Tag
+
+- **URL:** `POST /orgs/{org_id}/tags`
+- **Purpose:** Create a reusable org tag.
+- **Access Control:** `admin`, `mentor`
+
+#### Headers
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+
+#### Path Params
+
+- `org_id` — organization UUID
+
+#### Request Body
+```json
+{  
+  "name": "sliding-window"  
+}
+```
+
+#### Validation Rules
+- `name` required, trimmed, 2–80 chars
+- store normalized form consistently, e.g. lowercase with hyphens
+- must be unique per organization
+- do not accept `organization_id` from client
+
+#### Success Response
+- `201 Created`
+
+```json
+{  
+  "id": "tag_uuid",  
+  "organization_id": "org_uuid",  
+  "name": "sliding-window",  
+  "created_at": "2026-03-21T10:00:00Z"  
+}
+```
+
+### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|400|invalid_body|Bad request or invalid tag name|
+|401|unauthorized|Missing or invalid token|
+|403|forbidden|Caller cannot create tags|
+|404|org_not_found|Organization does not exist|
+|409|duplicate_tag|Tag already exists in this org|
+
+---
+
+## 7) List Tags
+
+- **URL:** `GET /orgs/{org_id}/tags`
+- **Purpose:** List all tags in the org.
+- **Access Control:** `super_admin`, `admin`, `mentor`, `mentee`
+
+#### Headers
+- `Authorization: Bearer <token>`
+
+#### Path Params
+
+- `org_id` — organization UUID
+
+#### Query Params
+
+- `q` — search tag name
+- `page`
+- `limit`
+
+#### Success Response
+
+- `200 OK`
+
+```json
+{  
+  "items": [  
+    {  
+      "id": "tag_uuid",  
+      "name": "sliding-window"  
+    }  
+  ],  
+  "page": 1,  
+  "limit": 20,  
+  "total": 1  
+}
+```
+
+#### Errors
+
+| Status | Code          | Condition                              |
+| ------ | ------------- | -------------------------------------- |
+| 401    | unauthorized  | Missing or invalid token               |
+| 403    | forbidden     | Caller cannot access this organization |
+| 404    | org_not_found | Organization does not exist            |
+
+
+## 8) Update Tag
+
+- **URL:** `PATCH /orgs/{org_id}/tags/{tag_id}`
+- **Purpose:** Rename a tag.
+- **Access Control:** `admin`, `mentor`
+
+#### Headers
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+
+#### Path Params
+- `org_id` — organization UUID
+- `tag_id` — tag UUID
+
+#### Request Body
+```json
+{  
+  "name": "two-pointers"  
+}
+```
+
+#### Validation Rules
+- `name` required in patch body
+- normalized uniqueness enforced within org
+- tag must belong to the path org
+
+#### Success Response
+
+- `200 OK`
+
+```json
+{  
+  "id": "tag_uuid",  
+  "organization_id": "org_uuid",  
+  "name": "two-pointers",  
+  "created_at": "2026-03-21T10:00:00Z"  
+}
+```
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|400|invalid_body|Missing or invalid name|
+|401|unauthorized|Missing or invalid token|
+|403|forbidden|Caller cannot update tags|
+|404|tag_not_found|Tag does not exist|
+|409|duplicate_tag|Another tag with same name already exists|
+
+---
+
+## 9) Delete Tag
+
+- **URL:** `DELETE /orgs/{org_id}/tags/{tag_id}`
+- **Purpose:** Remove a tag from the org.
+- **Access Control:** `admin`, `mentor`
+
+#### Headers
+
+- `Authorization: Bearer <token>`
+
+#### Path Params
+
+- `org_id` — organization UUID
+- `tag_id` — tag UUID
+
+#### Success Response
+
+- `204 No Content`
+
+#### Important rule
+
+If the tag is attached to problems, you need a business decision:
+
+- either cascade remove from `problem_tags`, or
+- reject deletion with `409 tag_in_use`.
+
+For production clarity, I recommend **rejecting delete when in use** unless you explicitly support cleanup.
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|unauthorized|Missing or invalid token|
+|403|forbidden|Caller cannot delete tags|
+|404|tag_not_found|Tag does not exist|
+|409|tag_in_use|Tag is attached to one or more problems|
+
+---
+
+## 10) Attach Tags to Problem
+
+- **URL:** `POST /orgs/{org_id}/problems/{problem_id}/tags`
+- **Purpose:** Attach one or more tags to a problem.
+- **Access Control:** `admin`, `mentor`
+
+#### Headers
+
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+
+#### Path Params
+
+- `org_id` — organization UUID
+- `problem_id` — problem UUID
+
+#### Request Body
+```
+{  
+  "tag_ids": [  
+    "tag_uuid_1",  
+    "tag_uuid_2"  
+  ]  
+}
+```
+
+#### Validation Rules
+
+- `tag_ids` required and must not be empty
+- every tag must belong to the same org
+- problem must belong to the same org
+- duplicates in request should be deduplicated or rejected cleanly
+- existing relations should not error unless your API is strict; idempotent attach is better
+
+#### Success Response
+
+- `200 OK`
+```
+{  
+  "problem_id": "prob_uuid",  
+  "attached_tag_ids": [  
+    "tag_uuid_1",  
+    "tag_uuid_2"  
+  ]  
+}
+```
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|400|invalid_body|Empty list or invalid IDs|
+|401|unauthorized|Missing or invalid token|
+|403|forbidden|Caller cannot modify this org|
+|404|problem_not_found|Problem does not exist|
+|404|tag_not_found|One or more tags do not exist in this org|
+|409|cross_org_violation|A tag belongs to a different organization|
+
+---
+
+## 11) Detach Tag from Problem
+
+- **URL:** `DELETE /orgs/{org_id}/problems/{problem_id}/tags/{tag_id}`
+- **Purpose:** Remove one tag from one problem.
+- **Access Control:** `admin`, `mentor`
+
+#### Headers
+
+- `Authorization: Bearer <token>`
+
+#### Path Params
+
+- `org_id` — organization UUID
+- `problem_id` — problem UUID
+- `tag_id` — tag UUID
+
+#### Success Response
+
+- `204 No Content`
+
+#### Errors
+
+| Status | Code               | Condition                           |
+| ------ | ------------------ | ----------------------------------- |
+| 401    | unauthorized       | Missing or invalid token            |
+| 403    | forbidden          | Caller cannot modify this org       |
+| 404    | relation_not_found | Problem-tag relation does not exist |
+
+---
+
+## 12) Add Problem Resource
+
+- **URL:** `POST /orgs/{org_id}/problems/{problem_id}/resources`
+- **Purpose:** Add a learning resource to a problem.
+- **Access Control:** `admin`, `mentor`
+
+#### Headers
+
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+
+#### Path Params
+
+- `org_id` — organization UUID
+- `problem_id` — problem UUID
+
+#### Request Body
+```
+{  
+  "title": "Official Editorial",  
+  "url": "https://example.com/editorial"  
+}
+```
+
+#### Validation Rules
+
+- `title` required, 2–150 chars
+- `url` required and must be a valid URL
+- problem must belong to same org
+- no org_id field in body
+- resource count can be unlimited unless product policy says otherwise
+
+#### Success Response
+
+- `201 Created`
+```
+{  
+  "id": "res_uuid",  
+  "problem_id": "prob_uuid",  
+  "title": "Official Editorial",  
+  "url": "https://example.com/editorial",  
+  "created_at": "2026-03-21T10:30:00Z"  
+}
+```
+#### Errors
+
+| Status | Code              | Condition                     |
+| ------ | ----------------- | ----------------------------- |
+| 400    | invalid_body      | Bad title or URL              |
+| 401    | unauthorized      | Missing or invalid token      |
+| 403    | forbidden         | Caller cannot modify this org |
+| 404    | problem_not_found | Problem does not exist        |
+
+---
+
+## 13) List Problem Resources
+
+- **URL:** `GET /orgs/{org_id}/problems/{problem_id}/resources`
+- **Purpose:** List all resources attached to a problem.
+- **Access Control:** `super_admin`, `admin`, `mentor`, `mentee`
+
+#### Headers
+
+- `Authorization: Bearer <token>`
+
+#### Path Params
+
+- `org_id` — organization UUID
+- `problem_id` — problem UUID
+
+#### Success Response
+
+- `200 OK`
+```
+{  
+  "items": [  
+    {  
+      "id": "res_uuid",  
+      "title": "Official Editorial",  
+      "url": "https://example.com/editorial",  
+      "created_at": "2026-03-21T10:30:00Z"  
+    }  
+  ],  
+  "total": 1  
+}
+```
+#### Errors
+
+| Status | Code              | Condition                              |
+| ------ | ----------------- | -------------------------------------- |
+| 401    | unauthorized      | Missing or invalid token               |
+| 403    | forbidden         | Caller cannot access this organization |
+| 404    | problem_not_found | Problem does not exist                 |
+
+---
+
+## 14) Update Problem Resource
+
+- **URL:** `PATCH /orgs/{org_id}/problems/{problem_id}/resources/{resource_id}`
+- **Purpose:** Update a problem resource.
+- **Access Control:** `admin`, `mentor`
+
+#### Headers
+
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+
+#### Path Params
+
+- `org_id` — organization UUID
+- `problem_id` — problem UUID
+- `resource_id` — resource UUID
+
+#### Request Body
+```
+{  
+  "title": "Updated Editorial",  
+  "url": "https://example.com/new-editorial"  
+}
+```
+#### Validation Rules
+
+- all fields optional, but at least one must be present
+- title/url must be valid if present
+- resource must belong to the problem in path
+- problem must belong to the org in path
+
+#### Success Response
+
+- `200 OK`
+```
+{  
+  "id": "res_uuid",  
+  "problem_id": "prob_uuid",  
+  "title": "Updated Editorial",  
+  "url": "https://example.com/new-editorial",  
+  "created_at": "2026-03-21T10:30:00Z"  
+}
+```
+#### Errors
+
+| Status | Code               | Condition                      |
+| ------ | ------------------ | ------------------------------ |
+| 400    | invalid_body       | No valid fields or bad values  |
+| 401    | unauthorized       | Missing or invalid token       |
+| 403    | forbidden          | Caller cannot update resources |
+| 404    | resource_not_found | Resource does not exist        |
+
+---
+
+## 15) Delete Problem Resource
+
+- **URL:** `DELETE /orgs/{org_id}/problems/{problem_id}/resources/{resource_id}`
+- **Purpose:** Remove a resource from a problem.
+- **Access Control:** `admin`, `mentor`
+
+#### Headers
+
+- `Authorization: Bearer <token>`
+
+#### Path Params
+
+- `org_id` — organization UUID
+- `problem_id` — problem UUID
+- `resource_id` — resource UUID
+
+#### Success Response
+
+- `204 No Content`
+
+#### Errors
+
+|Status|Code|Condition|
+|---|---|---|
+|401|unauthorized|Missing or invalid token|
+|403|forbidden|Caller cannot delete resources|
+|404|resource_not_found|Resource does not exist|
+
+### Security considerations
+
+- Every request must verify:
+    1. the caller is authenticated,
+    2. the caller belongs to the org unless they are super_admin read-only,
+    3. the target problem/tag/resource belongs to the same org.
+- Never trust `created_by`, `organization_id`, or relationship IDs from the client when the server can infer them.
+- Enforce uniqueness at the database level:
+    - `tags(organization_id, name)`
+    - `problem_tags(problem_id, tag_id)`
+- Do not allow `super_admin` to mutate org content. Read-only only, exactly as required.
+- If cookies and headers both transport JWT, make sure your middleware resolves precedence consistently and safely.
+
+### Multi-tenant isolation rules
+
+- Organization is the tenant boundary.
+- A problem can never reference a tag from another organization.
+- A resource cannot escape its parent problem, and that problem cannot escape its org.
+- List endpoints must always filter by org first, not by search criteria first.
+- Super admin moderation should be read-only for this layer, even if they can inspect all orgs.
+
+
+# 

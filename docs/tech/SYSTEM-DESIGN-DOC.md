@@ -179,7 +179,7 @@ erDiagram
 # 3. Role : 
 
 [Check the Excalidraw Design](https://excalidraw.com/?element=O2KF6A5GBUGksl_cd2GJ4#room=b80233bfe803d969ff0d,bmQ033XOkOwzEq01vslqSQ)
-![[Pasted image 20260321113020.png]]
+![Role Hierarchy](assets/role_image.png)
 
 ```go
 - user → A registered account in the platform (not a role)
@@ -200,7 +200,7 @@ erDiagram
 
 
 
-# 2. Bootcamp Module
+# 4. Bootcamp Module
 
 #### Why this design is important ?
 
@@ -312,7 +312,7 @@ Rahul
 
 ---
 
-## 3. Problem Content Layer
+# 4. Problem Content Module
 
 This layer represents the **question bank mentors use to create assignments**.
 The important principle here is:
@@ -326,7 +326,24 @@ problem_tags
 problem_resources
 ```
 
+### Role hierarchy
 
+- **super_admin**: read-only for org business resources in this layer. Can inspect problems/tags/resources, but cannot create/update/delete them.
+- **admin**: can manage org-wide problem content.
+- **mentor**: can manage problem content inside their org.
+- **mentee**: read-only access.
+
+### Important invariants
+
+- Every problem belongs to exactly one organization.
+- Every tag belongs to exactly one organization.
+- `created_by` must point to an `organization_member` from the same organization as the problem.
+- A tag can only be attached to a problem if both belong to the same organization.
+- `tags.name` must be unique within an organization, not globally.
+- `problem_tags` must not allow duplicate `(problem_id, tag_id)`.
+- A resource must always belong to one problem.
+- Org isolation is mandatory at every read/write path.
+- `super_admin` can only use `GET` on these endpoints. No write access to org business data.
 
 ### 1. Problem
 
@@ -379,7 +396,7 @@ Tags are **global to the organization**.
 | organization_id | UUID      | FK → organizations.id               |
 | name            | string    | Tag name, NOT NULL                  |
 | created_at      | timestamp | NOT NULL, default CURRENT_TIMESTAMP |
-|                 |           |                                     |
+
 #### Constraints
 
 UNIQUE:
@@ -437,9 +454,8 @@ Problem → many resources
 FOREIGN KEY:
 	problem_id → problems.id
 
----
 
-## 4. Assignment layer
+# 5. Assignment layer
 
 The main principles we follow:
 1. **Problem sets should be reusable**
