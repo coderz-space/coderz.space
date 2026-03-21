@@ -12,4 +12,6 @@
 # USER Flow : 
 
 [excalidraw diagram](https://excalidraw.com/?element=6MOcnXIz_r4FF4lQ8OiLF#room=b80233bfe803d969ff0d,bmQ033XOkOwzEq01vslqSQ)
-![USER Flow Diagram](assets/user_flow.png)
+![[user_flow.png]]
+
+
