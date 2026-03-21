@@ -872,60 +872,6 @@ erDiagram
 | 15  | `/orgs/{org_id}/problems/{problem_id}/resources/{resource_id}` | DELETE | admin, mentor                      | Remove a resource                             |
 
 
-## Entity Relationship : 
-
-
-```mermaid
-erDiagram
-    ORGANIZATIONS ||--o{ PROBLEMS : owns
-    ORGANIZATIONS ||--o{ TAGS : owns
-    ORGANIZATION_MEMBERS ||--o{ PROBLEMS : creates
-    PROBLEMS ||--o{ PROBLEM_RESOURCES : has
-    PROBLEMS ||--o{ PROBLEM_TAGS : mapped_by
-    TAGS ||--o{ PROBLEM_TAGS : mapped_by
-
-    ORGANIZATIONS {
-        uuid id PK
-        string name
-    }
-
-    ORGANIZATION_MEMBERS {
-        uuid id PK
-        uuid organization_id FK
-        uuid user_id FK
-        string role
-    }
-
-    PROBLEMS {
-        uuid id PK
-        uuid organization_id FK
-        uuid created_by FK
-        string title
-        text description
-        enum difficulty
-        string external_link
-    }
-
-    TAGS {
-        uuid id PK
-        uuid organization_id FK
-        string name
-    }
-
-    PROBLEM_TAGS {
-        uuid problem_id FK
-        uuid tag_id FK
-    }
-
-    PROBLEM_RESOURCES {
-        uuid id PK
-        uuid problem_id FK
-        string title
-        string url
-    }
-```
-
-
 ## 1. CREATE PROBLEM :
 
 - **URL:** `POST /orgs/{org_id}/problems`
@@ -1661,4 +1607,48 @@ For production clarity, I recommend **rejecting delete when in use** unless you 
 - Super admin moderation should be read-only for this layer, even if they can inspect all orgs.
 
 
-# 
+# 5. ASSIGNMENT Module :
+
+
+|     | URL                                                  | Method | Auth                                               | Description                                        |
+| --- | ---------------------------------------------------- | -----: | -------------------------------------------------- | -------------------------------------------------- |
+| 1   | `/b/{bootcamp_id}/agroups`                           |    GET | Admin, Mentor, Super_admin(read-only)              | 1) List assignment groups in a bootcamp            |
+| 2   | `/b/{bootcamp_id}/agroups`                           |   POST | Admin, Mentor                                      | 2) Create an assignment group                      |
+| 3   | `/agroups/{agroup_id}`                               |    GET | Admin, Mentor, Super_admin(read-only)              | 3) Get assignment group details                    |
+| 4   | `/agroups/{agroup_id}`                               |  PATCH | Admin, Mentor                                      | 4) Update assignment group                         |
+| 5   | `/agroups/{agroup_id}`                               | DELETE | Admin, Mentor                                      | 5) Delete assignment group                         |
+| 6   | `/agroups/{agroup_id}/problems`                      |    GET | Admin, Mentor, Super_admin(read-only)              | 6) List problems in an assignment group            |
+| 7   | `/agroups/{agroup_id}/problems`                      |    PUT | Admin, Mentor                                      | 7) Replace ordered problems in an assignment group |
+| 8   | `/assignments`                                       |   POST | Admin, Mentor                                      | 8) Create an assignment for one mentee             |
+| 9   | `/assignments`                                       |    GET | Admin, Mentor, Mentee(own), Super_admin(read-only) | 9) List assignments visible to caller              |
+| 10  | `/assignments/{assignment_id}`                       |    GET | Admin, Mentor, Mentee(own), Super_admin(read-only) | 10) Get assignment details                         |
+| 11  | `/assignments/{assignment_id}`                       |  PATCH | Admin, Mentor                                      | 11) Update assignment deadline/status              |
+| 12  | `/assignments/{assignment_id}/problems`              |    GET | Admin, Mentor, Mentee(own), Super_admin(read-only) | 12) List problems inside an assignment instance    |
+| 13  | `/assignments/{assignment_id}/problems/{problem_id}` |  PATCH | Admin, Mentor, Mentee(own)                         | 13) Update progress for one assigned problem       |
+
+
+
+# 6. PROGRESS Module : 
+
+| #   | URL                    | Method | Auth                  | Description                              |
+| --- | ---------------------- | ------ | --------------------- | ---------------------------------------- |
+| 1   | `/doubts`              | POST   | mentee                | Create a doubt for an assignment problem |
+| 2   | `/doubts`              | GET    | admin, mentor         | List doubts (with filters)               |
+| 3   | `/doubts/{id}`         | GET    | admin, mentor, mentee | Get doubt details                        |
+| 4   | `/doubts/{id}/resolve` | PATCH  | mentor                | Resolve a doubt                          |
+| 5   | `/doubts/{id}`         | DELETE | admin, mentor         | Delete a doubt                           |
+| 6   | `/doubts/me`           | GET    | mentee                | Get all doubts raised by self            |
+
+# 7. ANALYTICS Module : 
+
+
+| URL                                                                     | Method | Auth                                    | Description                                |
+| ----------------------------------------------------------------------- | -----: | --------------------------------------- | ------------------------------------------ |
+| `1. /orgs/{org_id}/bootcamps/{bootcamp_id}/leaderboard`                 |  `GET` | `super_admin / admin / mentor / mentee` | Read bootcamp leaderboard snapshot.        |
+| `2. /orgs/{org_id}/bootcamps/{bootcamp_id}/leaderboard/{enrollment_id}` |  `GET` | `super_admin / admin / mentor / mentee` | Read one mentee’s leaderboard entry.       |
+| `3. /orgs/{org_id}/bootcamps/{bootcamp_id}/polls`                       | `POST` | `mentor`                                | Create a poll for one bootcamp problem.    |
+| `4. /orgs/{org_id}/bootcamps/{bootcamp_id}/polls`                       |  `GET` | `super_admin / admin / mentor / mentee` | List polls in a bootcamp.                  |
+| `5. /orgs/{org_id}/bootcamps/{bootcamp_id}/polls/{poll_id}`             |  `GET` | `super_admin / admin / mentor / mentee` | Read poll details and voting state.        |
+| `6. /orgs/{org_id}/bootcamps/{bootcamp_id}/polls/{poll_id}/vote`        |  `PUT` | `mentee`                                | Create or update the mentee’s single vote. |
+| `7. /orgs/{org_id}/bootcamps/{bootcamp_id}/polls/{poll_id}/results`     |  `GET` | `super_admin / admin / mentor`          | Read aggregated poll results.              |
+| `8. /orgs/{org_id}/bootcamps/{bootcamp_id}/polls/{poll_id}/votes`       |  `GET` | `super_admin / admin / mentor`          | Read raw poll votes for audit/moderation.  |

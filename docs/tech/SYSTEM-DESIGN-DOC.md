@@ -15,7 +15,7 @@ Database architecture consists of
 
 
 
-# AUTH Module : 
+# 1. AUTH Module : 
 
 
 ### Token Strategy : 
@@ -312,7 +312,7 @@ Rahul
 
 ---
 
-# 4. Problem Content Module
+# 5. Problem Content Module
 
 This layer represents the **question bank mentors use to create assignments**.
 The important principle here is:
@@ -455,7 +455,85 @@ FOREIGN KEY:
 	problem_id → problems.id
 
 
-# 5. Assignment layer
+## ER diagram
+
+```mermaid
+erDiagram
+    ORGANIZATIONS ||--o{ PROBLEMS : owns
+    ORGANIZATIONS ||--o{ TAGS : owns
+    ORGANIZATION_MEMBERS ||--o{ PROBLEMS : creates
+    PROBLEMS ||--o{ PROBLEM_RESOURCES : has
+    PROBLEMS ||--o{ PROBLEM_TAGS : mapped_by
+    TAGS ||--o{ PROBLEM_TAGS : mapped_by
+
+    ORGANIZATIONS {
+        uuid id PK
+        string name
+    }
+
+    ORGANIZATION_MEMBERS {
+        uuid id PK
+        uuid organization_id FK
+        uuid user_id FK
+        string role
+    }
+
+    PROBLEMS {
+        uuid id PK
+        uuid organization_id FK
+        uuid created_by FK
+        string title
+        text description
+        enum difficulty
+        string external_link
+    }
+
+    TAGS {
+        uuid id PK
+        uuid organization_id FK
+        string name
+    }
+
+    PROBLEM_TAGS {
+        uuid problem_id FK
+        uuid tag_id FK
+    }
+
+    PROBLEM_RESOURCES {
+        uuid id PK
+        uuid problem_id FK
+        string title
+        string url
+    }
+```
+
+
+
+# 6. Assignment layer
+
+
+Assignment groups are reusable templates inside a bootcamp. Assignments are per-mentee instances created from those templates. That means one group can be assigned to many mentees with different deadlines, while each mentee still gets separate progress tracking. That is exactly why the model has both template-level and instance-level deadline fields.
+
+### Role hierarchy and access model
+
+- **super_admin**: read-only visibility for this module. No write access here.
+- **admin**: full write access inside the organization’s bootcamps.
+- **mentor**: can create groups, assign them, and manage mentee progress inside bootcamps they belong to.
+- **mentee**: can only read and update their own assignment progress.
+
+### Important invariants
+
+- `assignment_groups.bootcamp_id` never changes after creation.
+- `assignment_groups.created_by` and `assignments.assigned_by` are set from the authenticated member, not from client input.
+- `assignments.bootcamp_enrollment_id` must belong to the same bootcamp as the assignment group.
+- `assignment_problems` must be unique per assignment and problem pair. The schema already enforces that.
+- Existing assignments must not silently change when the template group is edited later. Snapshot the problem set at assignment creation.
+
+### Multi-tenant isolation
+
+Every write must be checked through the chain:
+
+`authenticated member → organization membership → bootcamp membership → enrollment ownership`
 
 The main principles we follow:
 1. **Problem sets should be reusable**
@@ -618,10 +696,22 @@ One is a **template rule**, the other is a **real deadline for a specific mentee
 
 
 
+## ER diagram
+```mermaid
+erDiagram
+    BOOTCAMPS ||--o{ ASSIGNMENT_GROUPS : contains
+    ASSIGNMENT_GROUPS ||--o{ ASSIGNMENT_GROUP_PROBLEMS : has
+    PROBLEMS ||--o{ ASSIGNMENT_GROUP_PROBLEMS : reused_in
 
----
+    BOOTCAMP_ENROLLMENTS ||--o{ ASSIGNMENTS : receives
+    ASSIGNMENT_GROUPS ||--o{ ASSIGNMENTS : instantiated_as
 
-## 5. Progress Tracking Layer
+    ASSIGNMENTS ||--o{ ASSIGNMENT_PROBLEMS : tracks
+    PROBLEMS ||--o{ ASSIGNMENT_PROBLEMS : tracked_as
+```
+
+
+# 5. Progress Tracking Layer
 
 ### 1. Doubt
 
@@ -651,9 +741,28 @@ FOREIGN KEY:
 FOREIGN KEY:
 	resolved_by → organization_members.id
 
----
 
-## 6. Analytics Layer
+## ER diagram : 
+
+```mermaid
+erDiagram
+    doubts {
+        UUID id
+        UUID assignment_problem_id
+        UUID raised_by
+        UUID resolved_by
+        boolean resolved
+    }
+
+    assignment_problems ||--o{ doubts : has
+    organization_members ||--o{ doubts : raised_by
+    organization_members ||--o{ doubts : resolved_by
+```
+
+
+
+
+# 6. Analytics Layer
 
 ### 1. LeaderboardEntry
 
@@ -741,6 +850,20 @@ UNIQUE
 	(poll_id, voter_id)
 
 Each mentee votes once per poll.
+
+```mermaid
+erDiagram
+    organizations ||--o{ organization_members : has
+    organizations ||--o{ bootcamps : owns
+    bootcamps ||--o{ bootcamp_enrollments : has
+    bootcamps ||--o{ polls : has
+    problems ||--o{ polls : referenced_by
+    organization_members ||--o{ polls : creates
+    polls ||--o{ poll_votes : receives
+    bootcamp_enrollments ||--o{ poll_votes : casts
+    bootcamps ||--o{ leaderboard_entries : snapshots
+    bootcamp_enrollments ||--o{ leaderboard_entries : measured_for
+```
 
 
 ---
