@@ -8,7 +8,7 @@ Thumbs.db
 *.swo
 *.tmp
 *.log
-
+private.md
 
 #######################################
 # Environment / Secrets

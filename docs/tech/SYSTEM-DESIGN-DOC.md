@@ -13,9 +13,10 @@ Database architecture consists of
 
 ---
 
+
+
 # AUTH Module : 
 
-## 1. System Design :
 
 ### Token Strategy : 
 
@@ -58,19 +59,62 @@ Path=/auth/refresh;
 
 ## 2. DATABASE DESIGN 
 
-Check the User Table in the ORGANIZATION module below.
+### USER table : 
 
----
+**Description:**  
+A User Represents a global platform account. A user exists independently of any organization and can belong to multiple organizations with different roles.
+
+**Authentication:**  
+Supports multiple login methods such as **email/password** and **Google OAuth**.
+
+| Field          | Type      | Notes                                                 |
+| -------------- | --------- | ----------------------------------------------------- |
+| id             | UUID      | PK                                                    |
+| name           | string    | User's full name, NOT NULL                            |
+| email          | string    | unique, nullable                                      |
+| email_verified | boolean   | default false, NOT NULL                               |
+| password_hash  | string    | nullable, required when google_id is NULL             |
+| role           | enum      | ENUM('USER',SUPER_ADMIN') default 'USER' and NOT NULL |
+| google_id      | string    | unique, nullable, required when password_hash is NULL |
+| avatar_url     | string    | nullable                                              |
+| created_at     | timestamp | NOT NULL, default CURRENT_TIMESTAMP                   |
+| updated_at     | timestamp | NOT NULL, default CURRENT_TIMESTAMP, auto-update      |
+
+#### Constraints
+
+- **CHECK:** At least one authentication method must exist  
+   `(password_hash IS NOT NULL OR google_id IS NOT NULL)`
+- **UNIQUE:** email
+- **UNIQUE:** google_id
 
 
----
-## 2. Organization Module
+#### Role : 
 
-### 1. organization
+- **USER :** 
+	- A registered account in the platform
+- **SUPER_ADMIN :**
+    - Manages entire platform
+    - Approves organization creation
+    - Moderates :
+        - view all orgs.
+        - suspend orgs
+        - manages abuse
+
+
+# 2. Organization Module
+
+
+
+## 1. organization
 
 **Description:**  
 Represents a company, community, or group that runs bootcamps on the platform.  
 Acts as the **tenant boundary** for all resources such as bootcamps, problems, and assignments.
+
+- A USER who is a member of the platform can create an organization and request SUPER_ADMIN for approval.
+- Once an org is approved, the USER who created it will become an ADMIN of the organization. Now 
+	- He can create bootcamps.  USER can join them. USER who are part of a bootcamp will get MENTEE role.
+	- He can promote a USER to MENTOR. 
 
 - Example : `Team Shiksha` , `Monkeys` , `Real Dev Squad`
 
@@ -89,34 +133,8 @@ Acts as the **tenant boundary** for all resources such as bootcamps, problems, a
     - Example : coderz-space, algo-university, dsa-club
     - URL : coderzspace.com/org/coderz-space
 
-### 2. user
 
-**Description:**  
-Represents a global platform account. A user exists independently of any organization and can belong to multiple organizations with different roles.
-
-**Authentication:**  
-Supports multiple login methods such as **email/password** and **Google OAuth**.
-
-| Field          | Type      | Notes                                                 |
-| -------------- | --------- | ----------------------------------------------------- |
-| id             | UUID      | PK                                                    |
-| name           | string    | User's full name, NOT NULL                            |
-| email          | string    | unique, nullable                                      |
-| email_verified | boolean   | default false, NOT NULL                               |
-| password_hash  | string    | nullable, required when google_id is NULL             |
-| google_id      | string    | unique, nullable, required when password_hash is NULL |
-| avatar_url     | string    | nullable                                              |
-| created_at     | timestamp | NOT NULL, default CURRENT_TIMESTAMP                   |
-| updated_at     | timestamp | NOT NULL, default CURRENT_TIMESTAMP, auto-update      |
-
-#### Constraints
-
-- **CHECK:** At least one authentication method must exist  
-   `(password_hash IS NOT NULL OR google_id IS NOT NULL)`
-- **UNIQUE:** email
-- **UNIQUE:** google_id
-
-### 3. organization_member
+## 2. organization_member
 
 - Join table between user and organization.
 - A user can be mentor in one organization and mentee in another.
@@ -124,20 +142,20 @@ Supports multiple login methods such as **email/password** and **Google OAuth**.
   Represents the relationship between a **user and an organization**.  
   Stores the user's **role within that organization** and enables role-based access control.
 
-#### Role Values
+#### Organization Role Values
 
-- **owner** → Creator of the organization with full permissions
-- **admin** → Organization administrators managing members and bootcamps
-- **mentor** → Mentors who assign problems and review progress
+- **admin** :  Creator of the organization, manages members and bootcamps.
+- **mentor** →  Assign problems and review progress
 - **mentee** → Students participating in bootcamps
 
-| Field           | Type      | Notes                                             |
-| --------------- | --------- | ------------------------------------------------- |
-| id              | UUID      | PK                                                |
-| organization_id | UUID      | FK → organizations.id, NOT NULL                   |
-| user_id         | UUID      | FK → users.id, NOT NULL                           |
-| role            | enum      | ENUM('owner','admin','mentor','mentee'), NOT NULL |
-| joined_at       | timestamp | NOT NULL, default CURRENT_TIMESTAMP               |
+| Field           | Type      | Notes                                     |
+| --------------- | --------- | ----------------------------------------- |
+| id              | UUID      | PK                                        |
+| organization_id | UUID      | FK → organizations.id, NOT NULL           |
+| user_id         | UUID      | FK → users.id, NOT NULL                   |
+| role            | enum      | ENUM('admin','mentor','mentee'), NOT NULL |
+| joined_at       | timestamp | NOT NULL, default CURRENT_TIMESTAMP       |
+
 
 #### Constraints
 
@@ -148,9 +166,41 @@ Supports multiple login methods such as **email/password** and **Google OAuth**.
 - **FOREIGN KEY:**  
    `user_id → users.id`
 
----
 
-## 2. Bootcamp Layer
+```mermaid
+erDiagram
+    USER ||--o{ ORGANIZATION_MEMBER : belongs_to
+    ORGANIZATION ||--o{ ORGANIZATION_MEMBER : has
+```
+
+
+
+
+# 3. Role : 
+
+[Check the Excalidraw Design](https://excalidraw.com/?element=O2KF6A5GBUGksl_cd2GJ4#room=b80233bfe803d969ff0d,bmQ033XOkOwzEq01vslqSQ)
+![[Pasted image 20260321113020.png]]
+
+```go
+- user → A registered account in the platform (not a role)
+
+- super_admin → Manages the whole Coderz Space
+  - approves organization creation
+  - platform-level moderation
+
+- admin → Creator of the organization
+  - manages members and bootcamps
+
+- mentor → Assign problems and review progress
+	- will also manage mentee, ie add, remove mentee in a bootcamp.
+	- 
+
+- mentee → Students participating in bootcamps
+```
+
+
+
+# 2. Bootcamp Module
 
 #### Why this design is important ?
 
@@ -329,6 +379,7 @@ Tags are **global to the organization**.
 | organization_id | UUID      | FK → organizations.id               |
 | name            | string    | Tag name, NOT NULL                  |
 | created_at      | timestamp | NOT NULL, default CURRENT_TIMESTAMP |
+|                 |           |                                     |
 #### Constraints
 
 UNIQUE:
