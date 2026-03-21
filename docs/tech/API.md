@@ -2535,25 +2535,25 @@ Allows a mentee to raise a doubt against a specific assignment problem.
 
 - None
 
-### #### Query Params
+#### Query Params
 
 - None
 
-### #### Request Body
+#### Request Body
 
 {  
   "assignment_problem_id": "uuid",  
   "message": "I am not understanding the sliding window logic"  
 }
 
-### #### Validation Rules
+#### Validation Rules
 
 - `assignment_problem_id` must exist
 - Problem must be assigned to this mentee
 - `message` must be non-empty (min 10 chars recommended)
 - Prevent spam (rate limit per user)
 
-### #### Success Response
+#### Success Response
 
 {  
   "id": "uuid",  
@@ -2561,7 +2561,7 @@ Allows a mentee to raise a doubt against a specific assignment problem.
   "created_at": "timestamp"  
 }
 
-### #### Errors
+#### Errors
 
 |Status|Code|Condition|
 |---|---|---|
@@ -2573,43 +2573,43 @@ Allows a mentee to raise a doubt against a specific assignment problem.
 
 ## 2. List Doubts
 
-### #### URL
+#### URL
 
 `GET /doubts`
 
-### #### Purpose
+#### Purpose
 
 Retrieve doubts across organization for monitoring and mentoring.
 
-### #### Access Control
+#### Access Control
 
 - **admin, mentor only**
 
-### #### Headers
+#### Headers
 
 - Authorization
 
-### #### Path Params
+#### Path Params
 
 - None
 
-### #### Query Params
+#### Query Params
 
 - `assignment_problem_id`
 - `resolved` (true/false)
 - `raised_by`
 - `limit`, `cursor`
 
-### #### Request Body
+#### Request Body
 
 - None
 
-### #### Validation Rules
+#### Validation Rules
 
 - Ensure org-level filtering
 - Pagination required (cursor-based)
 
-### #### Success Response
+#### Success Response
 
 {  
   "data": [  
@@ -2632,40 +2632,40 @@ Retrieve doubts across organization for monitoring and mentoring.
 
 ## 3. Get Doubt Details
 
-### #### URL
+#### URL
 
 `GET /doubts/{id}`
 
-### #### Purpose
+#### Purpose
 
 Fetch full details of a specific doubt.
 
-### #### Access Control
+#### Access Control
 
 - mentee → only own doubts
 - mentor/admin → all org doubts
 
-### #### Headers
+#### Headers
 
 - Authorization
 
-### #### Path Params
+#### Path Params
 
 - `id` → doubt id
 
-### #### Query Params
+#### Query Params
 
 - None
 
-### #### Request Body
+#### Request Body
 
 - None
 
-### #### Validation Rules
+#### Validation Rules
 
 - Must belong to same org
 
-### #### Success Response
+#### Success Response
 
 {  
   "id": "uuid",  
@@ -2675,7 +2675,7 @@ Fetch full details of a specific doubt.
   "created_at": "timestamp"  
 }
 
-### #### Errors
+#### Errors
 
 |Status|Code|Condition|
 |---|---|---|
@@ -2686,50 +2686,50 @@ Fetch full details of a specific doubt.
 
 ## 4. Resolve Doubt
 
-### #### URL
+#### URL
 
 `PATCH /doubts/{id}/resolve`
 
-### #### Purpose
+#### Purpose
 
 Marks a doubt as resolved by a mentor/admin.
 
-### #### Access Control
+#### Access Control
 
 - **mentor, admin only**
 
-### #### Headers
+#### Headers
 
 - Authorization
 
-### #### Path Params
+#### Path Params
 
 - `id`
 
-### #### Query Params
+#### Query Params
 
 - None
 
-### #### Request Body
+#### Request Body
 
 {  
   "note": "Explained sliding window with example"  
 }
 
-### #### Validation Rules
+#### Validation Rules
 
 - Cannot resolve already resolved doubt (idempotent allowed)
 - Resolver must belong to same org
 - Optional: store resolution note (recommended)
 
-### #### Success Response
+#### Success Response
 
 {  
   "resolved": true,  
   "resolved_at": "timestamp"  
 }
 
-### #### Errors
+#### Errors
 
 |Status|Code|Condition|
 |---|---|---|
@@ -2741,46 +2741,46 @@ Marks a doubt as resolved by a mentor/admin.
 
 ## 5. Delete Doubt
 
-### #### URL
+#### URL
 
 `DELETE /doubts/{id}`
 
-### #### Purpose
+#### Purpose
 
 Remove invalid or spam doubts.
 
-### #### Access Control
+#### Access Control
 
 - **admin, mentor**
 - mentee CANNOT delete (important for audit)
 
-### #### Headers
+#### Headers
 
 - Authorization
 
-### #### Path Params
+#### Path Params
 
 - `id`
 
-### #### Query Params
+#### Query Params
 
 - None
 
-### #### Request Body
+#### Request Body
 
 - None
 
-### #### Validation Rules
+#### Validation Rules
 
 - Must belong to same org
 
-### #### Success Response
+#### Success Response
 
 {  
   "message": "deleted"  
 }
 
-### #### Errors
+#### Errors
 
 |Status|Code|Condition|
 |---|---|---|
@@ -2791,47 +2791,47 @@ Remove invalid or spam doubts.
 
 ## 6. Get My Doubts
 
-### #### URL
+#### URL
 
 `GET /doubts/me`
 
-### #### Purpose
+#### Purpose
 
 Fetch doubts raised by the logged-in mentee.
 
-### #### Access Control
+#### Access Control
 
 - **mentee only**
 
-### #### Headers
+#### Headers
 
 - Authorization
 
-### #### Path Params
+#### Path Params
 
 - None
 
-### #### Query Params
+#### Query Params
 
 - `resolved`
 - `limit`, `cursor`
 
-### #### Request Body
+#### Request Body
 
 - None
 
-### #### Validation Rules
+#### Validation Rules
 
 - Must map user → organization_member correctly
 
-### #### Success Response
+#### Success Response
 
 {  
   "data": [...],  
   "next_cursor": "abc"  
 }
 
-### #### Errors
+#### Errors
 
 |Status|Code|Condition|
 |---|---|---|
