@@ -1,8 +1,12 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MenteeStackParamList } from '../types';
-import PlaceholderScreen from '../screens/PlaceholderScreen.tsx';
 import { Colors } from '../theme';
+
+import MenteeDashboardScreen from '../screens/mentee/DashboardScreen';
+import AssignmentDetailScreen from '../screens/mentee/AssignmentDetailScreen';
+import ProblemDetailScreen from '../screens/mentee/ProblemDetailsScreen';
+import CompletedScreen from '../screens/mentee/CompletedScreen';
 
 const Stack = createNativeStackNavigator<MenteeStackParamList>();
 
@@ -10,31 +14,15 @@ export default function MenteeNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: Colors.surface },
-        headerTintColor: Colors.textPrimary,
-        headerTitleStyle: { fontWeight: '700', color: Colors.textPrimary },
-        headerShadowVisible: false,
+        headerShown: false,
         contentStyle: { backgroundColor: Colors.background },
+        animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen
-        name="Dashboard"
-        component={PlaceholderScreen}
-        options={{ title: 'My Dashboard', headerShown: false }}
-        initialParams={{ title: 'Mentee Dashboard' }}
-      />
-      <Stack.Screen
-        name="TaskDetail"
-        component={PlaceholderScreen}
-        options={{ title: 'Task Detail' }}
-        initialParams={{ taskId: 'task-1', title: 'Task Detail' }}
-      />
-      <Stack.Screen
-        name="Leaderboard"
-        component={PlaceholderScreen}
-        options={{ title: 'Leaderboard' }}
-        initialParams={{ title: 'Leaderboard' }}
-      />
+      <Stack.Screen name="Dashboard" component={MenteeDashboardScreen} />
+      <Stack.Screen name="AssignmentDetail" component={AssignmentDetailScreen} />
+      <Stack.Screen name="ProblemDetail" component={ProblemDetailScreen} />
+      <Stack.Screen name="CompletedProblems" component={CompletedScreen} />
     </Stack.Navigator>
   );
 }
