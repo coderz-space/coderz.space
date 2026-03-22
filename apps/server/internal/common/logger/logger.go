@@ -3,7 +3,7 @@ package logger
 import (
 	"os"
 
-	"github.com/DSAwithGautam/CodeConquerers/internal/config"
+	"github.com/DSAwithGautam/Coderz.space/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"

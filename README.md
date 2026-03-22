@@ -1,103 +1,30 @@
 # Coderz Space
 
-Coderz Space is a structured bootcamp management platform that enables mentors to assign, monitor, and optimize technical learning journeys for their mentees.
+Coderz Space is a multi-tenant bootcamp management platform that helps mentors, admins, and mentees replace scattered manual tracking with a structured system for assignments, feedback, progress, and performance.
 
-It is designed to replace fragmented tools like spreadsheets and chat-based tracking with a focused, role-based system built specifically for DSA and development bootcamps.
+## The Problem
 
-DESIGN : [excalidraw](https://excalidraw.com/#room=b80233bfe803d969ff0d,bmQ033XOkOwzEq01vslqSQ)
+Most coding bootcamps and mentorship programs rely on fragmented tools like Google Sheets, chats, and manual tracking. This leads to:
 
----
-
-## What It Enables
-
-- Create and manage bootcamps under an organization
-- Role-based access control (Owner, Admin, Mentor, Student)
-- Structured task assignment (DSA / Dev)
-- Submission tracking and review workflows
-- Progress monitoring and consistency analytics
-- Organization-scoped data isolation (multi-tenant architecture)
-
-## 👥 Core Roles
-
-### Organization
-
-An organization can create a bootcamp and manage users (mentors and mentees) under it.
-
-### Mentor
-
-A user with the ability to:
-
-- Create and manage a master question bank
-- Attach optional learning resources to questions
-- Assign weekly personalized goals per mentee
-- Reassign or adjust goals dynamically
-- Review progress and provide structured feedback
-- Monitor highlighted doubts and recurring problem areas
-
-### Mentee
-
-A user who can:
-
-- View assigned weekly goals
-- Update progress status on each task
-- Attach optional solution links
-- Highlight questions as doubts
-- View peer progress (if enabled by organization)
-
----
-
-## 🎯 Problem Being Solved
-
-Current bootcamp workflows rely heavily on:
-
-- Google Sheets for tracking
-- Manual weekly planning
-- Fragmented communication channels
-- Poor visibility into consistency and performance
-
-This results in:
-
-- Inconvenient and cluttered experience for mentees
+- Poor visibility into student progress
 - High manual overhead for mentors
-- Lack of structured analytics
-- No centralized doubt tracking
-- No competitive or motivational layer
+- Lack of structured feedback and analytics
+- No centralized system for doubts or consistency tracking
 
-Coderz Space replaces this with a purpose-built system designed for clarity, accountability, and scalability.
+## The Solution 💡
 
----
+Coderz Space replaces this chaos with a purpose-built, role-based system that centralizes the entire learning workflow:
 
-## 🧩 Core Features
+- Mentors can assign personalized tasks, track progress, and provide structured feedback
+- Mentees get a clear dashboard for goals, submissions, and doubts
+- Organizations can manage users, bootcamps, and performance at scale
 
-### Mentor Features
+## How it works
 
-- Login and secure access
-- Master question repository management
-- Optional resource linking per question
-- Personalized weekly assignment per mentee
-- Feedback system on submissions
-- Doubt tracking dashboard
-- Ability to identify repeated or highlighted problems
-
-### Mentee Features
-
-- Login and personalized dashboard
-- View current weekly goals
-- Update task completion status
-- Attach optional solution references
-- Highlight problems as doubts
-- View overall cohort progress (if enabled)
-
----
-
-## 🌍 Global Features
-
-- Leaderboard system based on completion and consistency
-- Polling system to identify commonly difficult problems
-- Weekly progress analytics
-- Organization-scoped bootcamps (multi-tenant architecture ready)
-
----
+- Multi-tenant architecture ensures organization-level data isolation
+- Role-based access (Admin, Mentor, Mentee) enforces clear responsibilities
+- Structured assignment and submission workflows replace manual tracking
+- Analytics and leaderboards drive accountability and motivation
 
 ## 🏗️ Tech Stack (Planned)
 

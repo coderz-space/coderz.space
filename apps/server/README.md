@@ -1,4 +1,5 @@
-# CodeConquerers
+#
 
+server app for Coderz.space
 
-server app for CodeConquerers
+- [API Docs - Swagger UI](http://localhost:8080/swagger/index.html) (Local)

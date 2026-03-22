@@ -15,7 +15,7 @@ type apiError struct {
 	Message string `json:"message,omitempty"`
 }
 
-func NewResponse(c *echo.Context, statusCode int, message string, data any, err error, status string) {
+func NewResponse(c *echo.Context, statusCode int, status string, message string, data any, err error) error {
 	res := &apiResponse{
 		Message: message,
 		Data:    data,
@@ -31,5 +31,5 @@ func NewResponse(c *echo.Context, statusCode int, message string, data any, err 
 		}
 	}
 
-	c.JSON(statusCode, res)
+	return c.JSON(statusCode, res)
 }

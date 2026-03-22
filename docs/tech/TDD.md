@@ -1,3 +1,0 @@
-# TDD
-
-## Data model
