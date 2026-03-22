@@ -1,29 +1,47 @@
 import { create } from 'zustand';
-import { User, UserRole } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppSession } from '../types';
 
 interface AuthStore {
-  user: User | null;
-  token: string | null;
+  session: AppSession | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isBootstrapping: boolean;   // true on first app launch while checking storage
 
-  // Actions
-  setUser: (user: User, token: string) => void;
-  logout: () => void;
+  setSession: (session: AppSession) => void;
+  logout: () => Promise<void>;
   setLoading: (loading: boolean) => void;
+  bootstrapAuth: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthStore>((set) => ({
-  user: null,
-  token: null,
+export const useAuthStore = create<AuthStore>((set, get) => ({
+  session: null,
   isAuthenticated: false,
   isLoading: false,
+  isBootstrapping: true,
 
-  setUser: (user, token) =>
-    set({ user, token, isAuthenticated: true, isLoading: false }),
+  setSession: (session) =>
+    set({ session, isAuthenticated: true, isLoading: false }),
 
-  logout: () =>
-    set({ user: null, token: null, isAuthenticated: false }),
+  logout: async () => {
+    await AsyncStorage.removeItem('@access_token');
+    await AsyncStorage.removeItem('@session');
+    set({ session: null, isAuthenticated: false });
+  },
 
   setLoading: (isLoading) => set({ isLoading }),
+
+  bootstrapAuth: async () => {
+    try {
+      const raw = await AsyncStorage.getItem('@session');
+      if (raw) {
+        const session: AppSession = JSON.parse(raw);
+        set({ session, isAuthenticated: true });
+      }
+    } catch {
+      // corrupted storage — start fresh
+    } finally {
+      set({ isBootstrapping: false });
+    }
+  },
 }));
