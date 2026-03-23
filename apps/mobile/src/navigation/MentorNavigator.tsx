@@ -3,12 +3,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MentorStackParamList } from '../types';
 import { Colors } from '../theme';
 
-import MentorDashboardScreen from '../screens/mentor/DashboardScreen';
+import MentorTabNavigator from './MentorTabNavigator';
 import MenteeListScreen from '../screens/mentor/MenteeListScreen';
 import AssignTaskScreen from '../screens/mentor/AssignTaskScreen';
-import PlaceholderScreen from '../screens/PlaceholderScreen';
+import MenteeProgressScreen from '../screens/mentor/MenteeProgressScreen';
+import QuestionBankScreen from '../screens/mentor/QuestionBankScreen';
 
-const Stack = createNativeStackNavigator<MentorStackParamList>();
+type MentorRootStack = MentorStackParamList & { Tabs: undefined };
+const Stack = createNativeStackNavigator<MentorRootStack>();
 
 export default function MentorNavigator() {
   return (
@@ -19,11 +21,11 @@ export default function MentorNavigator() {
         animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen name="Dashboard" component={MentorDashboardScreen} />
+      <Stack.Screen name="Tabs" component={MentorTabNavigator} />
       <Stack.Screen name="MenteeList" component={MenteeListScreen} />
       <Stack.Screen name="AssignTask" component={AssignTaskScreen} />
-      <Stack.Screen name="MenteeProgress" component={PlaceholderScreen} />
-      <Stack.Screen name="QuestionBank" component={PlaceholderScreen} />
+      <Stack.Screen name="MenteeProgress" component={MenteeProgressScreen} />
+      <Stack.Screen name="QuestionBank" component={QuestionBankScreen} />
     </Stack.Navigator>
   );
 }
