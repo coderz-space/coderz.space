@@ -145,4 +145,39 @@ export const ApiRoutes = {
   // Leaderboard
   leaderboard: (orgId: string, bootcampId: string) =>
     `/orgs/${orgId}/bootcamps/${bootcampId}/leaderboard`,
+
+  // Add these to the existing ApiRoutes in apiClient.ts
+
+  // Auth
+  signup: '/auth/signup',
+  forgotPassword: '/auth/forgot-password',
+  resetPassword: '/auth/reset-password',
+
+  // Assignment Groups
+  assignmentGroupDetail: (agroupId: string) => `/agroups/${agroupId}`,
+  assignmentGroupProblems: (agroupId: string) => `/agroups/${agroupId}/problems`,
+  bootcampAssignmentGroups: (bootcampId: string) => `/b/${bootcampId}/agroups`,
+
+  // Assignments (flat — not nested under org)
+  assignmentsList: '/assignments',
+  assignmentDetailFlat: (assignmentId: string) => `/assignments/${assignmentId}`,
+  assignmentProblemsList: (assignmentId: string) => `/assignments/${assignmentId}/problems`,
+  assignmentProblemUpdateFlat: (assignmentId: string, problemId: string) =>
+    `/assignments/${assignmentId}/problems/${problemId}`,
+
+  // Doubts (flat)
+  doubtsList: '/doubts',
+  doubtDetail: (doubtId: string) => `/doubts/${doubtId}`,
+  doubtResolve: (doubtId: string) => `/doubts/${doubtId}/resolve`,
+  myDoubts: '/doubts/me',
+
+  // Analytics
+  polls: (orgId: string, bootcampId: string) =>
+    `/orgs/${orgId}/bootcamps/${bootcampId}/polls`,
+  pollDetail: (orgId: string, bootcampId: string, pollId: string) =>
+    `/orgs/${orgId}/bootcamps/${bootcampId}/polls/${pollId}`,
+  pollVote: (orgId: string, bootcampId: string, pollId: string) =>
+    `/orgs/${orgId}/bootcamps/${bootcampId}/polls/${pollId}/vote`,
+  pollResults: (orgId: string, bootcampId: string, pollId: string) =>
+    `/orgs/${orgId}/bootcamps/${bootcampId}/polls/${pollId}/results`,
 } as const;
