@@ -3,12 +3,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MenteeStackParamList } from '../types';
 import { Colors } from '../theme';
 
-import MenteeDashboardScreen from '../screens/mentee/DashboardScreen';
+import MenteeTabNavigator from './MenteeTabNavigator';
 import AssignmentDetailScreen from '../screens/mentee/AssignmentDetailScreen';
-import ProblemDetailScreen from '../screens/mentee/ProblemDetailsScreen';
+import ProblemDetailScreen from '../screens/mentee/ProblemDetailScreen';
 import CompletedScreen from '../screens/mentee/CompletedScreen';
 
-const Stack = createNativeStackNavigator<MenteeStackParamList>();
+type MenteeRootStack = MenteeStackParamList & { Tabs: undefined };
+const Stack = createNativeStackNavigator<MenteeRootStack>();
 
 export default function MenteeNavigator() {
   return (
@@ -19,7 +20,7 @@ export default function MenteeNavigator() {
         animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen name="Dashboard" component={MenteeDashboardScreen} />
+      <Stack.Screen name="Tabs" component={MenteeTabNavigator} />
       <Stack.Screen name="AssignmentDetail" component={AssignmentDetailScreen} />
       <Stack.Screen name="ProblemDetail" component={ProblemDetailScreen} />
       <Stack.Screen name="CompletedProblems" component={CompletedScreen} />

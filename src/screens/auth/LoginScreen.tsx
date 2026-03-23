@@ -11,6 +11,11 @@ import { authMock } from '../../services/api/mock/authMock';
 import { useAuthStore } from '../../store/authStore';
 import { AppSession } from '../../types';
 
+// ✅ NEW: Props added
+interface Props {
+  onNavigateToSignup?: () => void;
+}
+
 // Enrollment IDs are hardcoded for mock; real values come from getMe() response
 const MOCK_ENROLLMENT_IDS: Record<string, string> = {
   'user-mentee-1': 'enrollment-mentee-1',
@@ -21,7 +26,7 @@ const MOCK_ORG_MEMBER_IDS: Record<string, string> = {
   'user-mentor-1': 'orgmember-mentor-1',
 };
 
-export default function LoginScreen() {
+export default function LoginScreen({ onNavigateToSignup }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -135,6 +140,14 @@ export default function LoginScreen() {
             </Text>
           </Text>
         </View>
+
+        {/* ✅ NEW: Signup Link */}
+        <TouchableOpacity onPress={onNavigateToSignup} style={styles.signupLink}>
+          <Text style={styles.signupLinkText}>
+            New here?{' '}
+            <Text style={styles.signupLinkBold}>Create an account</Text>
+          </Text>
+        </TouchableOpacity>
       </View>
     </ScreenWrapper>
   );
@@ -209,5 +222,19 @@ const styles = StyleSheet.create({
   hintLink: {
     color: Colors.primary,
     fontWeight: '600',
+  },
+
+  // ✅ NEW STYLES
+  signupLink: {
+    alignItems: 'center',
+    paddingTop: Spacing.base,
+  },
+  signupLinkText: {
+    ...Typography.bodySmall,
+    color: Colors.textSecondary,
+  },
+  signupLinkBold: {
+    color: Colors.primary,
+    fontWeight: '700',
   },
 });

@@ -251,3 +251,68 @@ export interface AppSession {
   orgMemberId: string;       // organization_member.id — critical for all API calls
   bootcampEnrollmentId: string; // bootcamp_enrollment.id
 }
+
+// ─── Polls (Analytics Module) ─────────────────────────────────
+
+export type PollVote = 'easy' | 'medium' | 'hard';
+
+export interface Poll {
+  id: string;
+  bootcampId: string;
+  problemId: string;
+  question: string;
+  createdBy: string;
+  createdAt: string;
+  myVote?: PollVote;
+}
+
+export interface PollResult {
+  pollId: string;
+  totalVotes: number;
+  easy: number;
+  medium: number;
+  hard: number;
+  percentages: { easy: number; medium: number; hard: number };
+}
+
+export interface PollVoteRecord {
+  voterId: string;
+  vote: PollVote;
+  createdAt: string;
+}
+
+// ─── Signup ───────────────────────────────────────────────────
+
+export interface SignupPayload {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface SignupResponse {
+  user: Pick<User, 'id' | 'name' | 'email' | 'emailVerified'>;
+}
+
+// ─── Updated Nav Param Lists ──────────────────────────────────
+
+export type MenteeTabParamList = {
+  DashboardTab: undefined;
+  LeaderboardTab: undefined;
+  ProfileTab: undefined;
+};
+
+export type MentorTabParamList = {
+  DashboardTab: undefined;
+  DoubtsTab: undefined;
+  PollsTab: undefined;
+  ProfileTab: undefined;
+};
+
+// ─── Organization context ─────────────────────────────────────
+
+export interface OrgContext {
+  orgId: string;
+  bootcampId: string;
+  enrollmentId: string;
+  orgMemberId: string;
+}
