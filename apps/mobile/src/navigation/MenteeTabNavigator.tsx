@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View, StyleSheet } from 'react-native';
 import { Colors, Typography, Spacing } from '../theme';
 import { MenteeTabParamList } from '../types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import MenteeDashboardScreen from '../screens/mentee/DashboardScreen';
 import LeaderboardScreen from '../screens/mentee/LeaderboardScreen';
@@ -13,17 +14,24 @@ const Tab = createBottomTabNavigator<MenteeTabParamList>();
 function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
   return (
     <View style={[tabStyles.iconWrap, focused && tabStyles.iconWrapActive]}>
-      <Text style={[tabStyles.icon, focused && tabStyles.iconActive]}>{icon}</Text>
+      <Text style={[tabStyles.icon, focused && tabStyles.iconActive]}>
+        {icon}
+      </Text>
     </View>
   );
 }
 
 export default function MenteeTabNavigator() {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: tabStyles.bar,
+        tabBarStyle: {
+          ...tabStyles.bar,
+          height: 64 + insets.bottom, // ADD insets.bottom
+          paddingBottom: insets.bottom + 4, // ADD insets.bottom
+        },
         tabBarShowLabel: true,
         tabBarLabelStyle: tabStyles.label,
         tabBarActiveTintColor: Colors.primary,
@@ -63,9 +71,6 @@ const tabStyles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
     borderTopColor: Colors.surfaceBorder,
-    height: 64,
-    paddingBottom: Spacing.sm,
-    paddingTop: Spacing.sm,
   },
   label: {
     ...Typography.labelSmall,
