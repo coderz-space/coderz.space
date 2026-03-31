@@ -87,6 +87,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/auth/login": {
+            "post": {
+                "description": "Login with email and password to receive authentication tokens",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Authenticate user",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_auth.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_auth.AuthResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid credentials",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/v1/auth/reset-password": {
             "post": {
                 "description": "Reset user password using a valid reset token",
@@ -120,6 +161,47 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad request - validation error or invalid/expired token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/signup": {
+            "post": {
+                "description": "Create a new user account with email and password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register a new user",
+                "parameters": [
+                    {
+                        "description": "User registration details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_auth.SignupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_auth.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - validation error or email already exists",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -166,54 +248,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/enrollments/{enrollmentId}": {
-            "patch": {
-                "description": "Update the role of a bootcamp enrollment (admin only)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Bootcamp Enrollments"
-                ],
-                "summary": "Update enrollment role",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Enrollment ID (UUID)",
-                        "name": "enrollmentId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "New role",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/bootcamp.UpdateEnrollmentRoleRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Enrollment role updated successfully",
-                        "schema": {
-                            "$ref": "#/definitions/bootcamp.EnrollmentResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request - validation error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -2138,6 +2172,66 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not found - enrollment does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Update the role of a bootcamp enrollment (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bootcamp Enrollments"
+                ],
+                "summary": "Update enrollment role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID (UUID)",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Enrollment ID (UUID)",
+                        "name": "enrollmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New role",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/bootcamp.UpdateEnrollmentRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Enrollment role updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/bootcamp.EnrollmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - validation error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -4363,6 +4457,55 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_modules_auth.AuthResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_modules_auth.AuthResponseData"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_auth.AuthResponseData": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "refreshToken": {
+                    "type": "string",
+                    "example": "a1b2c3d4e5f6..."
+                },
+                "user": {
+                    "$ref": "#/definitions/internal_modules_auth.AuthUser"
+                }
+            }
+        },
+        "internal_modules_auth.AuthUser": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "emailVerified": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                }
+            }
+        },
         "internal_modules_auth.ForgotPasswordRequest": {
             "type": "object",
             "required": [
@@ -4388,6 +4531,25 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_modules_auth.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 8,
+                    "example": "Password123"
+                }
+            }
+        },
         "internal_modules_auth.ResetPasswordRequest": {
             "type": "object",
             "required": [
@@ -4404,6 +4566,32 @@ const docTemplate = `{
                 "token": {
                     "type": "string",
                     "example": "a1b2c3d4e5f6g7h8i9j0"
+                }
+            }
+        },
+        "internal_modules_auth.SignupRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "example": "John Doe"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 8,
+                    "example": "Password123"
                 }
             }
         },

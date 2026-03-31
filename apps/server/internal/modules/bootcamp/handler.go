@@ -6,6 +6,7 @@ import (
 	"github.com/DSAwithGautam/Coderz.space/internal/common/middleware/auth"
 	"github.com/DSAwithGautam/Coderz.space/internal/common/response"
 	"github.com/DSAwithGautam/Coderz.space/internal/common/utils"
+	"github.com/DSAwithGautam/Coderz.space/internal/common/validator"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v5"
 )
@@ -38,7 +39,16 @@ func NewHandler(service *Service) *Handler {
 // @Failure 404 {object} map[string]any "Not found - organization does not exist"
 // @Failure 409 {object} map[string]any "Conflict - organization not approved"
 // @Router /v1/organizations/{orgId}/bootcamps [post]
-func (h *Handler) CreateBootcamp(c *echo.Context, body CreateBootcampRequest) error {
+func (h *Handler) CreateBootcamp(c *echo.Context) error {
+	var body CreateBootcampRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
 	if !ok {
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
@@ -261,7 +271,16 @@ func (h *Handler) ListBootcamps(c *echo.Context) error {
 // @Failure 403 {object} map[string]any "Forbidden - admin role required"
 // @Failure 404 {object} map[string]any "Not found - bootcamp does not exist"
 // @Router /v1/organizations/{orgId}/bootcamps/{bootcampId} [patch]
-func (h *Handler) UpdateBootcamp(c *echo.Context, body UpdateBootcampRequest) error {
+func (h *Handler) UpdateBootcamp(c *echo.Context) error {
+	var body UpdateBootcampRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
 	if !ok {
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
@@ -410,7 +429,16 @@ func (h *Handler) DeactivateBootcamp(c *echo.Context) error {
 // @Failure 404 {object} map[string]any "Not found - bootcamp does not exist"
 // @Failure 409 {object} map[string]any "Conflict - bootcamp inactive or cross-org violation"
 // @Router /v1/organizations/{orgId}/bootcamps/{bootcampId}/enrollments [post]
-func (h *Handler) EnrollMember(c *echo.Context, body EnrollMemberRequest) error {
+func (h *Handler) EnrollMember(c *echo.Context) error {
+	var body EnrollMemberRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
 	if !ok {
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
@@ -496,13 +524,24 @@ func (h *Handler) ListEnrollments(c *echo.Context) error {
 // @Tags Bootcamp Enrollments
 // @Accept json
 // @Produce json
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param bootcampId path string true "Bootcamp ID (UUID)"
 // @Param enrollmentId path string true "Enrollment ID (UUID)"
 // @Param body body UpdateEnrollmentRoleRequest true "New role"
 // @Success 200 {object} EnrollmentResponse "Enrollment role updated successfully"
 // @Failure 400 {object} map[string]any "Bad request - validation error"
-// @Router /v1/enrollments/{enrollmentId} [patch]
-func (h *Handler) UpdateEnrollmentRole(c *echo.Context, body UpdateEnrollmentRoleRequest) error {
-	enrollmentID, err := utils.StringToUUID((*c).Param("enrollmentId"))
+// @Router /v1/organizations/{orgId}/bootcamps/{bootcampId}/enrollments/{enrollmentId} [patch]
+func (h *Handler) UpdateEnrollmentRole(c *echo.Context) error {
+	var body UpdateEnrollmentRoleRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
+	enrollmentID, err := utils.StringToUUID(c.Param("enrollmentId"))
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ENROLLMENT_ID", nil, nil)
 	}

@@ -30,7 +30,6 @@ func NewHandler(service *Service) *Handler {
 // @Success 201 {object} AuthResponse "User registered successfully"
 // @Failure 400 {object} map[string]any "Bad request - validation error or email already exists"
 // @Router /v1/auth/signup [post]
-
 func (h *Handler) Signup(c *echo.Context) error {
 	var body SignupRequest
 	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
@@ -64,7 +63,6 @@ func (h *Handler) Signup(c *echo.Context) error {
 // @Success 200 {object} AuthResponse "Login successful"
 // @Failure 401 {object} map[string]any "Unauthorized - invalid credentials"
 // @Router /v1/auth/login [post]
-
 func (h *Handler) Login(c *echo.Context) error {
 	var body LoginRequest
 	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
@@ -187,7 +185,16 @@ func (h *Handler) Me(c *echo.Context) error {
 // @Success 200 {object} GenericResponse "Password reset email sent (if email exists)"
 // @Failure 400 {object} map[string]any "Bad request - validation error"
 // @Router /v1/auth/forgot-password [post]
-func (h *Handler) ForgotPassword(c *echo.Context, body ForgotPasswordRequest) error {
+func (h *Handler) ForgotPassword(c *echo.Context) error {
+	var body ForgotPasswordRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
 	// Always return success to prevent email enumeration
 	_ = h.service.ForgotPassword(c.Request().Context(), body)
 
@@ -207,7 +214,16 @@ func (h *Handler) ForgotPassword(c *echo.Context, body ForgotPasswordRequest) er
 // @Success 200 {object} GenericResponse "Password reset successful"
 // @Failure 400 {object} map[string]any "Bad request - validation error or invalid/expired token"
 // @Router /v1/auth/reset-password [post]
-func (h *Handler) ResetPassword(c *echo.Context, body ResetPasswordRequest) error {
+func (h *Handler) ResetPassword(c *echo.Context) error {
+	var body ResetPasswordRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
 	err := h.service.ResetPassword(c.Request().Context(), body)
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", err.Error(), nil, nil)
