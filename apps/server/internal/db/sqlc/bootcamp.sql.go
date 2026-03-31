@@ -211,6 +211,25 @@ func (q *Queries) GetEnrollmentByMember(ctx context.Context, arg GetEnrollmentBy
 	return i, err
 }
 
+const getEnrollmentIDByUserID = `-- name: GetEnrollmentIDByUserID :one
+SELECT be.id FROM bootcamp_enrollments be
+JOIN organization_members om ON be.organization_member_id = om.id
+WHERE om.user_id = $1 AND be.bootcamp_id = $2
+LIMIT 1
+`
+
+type GetEnrollmentIDByUserIDParams struct {
+	UserID     pgtype.UUID `db:"user_id" json:"user_id"`
+	BootcampID pgtype.UUID `db:"bootcamp_id" json:"bootcamp_id"`
+}
+
+func (q *Queries) GetEnrollmentIDByUserID(ctx context.Context, arg GetEnrollmentIDByUserIDParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, getEnrollmentIDByUserID, arg.UserID, arg.BootcampID)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const listBootcampEnrollments = `-- name: ListBootcampEnrollments :many
 SELECT be.id, be.bootcamp_id, be.organization_member_id, be.role, be.status, be.enrolled_at, u.name, u.email, u.avatar_url, om.role as org_role
 FROM bootcamp_enrollments be

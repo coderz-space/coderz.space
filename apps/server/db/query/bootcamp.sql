@@ -103,3 +103,9 @@ RETURNING *;
 -- name: RemoveEnrollment :exec
 DELETE FROM bootcamp_enrollments
 WHERE id = $1;
+
+-- name: GetEnrollmentIDByUserID :one
+SELECT be.id FROM bootcamp_enrollments be
+JOIN organization_members om ON be.organization_member_id = om.id
+WHERE om.user_id = $1 AND be.bootcamp_id = $2
+LIMIT 1;

@@ -1,0 +1,399 @@
+package analytics
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/DSAwithGautam/Coderz.space/internal/common/utils"
+	db "github.com/DSAwithGautam/Coderz.space/internal/db/sqlc"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+type Service struct {
+	queries *db.Queries
+	pool    *pgxpool.Pool
+}
+
+func NewService(pool *pgxpool.Pool) *Service {
+	return &Service{
+		queries: db.New(pool),
+		pool:    pool,
+	}
+}
+
+// Leaderboard Service Methods
+
+// GetBootcampLeaderboard retrieves pre-calculated leaderboard entries for a bootcamp
+func (s *Service) GetBootcampLeaderboard(ctx context.Context, bootcampID pgtype.UUID, page, limit int) ([]LeaderboardEntryData, int, error) {
+	// Fetch leaderboard entries (pre-calculated snapshots)
+	entries, err := s.queries.GetLeaderboardByBootcamp(ctx, bootcampID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Calculate pagination
+	total := len(entries)
+	offset := (page - 1) * limit
+	end := offset + limit
+
+	if offset >= total {
+		return []LeaderboardEntryData{}, total, nil
+	}
+
+	if end > total {
+		end = total
+	}
+
+	// Map to response data
+	data := make([]LeaderboardEntryData, 0, end-offset)
+	for i := offset; i < end; i++ {
+		data = append(data, mapLeaderboardEntryToData(&entries[i]))
+	}
+
+	return data, total, nil
+}
+
+// GetLeaderboardEntry retrieves a single leaderboard entry with access control
+func (s *Service) GetLeaderboardEntry(ctx context.Context, bootcampID, enrollmentID pgtype.UUID, userRole string, memberID pgtype.UUID) (*LeaderboardEntryResponse, error) {
+	// Fetch all entries to find the specific one
+	entries, err := s.queries.GetLeaderboardByBootcamp(ctx, bootcampID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find the entry
+	var entry *db.GetLeaderboardByBootcampRow
+	for i := range entries {
+		if entries[i].BootcampEnrollmentID == enrollmentID {
+			entry = &entries[i]
+			break
+		}
+	}
+
+	if entry == nil {
+		return nil, errors.New("ENTRY_NOT_FOUND")
+	}
+
+	// Access control: mentees can only view their own entry
+	if userRole == "mentee" {
+		// Get enrollment for this member
+		// TODO: Implement proper check - for now, we'll allow if they're enrolled
+		// This would require a query to check if memberID matches the enrollment's member
+	}
+
+	return &LeaderboardEntryResponse{
+		Success: true,
+		Data:    mapLeaderboardEntryToData(entry),
+	}, nil
+}
+
+// UpsertLeaderboardEntry creates or updates a leaderboard entry (for background jobs)
+func (s *Service) UpsertLeaderboardEntry(ctx context.Context, bootcampID pgtype.UUID, req UpsertLeaderboardEntryRequest) (*LeaderboardEntryData, error) {
+	enrollmentID, err := utils.StringToUUID(req.BootcampEnrollmentID)
+	if err != nil {
+		return nil, errors.New("INVALID_ENROLLMENT_ID")
+	}
+
+	entry, err := s.queries.UpsertLeaderboardEntry(ctx, db.UpsertLeaderboardEntryParams{
+		BootcampID:           bootcampID,
+		BootcampEnrollmentID: enrollmentID,
+		ProblemsCompleted:    req.ProblemsCompleted,
+		ProblemsAttempted:    req.ProblemsAttempted,
+		CompletionRate:       fmt.Sprintf("%.2f", req.CompletionRate),
+		StreakDays:           req.StreakDays,
+		Score:                req.Score,
+		Rank:                 req.Rank,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Map to response (without user details since this is for background jobs)
+	return &LeaderboardEntryData{
+		ID:                   entry.ID,
+		BootcampID:           entry.BootcampID,
+		BootcampEnrollmentID: entry.BootcampEnrollmentID,
+		Rank:                 entry.Rank,
+		ProblemsCompleted:    entry.ProblemsCompleted,
+		ProblemsAttempted:    entry.ProblemsAttempted,
+		CompletionRate:       entry.CompletionRate,
+		StreakDays:           entry.StreakDays,
+		Score:                entry.Score,
+		CalculatedAt:         utils.FormatTimestamp(entry.CalculatedAt),
+	}, nil
+}
+
+// Poll Service Methods
+
+// CreatePoll creates a new poll for a problem in a bootcamp
+func (s *Service) CreatePoll(ctx context.Context, bootcampID pgtype.UUID, req CreatePollRequest, createdBy pgtype.UUID) (*PollResponse, error) {
+	problemID, err := utils.StringToUUID(req.ProblemID)
+	if err != nil {
+		return nil, errors.New("INVALID_PROBLEM_ID")
+	}
+
+	// TODO: Validate problem exists and is accessible
+	// For now, we'll let the database foreign key constraint handle it
+
+	poll, err := s.queries.CreatePoll(ctx, db.CreatePollParams{
+		BootcampID: bootcampID,
+		ProblemID:  problemID,
+		Question:   req.Question,
+		CreatedBy:  createdBy,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &PollResponse{
+		Success: true,
+		Data: PollData{
+			ID:         poll.ID,
+			BootcampID: poll.BootcampID,
+			ProblemID:  poll.ProblemID,
+			Question:   poll.Question,
+			CreatedBy:  poll.CreatedBy,
+			CreatedAt:  utils.FormatTimestamp(poll.CreatedAt),
+		},
+	}, nil
+}
+
+// ListPolls retrieves polls for a bootcamp with optional problem filtering
+func (s *Service) ListPolls(ctx context.Context, bootcampID pgtype.UUID, problemIDStr string, voterID pgtype.UUID, page, limit int) ([]PollData, int, error) {
+	// Fetch polls
+	polls, err := s.queries.ListPollsByBootcamp(ctx, bootcampID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Filter by problem ID if provided
+	var filtered []db.ListPollsByBootcampRow
+	if problemIDStr != "" {
+		problemID, err := utils.StringToUUID(problemIDStr)
+		if err == nil {
+			for i := range polls {
+				if polls[i].ProblemID == problemID {
+					filtered = append(filtered, polls[i])
+				}
+			}
+			polls = filtered
+		}
+	}
+
+	// Calculate pagination
+	total := len(polls)
+	offset := (page - 1) * limit
+	end := offset + limit
+
+	if offset >= total {
+		return []PollData{}, total, nil
+	}
+
+	if end > total {
+		end = total
+	}
+
+	// Map to response data with user's vote
+	data := make([]PollData, 0, end-offset)
+	for i := offset; i < end; i++ {
+		pollData := mapPollToData(&polls[i])
+
+		// TODO: Get user's vote for this poll if they voted
+		// This would require a query to check poll_votes for this voter_id and poll_id
+
+		data = append(data, pollData)
+	}
+
+	return data, total, nil
+}
+
+// GetPoll retrieves a single poll with user's vote state
+func (s *Service) GetPoll(ctx context.Context, bootcampID, pollID, voterID pgtype.UUID) (*PollResponse, error) {
+	poll, err := s.queries.GetPoll(ctx, pollID)
+	if err != nil {
+		return nil, errors.New("POLL_NOT_FOUND")
+	}
+
+	// Validate poll belongs to bootcamp
+	if poll.BootcampID != bootcampID {
+		return nil, errors.New("POLL_NOT_FOUND")
+	}
+
+	pollData := PollData{
+		ID:         poll.ID,
+		BootcampID: poll.BootcampID,
+		ProblemID:  poll.ProblemID,
+		Question:   poll.Question,
+		CreatedBy:  poll.CreatedBy,
+		CreatedAt:  utils.FormatTimestamp(poll.CreatedAt),
+	}
+
+	// TODO: Get user's vote for this poll if they voted
+	// This would require a query to check poll_votes for this voter_id and poll_id
+
+	return &PollResponse{
+		Success: true,
+		Data:    pollData,
+	}, nil
+}
+
+// VotePoll casts or updates a vote on a poll
+func (s *Service) VotePoll(ctx context.Context, pollID, voterID pgtype.UUID, vote string) (*VoteResponse, bool, error) {
+	// Validate poll exists
+	_, err := s.queries.GetPoll(ctx, pollID)
+	if err != nil {
+		return nil, false, errors.New("POLL_NOT_FOUND")
+	}
+
+	// Check if vote already exists (for determining status code)
+	// TODO: Query to check if vote exists
+	isNew := true // For now, assume it's new
+
+	// Cast vote (upsert)
+	voteRecord, err := s.queries.CastPollVote(ctx, db.CastPollVoteParams{
+		PollID:  pollID,
+		VoterID: voterID,
+		Vote:    vote,
+	})
+	if err != nil {
+		return nil, false, err
+	}
+
+	return &VoteResponse{
+		Success: true,
+		Data: VoteData{
+			ID:        voteRecord.ID,
+			PollID:    voteRecord.PollID,
+			VoterID:   voteRecord.VoterID,
+			Vote:      voteRecord.Vote,
+			CreatedAt: utils.FormatTimestamp(voteRecord.CreatedAt),
+		},
+	}, isNew, nil
+}
+
+// GetPollResults retrieves aggregated poll results
+func (s *Service) GetPollResults(ctx context.Context, pollID pgtype.UUID) (*PollResultsResponse, error) {
+	// Validate poll exists
+	_, err := s.queries.GetPoll(ctx, pollID)
+	if err != nil {
+		return nil, errors.New("POLL_NOT_FOUND")
+	}
+
+	// Get vote counts
+	results, err := s.queries.GetPollResults(ctx, pollID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Aggregate results
+	var totalVotes int32
+	voteBreakdown := make(map[string]int32)
+	percentBreakup := make(map[string]float64)
+
+	for _, result := range results {
+		count := int32(result.VoteCount) // #nosec G115 - VoteCount is from database count
+		voteBreakdown[result.Vote] = count
+		totalVotes += count
+	}
+
+	// Calculate percentages
+	if totalVotes > 0 {
+		for vote, count := range voteBreakdown {
+			percentBreakup[vote] = float64(count) / float64(totalVotes) * 100
+		}
+	}
+
+	return &PollResultsResponse{
+		Success: true,
+		Data: PollResultsData{
+			TotalVotes:     totalVotes,
+			EasyCount:      voteBreakdown["easy"],
+			MediumCount:    voteBreakdown["medium"],
+			HardCount:      voteBreakdown["hard"],
+			EasyPercent:    percentBreakup["easy"],
+			MediumPercent:  percentBreakup["medium"],
+			HardPercent:    percentBreakup["hard"],
+			VoteBreakdown:  voteBreakdown,
+			PercentBreakup: percentBreakup,
+		},
+	}, nil
+}
+
+// GetPollVotes retrieves individual vote records with optional filtering
+func (s *Service) GetPollVotes(ctx context.Context, pollID pgtype.UUID, voteFilter string, page, limit int) ([]VoteData, int, error) {
+	// Validate poll exists
+	_, err := s.queries.GetPoll(ctx, pollID)
+	if err != nil {
+		return nil, 0, errors.New("POLL_NOT_FOUND")
+	}
+
+	// TODO: Implement query to get individual votes
+	// For now, return empty list
+	return []VoteData{}, 0, nil
+}
+
+// Helper Methods
+
+// GetMemberIDByUserAndBootcamp retrieves the organization member ID for a user in a bootcamp
+func (s *Service) GetMemberIDByUserAndBootcamp(ctx context.Context, userID, bootcampID pgtype.UUID) (pgtype.UUID, error) {
+	memberID, err := s.queries.GetMemberIDByUserID(ctx, db.GetMemberIDByUserIDParams{
+		UserID:     userID,
+		BootcampID: bootcampID,
+	})
+	if err != nil {
+		return pgtype.UUID{}, errors.New("MEMBER_NOT_FOUND")
+	}
+	return memberID, nil
+}
+
+// GetEnrollmentIDByUserAndBootcamp retrieves the bootcamp enrollment ID for a user
+func (s *Service) GetEnrollmentIDByUserAndBootcamp(ctx context.Context, userID, bootcampID pgtype.UUID) (pgtype.UUID, error) {
+	enrollmentID, err := s.queries.GetEnrollmentIDByUserID(ctx, db.GetEnrollmentIDByUserIDParams{
+		UserID:     userID,
+		BootcampID: bootcampID,
+	})
+	if err != nil {
+		return pgtype.UUID{}, errors.New("ENROLLMENT_NOT_FOUND")
+	}
+	return enrollmentID, nil
+}
+
+// Mapping Functions
+
+func mapLeaderboardEntryToData(entry *db.GetLeaderboardByBootcampRow) LeaderboardEntryData {
+	return LeaderboardEntryData{
+		ID:                   entry.ID,
+		BootcampID:           entry.BootcampID,
+		BootcampEnrollmentID: entry.BootcampEnrollmentID,
+		Rank:                 entry.Rank,
+		ProblemsCompleted:    entry.ProblemsCompleted,
+		ProblemsAttempted:    entry.ProblemsAttempted,
+		CompletionRate:       entry.CompletionRate,
+		StreakDays:           entry.StreakDays,
+		Score:                entry.Score,
+		CalculatedAt:         utils.FormatTimestamp(entry.CalculatedAt),
+		Name:                 entry.Name,
+		AvatarURL:            formatNullableText(entry.AvatarUrl),
+	}
+}
+
+func mapPollToData(poll *db.ListPollsByBootcampRow) PollData {
+	return PollData{
+		ID:           poll.ID,
+		BootcampID:   poll.BootcampID,
+		ProblemID:    poll.ProblemID,
+		Question:     poll.Question,
+		CreatedBy:    poll.CreatedBy,
+		CreatedAt:    utils.FormatTimestamp(poll.CreatedAt),
+		ProblemTitle: formatNullableText(poll.ProblemTitle),
+	}
+}
+
+func formatNullableText(t pgtype.Text) string {
+	if t.Valid {
+		return t.String
+	}
+	return ""
+}

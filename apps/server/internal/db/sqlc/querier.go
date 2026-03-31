@@ -74,6 +74,7 @@ type Querier interface {
 	GetEnrollmentBootcamp(ctx context.Context, id pgtype.UUID) (GetEnrollmentBootcampRow, error)
 	GetEnrollmentByMember(ctx context.Context, arg GetEnrollmentByMemberParams) (BootcampEnrollment, error)
 	GetEnrollmentByMemberID(ctx context.Context, arg GetEnrollmentByMemberIDParams) (BootcampEnrollment, error)
+	GetEnrollmentIDByUserID(ctx context.Context, arg GetEnrollmentIDByUserIDParams) (pgtype.UUID, error)
 	GetLeaderboardByBootcamp(ctx context.Context, bootcampID pgtype.UUID) ([]GetLeaderboardByBootcampRow, error)
 	GetMemberIDByUserID(ctx context.Context, arg GetMemberIDByUserIDParams) (pgtype.UUID, error)
 	GetOrganizationById(ctx context.Context, id pgtype.UUID) (Organization, error)
