@@ -26,6 +26,13 @@ interface MentorStore {
     bootcampEnrollmentId: string;
     deadlineAt: string;
   }) => Promise<void>;
+  assignProblemsToMentee: (params: {
+  orgId: string;
+  bootcampId: string;
+  bootcampEnrollmentId: string;
+  problemIds: string[];
+  deadlineAt: string;
+}) => Promise<void>;
   resolveDoubt: (params: { orgId: string; bootcampId: string; doubtId: string }) => Promise<void>;
 }
 
@@ -99,6 +106,10 @@ export const useMentorStore = create<MentorStore>((set) => ({
   assignToMentee: async (params) => {
     await service.assignToMentee(params);
   },
+
+  assignProblemsToMentee: async (params) => {
+  await service.assignProblemsToMentee(params);
+},
 
   resolveDoubt: async (params) => {
     await service.resolveDoubt(params);

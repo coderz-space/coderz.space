@@ -133,6 +133,13 @@ export interface IMentorService {
     bootcampId: string;
     doubtId: string;
   }): Promise<Doubt>;
+  assignProblemsToMentee(params: {
+    orgId: string;
+    bootcampId: string;
+    bootcampEnrollmentId: string;
+    problemIds: string[];
+    deadlineAt: string;
+  }): Promise<void>;
 }
 
 // ─── Org Service ──────────────────────────────────────────────
