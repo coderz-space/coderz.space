@@ -22,6 +22,45 @@ func (q *Queries) ArchiveBootcamp(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const countBootcampsByEnrollment = `-- name: CountBootcampsByEnrollment :one
+SELECT COUNT(DISTINCT b.id) FROM bootcamps b
+JOIN bootcamp_enrollments be ON b.id = be.bootcamp_id
+WHERE be.organization_member_id = $1
+  AND b.archived_at IS NULL
+  AND ($2::boolean IS NULL OR b.is_active = $2::boolean)
+`
+
+type CountBootcampsByEnrollmentParams struct {
+	OrganizationMemberID pgtype.UUID `db:"organization_member_id" json:"organization_member_id"`
+	IsActive             pgtype.Bool `db:"is_active" json:"is_active"`
+}
+
+func (q *Queries) CountBootcampsByEnrollment(ctx context.Context, arg CountBootcampsByEnrollmentParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countBootcampsByEnrollment, arg.OrganizationMemberID, arg.IsActive)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countBootcampsByOrg = `-- name: CountBootcampsByOrg :one
+SELECT COUNT(*) FROM bootcamps
+WHERE organization_id = $1 
+  AND archived_at IS NULL
+  AND ($2::boolean IS NULL OR is_active = $2::boolean)
+`
+
+type CountBootcampsByOrgParams struct {
+	OrganizationID pgtype.UUID `db:"organization_id" json:"organization_id"`
+	IsActive       pgtype.Bool `db:"is_active" json:"is_active"`
+}
+
+func (q *Queries) CountBootcampsByOrg(ctx context.Context, arg CountBootcampsByOrgParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countBootcampsByOrg, arg.OrganizationID, arg.IsActive)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createBootcamp = `-- name: CreateBootcamp :one
 INSERT INTO bootcamps (
     organization_id, created_by, name, description, start_date, end_date, is_active
@@ -225,6 +264,60 @@ func (q *Queries) ListBootcampEnrollments(ctx context.Context, bootcampID pgtype
 	return items, nil
 }
 
+const listBootcampsByEnrollment = `-- name: ListBootcampsByEnrollment :many
+SELECT DISTINCT b.id, b.organization_id, b.created_by, b.name, b.description, b.start_date, b.end_date, b.is_active, b.archived_at, b.created_at, b.updated_at FROM bootcamps b
+JOIN bootcamp_enrollments be ON b.id = be.bootcamp_id
+WHERE be.organization_member_id = $1
+  AND b.archived_at IS NULL
+  AND ($4::boolean IS NULL OR b.is_active = $4::boolean)
+ORDER BY b.created_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListBootcampsByEnrollmentParams struct {
+	OrganizationMemberID pgtype.UUID `db:"organization_member_id" json:"organization_member_id"`
+	Limit                int32       `db:"limit" json:"limit"`
+	Offset               int32       `db:"offset" json:"offset"`
+	IsActive             pgtype.Bool `db:"is_active" json:"is_active"`
+}
+
+func (q *Queries) ListBootcampsByEnrollment(ctx context.Context, arg ListBootcampsByEnrollmentParams) ([]Bootcamp, error) {
+	rows, err := q.db.Query(ctx, listBootcampsByEnrollment,
+		arg.OrganizationMemberID,
+		arg.Limit,
+		arg.Offset,
+		arg.IsActive,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Bootcamp{}
+	for rows.Next() {
+		var i Bootcamp
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.CreatedBy,
+			&i.Name,
+			&i.Description,
+			&i.StartDate,
+			&i.EndDate,
+			&i.IsActive,
+			&i.ArchivedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listBootcampsByOrg = `-- name: ListBootcampsByOrg :many
 SELECT id, organization_id, created_by, name, description, start_date, end_date, is_active, archived_at, created_at, updated_at FROM bootcamps
 WHERE organization_id = $1 AND archived_at IS NULL
@@ -233,6 +326,59 @@ ORDER BY created_at DESC
 
 func (q *Queries) ListBootcampsByOrg(ctx context.Context, organizationID pgtype.UUID) ([]Bootcamp, error) {
 	rows, err := q.db.Query(ctx, listBootcampsByOrg, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Bootcamp{}
+	for rows.Next() {
+		var i Bootcamp
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.CreatedBy,
+			&i.Name,
+			&i.Description,
+			&i.StartDate,
+			&i.EndDate,
+			&i.IsActive,
+			&i.ArchivedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listBootcampsByOrgWithPagination = `-- name: ListBootcampsByOrgWithPagination :many
+SELECT id, organization_id, created_by, name, description, start_date, end_date, is_active, archived_at, created_at, updated_at FROM bootcamps
+WHERE organization_id = $1 
+  AND archived_at IS NULL
+  AND ($4::boolean IS NULL OR is_active = $4::boolean)
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListBootcampsByOrgWithPaginationParams struct {
+	OrganizationID pgtype.UUID `db:"organization_id" json:"organization_id"`
+	Limit          int32       `db:"limit" json:"limit"`
+	Offset         int32       `db:"offset" json:"offset"`
+	IsActive       pgtype.Bool `db:"is_active" json:"is_active"`
+}
+
+func (q *Queries) ListBootcampsByOrgWithPagination(ctx context.Context, arg ListBootcampsByOrgWithPaginationParams) ([]Bootcamp, error) {
+	rows, err := q.db.Query(ctx, listBootcampsByOrgWithPagination,
+		arg.OrganizationID,
+		arg.Limit,
+		arg.Offset,
+		arg.IsActive,
+	)
 	if err != nil {
 		return nil, err
 	}

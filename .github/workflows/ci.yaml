@@ -1,0 +1,41 @@
+# name: CI
+
+# on:
+#     pull_request:
+#         branches:
+#             - "*"
+#     push:
+#         branches:
+#             - prod
+#             - main
+#             - master
+#             - dev
+# env:
+#     GO_VERSION: "1.24.x"
+#     NODE_VERSION: "24"
+
+# jobs:
+#     test:
+#         runs-on: ubuntu-latest
+#         steps:
+#             - uses: actions/checkout@v4
+
+#             - name: Setup Go
+#                 uses: actions/setup-go@v5
+#                 with:
+#                     go-version: ${{ env.GO_VERSION }}
+
+#             - name: Setup Node
+#                 uses: actions/setup-node@v4
+#                 with:
+#                     node-version: ${{ env.NODE_VERSION }}
+#                     cache: 'npm'
+
+#             - name: Install dependencies
+#                 run: npm install
+
+#             - name: Run tests
+#                 run: npm test
+
+#             - name: Run Go tests
+#                 run: go test ./...

@@ -24,6 +24,8 @@ type Querier interface {
 	AssignGroupToMentee(ctx context.Context, arg AssignGroupToMenteeParams) (Assignment, error)
 	CastPollVote(ctx context.Context, arg CastPollVoteParams) (PollVote, error)
 	ClearExpiredRefreshTokens(ctx context.Context) error
+	CountBootcampsByEnrollment(ctx context.Context, arg CountBootcampsByEnrollmentParams) (int64, error)
+	CountBootcampsByOrg(ctx context.Context, arg CountBootcampsByOrgParams) (int64, error)
 	CountOrganizationAdmins(ctx context.Context, organizationID pgtype.UUID) (int64, error)
 	CountOrganizationMembers(ctx context.Context, organizationID pgtype.UUID) (int64, error)
 	CountUserOrganizations(ctx context.Context, userID pgtype.UUID) (int64, error)
@@ -69,7 +71,9 @@ type Querier interface {
 	ListAssignmentProblemsStatus(ctx context.Context, assignmentID pgtype.UUID) ([]ListAssignmentProblemsStatusRow, error)
 	ListAssignmentsByMentee(ctx context.Context, bootcampEnrollmentID pgtype.UUID) ([]ListAssignmentsByMenteeRow, error)
 	ListBootcampEnrollments(ctx context.Context, bootcampID pgtype.UUID) ([]ListBootcampEnrollmentsRow, error)
+	ListBootcampsByEnrollment(ctx context.Context, arg ListBootcampsByEnrollmentParams) ([]Bootcamp, error)
 	ListBootcampsByOrg(ctx context.Context, organizationID pgtype.UUID) ([]Bootcamp, error)
+	ListBootcampsByOrgWithPagination(ctx context.Context, arg ListBootcampsByOrgWithPaginationParams) ([]Bootcamp, error)
 	ListDoubtsByAssignmentProblem(ctx context.Context, assignmentProblemID pgtype.UUID) ([]ListDoubtsByAssignmentProblemRow, error)
 	ListOrganizationMembers(ctx context.Context, arg ListOrganizationMembersParams) ([]ListOrganizationMembersRow, error)
 	ListOrganizations(ctx context.Context, arg ListOrganizationsParams) ([]Organization, error)
