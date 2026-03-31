@@ -12,6 +12,8 @@ func RegisterPublicRoutes(e *echo.Group, handler *Handler) {
 	authRouter.POST("/login", core.WithBody(handler.Login))
 	authRouter.POST("/signup", core.WithBody(handler.Signup))
 	authRouter.POST("/refresh", handler.Refresh)
+	authRouter.POST("/forgot-password", core.WithBody(handler.ForgotPassword))
+	authRouter.POST("/reset-password", core.WithBody(handler.ResetPassword))
 }
 
 func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Config) {

@@ -33,6 +33,7 @@ type Querier interface {
 	CreateBootcamp(ctx context.Context, arg CreateBootcampParams) (Bootcamp, error)
 	CreateDoubt(ctx context.Context, arg CreateDoubtParams) (Doubt, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
+	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetToken, error)
 	// Polls
 	CreatePoll(ctx context.Context, arg CreatePollParams) (Poll, error)
 	CreateProblem(ctx context.Context, arg CreateProblemParams) (Problem, error)
@@ -40,9 +41,12 @@ type Querier interface {
 	// Tags
 	CreateTag(ctx context.Context, arg CreateTagParams) (Tag, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteExpiredPasswordResetTokens(ctx context.Context) error
+	DeletePasswordResetToken(ctx context.Context, tokenHash string) error
 	DeleteProblemResource(ctx context.Context, id pgtype.UUID) error
 	DeleteRefreshToken(ctx context.Context, tokenHash string) error
 	DeleteUser(ctx context.Context, id pgtype.UUID) error
+	DeleteUserPasswordResetTokens(ctx context.Context, userID pgtype.UUID) error
 	DeleteUserRefreshTokens(ctx context.Context, userID pgtype.UUID) error
 	// Enrollment
 	EnrollInBootcamp(ctx context.Context, arg EnrollInBootcampParams) (BootcampEnrollment, error)
@@ -57,6 +61,7 @@ type Querier interface {
 	GetOrganizationBySlug(ctx context.Context, slug string) (Organization, error)
 	GetOrganizationMember(ctx context.Context, arg GetOrganizationMemberParams) (OrganizationMember, error)
 	GetOrganizationMemberById(ctx context.Context, id pgtype.UUID) (OrganizationMember, error)
+	GetPasswordResetToken(ctx context.Context, tokenHash string) (PasswordResetToken, error)
 	GetPendingOrganizations(ctx context.Context) ([]Organization, error)
 	GetPoll(ctx context.Context, id pgtype.UUID) (Poll, error)
 	GetPollResults(ctx context.Context, pollID pgtype.UUID) ([]GetPollResultsRow, error)
@@ -98,6 +103,7 @@ type Querier interface {
 	UpdateOrganizationMemberRole(ctx context.Context, arg UpdateOrganizationMemberRoleParams) (OrganizationMember, error)
 	UpdateProblem(ctx context.Context, arg UpdateProblemParams) (Problem, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
+	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpsertLeaderboardEntry(ctx context.Context, arg UpsertLeaderboardEntryParams) (LeaderboardEntry, error)
 }
 
