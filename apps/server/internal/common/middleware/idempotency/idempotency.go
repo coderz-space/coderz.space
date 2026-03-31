@@ -103,14 +103,14 @@ func generateKey(userID, endpoint, idempotencyKey string) string {
 // IdempotencyMiddleware creates an idempotency middleware
 func IdempotencyMiddleware(store *IdempotencyStore) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			// Only apply to POST requests
-			if c.Request().Method != http.MethodPost {
+			if (*c).Request().Method != http.MethodPost {
 				return next(c)
 			}
 
 			// Get idempotency key from header
-			idempotencyKey := c.Request().Header.Get(IdempotencyKeyHeader)
+			idempotencyKey := (*c).Request().Header.Get(IdempotencyKeyHeader)
 			if idempotencyKey == "" {
 				// No idempotency key, proceed normally
 				return next(c)
@@ -118,37 +118,42 @@ func IdempotencyMiddleware(store *IdempotencyStore) echo.MiddlewareFunc {
 
 			// Validate idempotency key format (should be UUID or similar)
 			if len(idempotencyKey) < 16 || len(idempotencyKey) > 128 {
-				return response.BadRequestError(&c, "INVALID_IDEMPOTENCY_KEY", "Idempotency key must be between 16 and 128 characters")
+				return response.BadRequestError(c, "INVALID_IDEMPOTENCY_KEY", "Idempotency key must be between 16 and 128 characters")
 			}
 
 			// Get user ID from context
-			claims, ok := c.Get(auth.ClaimsKey).(*utils.TokenPayload)
+			claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
 			if !ok {
 				// No auth context, can't scope idempotency key
 				return next(c)
 			}
 
 			// Generate scoped key
-			endpoint := c.Request().URL.Path
+			endpoint := (*c).Request().URL.Path
 			scopedKey := generateKey(claims.UserID, endpoint, idempotencyKey)
 
 			// Check if we have a cached response
 			if cachedResp, exists := store.Get(scopedKey); exists {
 				// Return cached response
 				for key, value := range cachedResp.Headers {
-					c.Response().Header().Set(key, value)
+					(*c).Response().Header().Set(key, value)
 				}
-				return c.JSONBlob(cachedResp.StatusCode, cachedResp.Body)
+				return (*c).JSONBlob(cachedResp.StatusCode, cachedResp.Body)
 			}
 
 			// Create a response recorder
-			rec := &responseRecorder{
-				ResponseWriter: c.Response().Writer,
-				statusCode:     http.StatusOK,
-				body:           []byte{},
-				headers:        make(map[string]string),
+			originalResp, ok := (*c).Response().(*echo.Response)
+			if !ok {
+				// Fallback if response is not *echo.Response
+				return next(c)
 			}
-			c.Response().Writer = rec
+			rec := &responseRecorder{
+				Response:   originalResp,
+				statusCode: http.StatusOK,
+				body:       []byte{},
+				headers:    make(map[string]string),
+			}
+			(*c).SetResponse(rec)
 
 			// Process request
 			err := next(c)
@@ -157,7 +162,7 @@ func IdempotencyMiddleware(store *IdempotencyStore) echo.MiddlewareFunc {
 			if rec.statusCode >= 200 && rec.statusCode < 300 {
 				// Capture important headers
 				for _, header := range []string{"Content-Type", "Content-Length"} {
-					if value := c.Response().Header().Get(header); value != "" {
+					if value := (*c).Response().Header().Get(header); value != "" {
 						rec.headers[header] = value
 					}
 				}
@@ -177,7 +182,7 @@ func IdempotencyMiddleware(store *IdempotencyStore) echo.MiddlewareFunc {
 
 // responseRecorder records the response for caching
 type responseRecorder struct {
-	http.ResponseWriter
+	*echo.Response
 	statusCode int
 	body       []byte
 	headers    map[string]string
@@ -185,10 +190,10 @@ type responseRecorder struct {
 
 func (r *responseRecorder) WriteHeader(statusCode int) {
 	r.statusCode = statusCode
-	r.ResponseWriter.WriteHeader(statusCode)
+	r.Response.WriteHeader(statusCode)
 }
 
 func (r *responseRecorder) Write(b []byte) (int, error) {
 	r.body = append(r.body, b...)
-	return r.ResponseWriter.Write(b)
+	return r.Response.Write(b)
 }

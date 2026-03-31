@@ -71,15 +71,15 @@ func NewContainer(config *config.Config, logger *zap.Logger) (*Container, error)
 	organizationHandler := organization.NewHandler(organizationService)
 
 	// Initialize bootcamp module
-	bootcampService := bootcamp.NewService(pool)
+	bootcampService := bootcamp.NewService(queries, config, pool)
 	bootcampHandler := bootcamp.NewHandler(bootcampService)
 
 	// Initialize problem module
-	problemService := problem.NewService(pool)
+	problemService := problem.NewService(queries, config, pool)
 	problemHandler := problem.NewHandler(problemService)
 
 	// Initialize assignment module
-	assignmentService := assignment.NewService(pool)
+	assignmentService := assignment.NewService(pool, queries)
 	assignmentHandler := assignment.NewHandler(assignmentService)
 
 	// Initialize progress module

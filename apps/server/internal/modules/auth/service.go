@@ -68,6 +68,7 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*AuthRespon
 	}
 
 	if rt.ExpiresAt.Time.Before(time.Now()) {
+		// Best effort cleanup - ignore error
 		_ = s.queries.DeleteRefreshToken(ctx, tokenHash)
 		return nil, errors.New("EXPIRED_REFRESH_TOKEN")
 	}
@@ -77,7 +78,7 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*AuthRespon
 		return nil, err
 	}
 
-	// Delete old refresh token (rotation)
+	// Delete old refresh token (rotation) - best effort, ignore error
 	_ = s.queries.DeleteRefreshToken(ctx, tokenHash)
 
 	return s.generateAuthData(ctx, &user)
@@ -162,7 +163,7 @@ func (s *Service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 		return nil
 	}
 
-	// Delete any existing password reset tokens for this user
+	// Delete any existing password reset tokens for this user - best effort, ignore error
 	_ = s.queries.DeleteUserPasswordResetTokens(ctx, user.ID)
 
 	// Generate reset token
@@ -230,7 +231,7 @@ func (s *Service) ResetPassword(ctx context.Context, req ResetPasswordRequest) e
 		return err
 	}
 
-	// Delete all refresh tokens for this user (force re-login)
+	// Delete all refresh tokens for this user (force re-login) - best effort, ignore error
 	_ = s.queries.DeleteUserRefreshTokens(ctx, resetToken.UserID)
 
 	return nil

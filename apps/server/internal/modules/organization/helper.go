@@ -8,7 +8,10 @@ import (
 // ValidateSlug checks if a slug is valid (lowercase, alphanumeric with hyphens)
 func ValidateSlug(slug string) bool {
 	// Slug should be lowercase, alphanumeric with hyphens
-	match, _ := regexp.MatchString(`^[a-z0-9-]+$`, slug)
+	match, err := regexp.MatchString(`^[a-z0-9-]+$`, slug)
+	if err != nil {
+		return false
+	}
 	return match && len(slug) >= 3 && len(slug) <= 80
 }
 

@@ -22,9 +22,9 @@ func NewAuthorizationHelper(queries *db.Queries) *AuthorizationHelper {
 
 // GetUserOrgMembership retrieves the organization member record for a user in an organization
 func (h *AuthorizationHelper) GetUserOrgMembership(ctx context.Context, userID, organizationID pgtype.UUID) (*db.OrganizationMember, error) {
-	member, err := h.queries.GetOrganizationMemberByUserID(ctx, db.GetOrganizationMemberByUserIDParams{
-		UserID:         userID,
+	member, err := h.queries.GetOrganizationMember(ctx, db.GetOrganizationMemberParams{
 		OrganizationID: organizationID,
+		UserID:         userID,
 	})
 	if err != nil {
 		return nil, errors.New("USER_NOT_MEMBER_OF_ORGANIZATION")

@@ -25,43 +25,43 @@ func ValidationError(c *echo.Context, code string, err error) error {
 }
 
 // AuthorizationError returns a standardized authorization error response
-func AuthorizationError(c *echo.Context, code string, message string) error {
+func AuthorizationError(c *echo.Context, code, message string) error {
 	if message == "" {
 		message = "Access denied"
 	}
-	return NewResponse(c, http.StatusForbidden, "FORBIDDEN", code, nil, nil)
+	return NewResponse(c, http.StatusForbidden, "FORBIDDEN", message, nil, nil)
 }
 
 // AuthenticationError returns a standardized authentication error response
-func AuthenticationError(c *echo.Context, code string, message string) error {
+func AuthenticationError(c *echo.Context, code, message string) error {
 	if message == "" {
 		message = "Authentication required"
 	}
-	return NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", code, nil, nil)
+	return NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", message, nil, nil)
 }
 
 // ConflictError returns a standardized conflict error response
-func ConflictError(c *echo.Context, code string, message string) error {
+func ConflictError(c *echo.Context, code, message string) error {
 	if message == "" {
 		message = "Resource conflict"
 	}
-	return NewResponse(c, http.StatusConflict, "CONFLICT", code, nil, nil)
+	return NewResponse(c, http.StatusConflict, "CONFLICT", message, nil, nil)
 }
 
 // NotFoundError returns a standardized not found error response
-func NotFoundError(c *echo.Context, code string, message string) error {
+func NotFoundError(c *echo.Context, code, message string) error {
 	if message == "" {
 		message = "Resource not found"
 	}
-	return NewResponse(c, http.StatusNotFound, "NOT_FOUND", code, nil, nil)
+	return NewResponse(c, http.StatusNotFound, "NOT_FOUND", message, nil, nil)
 }
 
 // BadRequestError returns a standardized bad request error response
-func BadRequestError(c *echo.Context, code string, message string) error {
+func BadRequestError(c *echo.Context, code, message string) error {
 	if message == "" {
 		message = "Bad request"
 	}
-	return NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", code, nil, nil)
+	return NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", message, nil, nil)
 }
 
 // InternalServerError returns a standardized internal server error response
@@ -70,19 +70,19 @@ func InternalServerError(c *echo.Context, code string, err error) error {
 }
 
 // UnprocessableEntityError returns a standardized unprocessable entity error response
-func UnprocessableEntityError(c *echo.Context, code string, message string) error {
+func UnprocessableEntityError(c *echo.Context, code, message string) error {
 	if message == "" {
 		message = "Unprocessable entity"
 	}
-	return NewResponse(c, http.StatusUnprocessableEntity, "UNPROCESSABLE_ENTITY", code, nil, nil)
+	return NewResponse(c, http.StatusUnprocessableEntity, "UNPROCESSABLE_ENTITY", message, nil, nil)
 }
 
 // TooManyRequestsError returns a standardized rate limit error response
-func TooManyRequestsError(c *echo.Context, code string, message string) error {
+func TooManyRequestsError(c *echo.Context, code, message string) error {
 	if message == "" {
 		message = "Too many requests"
 	}
-	return NewResponse(c, http.StatusTooManyRequests, "TOO_MANY_REQUESTS", code, nil, nil)
+	return NewResponse(c, http.StatusTooManyRequests, "TOO_MANY_REQUESTS", message, nil, nil)
 }
 
 // HandleServiceError maps service layer errors to appropriate HTTP responses

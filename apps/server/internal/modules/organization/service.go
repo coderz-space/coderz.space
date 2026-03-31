@@ -44,7 +44,9 @@ func (s *Service) CreateOrganization(ctx context.Context, req CreateOrganization
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx) // Rollback is safe to call even after commit
+	}()
 
 	qtx := s.queries.WithTx(tx)
 

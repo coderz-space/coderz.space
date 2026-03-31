@@ -49,7 +49,9 @@ func main() {
 
 	cfg := config.LoadConfig()
 	logger.Initialize(cfg)
-	defer logger.Sync()
+	defer func() {
+		_ = logger.Sync() // Best effort sync on shutdown
+	}()
 
 	di, err := container.NewContainer(cfg, logger.Logger)
 	if err != nil {

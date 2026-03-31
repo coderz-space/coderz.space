@@ -136,6 +136,7 @@ func (h *Handler) Refresh(c *echo.Context) error {
 func (h *Handler) Logout(c *echo.Context) error {
 	cookie, err := c.Cookie("refresh_token")
 	if err == nil {
+		// Best effort logout - ignore error as cookies will be cleared anyway
 		_ = h.service.Logout(c.Request().Context(), cookie.Value)
 	}
 
@@ -201,7 +202,7 @@ func (h *Handler) ForgotPassword(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
 	}
 
-	// Always return success to prevent email enumeration
+	// Always return success to prevent email enumeration - ignore error intentionally
 	_ = h.service.ForgotPassword(c.Request().Context(), body)
 
 	return c.JSON(http.StatusOK, GenericResponse{

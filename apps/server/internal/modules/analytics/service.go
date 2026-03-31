@@ -111,7 +111,7 @@ func (s *Service) UpsertLeaderboardEntry(ctx context.Context, bootcampID pgtype.
 		BootcampEnrollmentID: enrollmentID,
 		ProblemsCompleted:    req.ProblemsCompleted,
 		ProblemsAttempted:    req.ProblemsAttempted,
-		CompletionRate:       fmt.Sprintf("%.2f", req.CompletionRate),
+		CompletionRate:       float32(req.CompletionRate),
 		StreakDays:           req.StreakDays,
 		Score:                req.Score,
 		Rank:                 req.Rank,
@@ -128,7 +128,7 @@ func (s *Service) UpsertLeaderboardEntry(ctx context.Context, bootcampID pgtype.
 		Rank:                 entry.Rank,
 		ProblemsCompleted:    entry.ProblemsCompleted,
 		ProblemsAttempted:    entry.ProblemsAttempted,
-		CompletionRate:       entry.CompletionRate,
+		CompletionRate:       fmt.Sprintf("%.2f", entry.CompletionRate),
 		StreakDays:           entry.StreakDays,
 		Score:                entry.Score,
 		CalculatedAt:         utils.FormatTimestamp(entry.CalculatedAt),
@@ -221,7 +221,7 @@ func (s *Service) ListPolls(ctx context.Context, bootcampID pgtype.UUID, problem
 			VoterID: voterID,
 		})
 		if err == nil {
-			pollData.MyVote = vote.Vote
+			pollData.MyVote = string(vote.Vote)
 		}
 
 		data = append(data, pollData)
@@ -257,7 +257,7 @@ func (s *Service) GetPoll(ctx context.Context, bootcampID, pollID, voterID pgtyp
 		VoterID: voterID,
 	})
 	if err == nil {
-		pollData.MyVote = vote.Vote
+		pollData.MyVote = string(vote.Vote)
 	}
 
 	return &PollResponse{
@@ -289,7 +289,7 @@ func (s *Service) VotePoll(ctx context.Context, pollID, voterID pgtype.UUID, vot
 	voteRecord, err := s.queries.CastPollVote(ctx, db.CastPollVoteParams{
 		PollID:  pollID,
 		VoterID: voterID,
-		Vote:    vote,
+		Vote:    db.PollVoteValue(vote),
 	})
 	if err != nil {
 		return nil, false, err
@@ -301,7 +301,7 @@ func (s *Service) VotePoll(ctx context.Context, pollID, voterID pgtype.UUID, vot
 			ID:        voteRecord.ID,
 			PollID:    voteRecord.PollID,
 			VoterID:   voteRecord.VoterID,
-			Vote:      voteRecord.Vote,
+			Vote:      string(voteRecord.Vote),
 			CreatedAt: utils.FormatTimestamp(voteRecord.CreatedAt),
 		},
 	}, isNew, nil
@@ -328,7 +328,7 @@ func (s *Service) GetPollResults(ctx context.Context, pollID pgtype.UUID) (*Poll
 
 	for _, result := range results {
 		count := int32(result.VoteCount) // #nosec G115 - VoteCount is from database count
-		voteBreakdown[result.Vote] = count
+		voteBreakdown[string(result.Vote)] = count
 		totalVotes += count
 	}
 
@@ -364,17 +364,9 @@ func (s *Service) GetPollVotes(ctx context.Context, pollID pgtype.UUID, voteFilt
 	}
 
 	// Count total votes
-	var voteFilterPtr *string
-	if voteFilter != "" {
-		voteFilterPtr = &voteFilter
-	}
-
 	total, err := s.queries.CountPollVotesByPoll(ctx, db.CountPollVotesByPollParams{
-		PollID: pollID,
-		Column2: pgtype.Text{
-			String: voteFilter,
-			Valid:  voteFilter != "",
-		},
+		PollID:  pollID,
+		Column2: voteFilter,
 	})
 	if err != nil {
 		return nil, 0, err
@@ -385,13 +377,10 @@ func (s *Service) GetPollVotes(ctx context.Context, pollID pgtype.UUID, voteFilt
 
 	// Fetch votes with pagination
 	votes, err := s.queries.ListPollVotesByPoll(ctx, db.ListPollVotesByPollParams{
-		PollID: pollID,
-		Column2: pgtype.Text{
-			String: voteFilter,
-			Valid:  voteFilter != "",
-		},
-		Limit:  int32(limit),  // #nosec G115 - limit is bounded by max 100
-		Offset: int32(offset), // #nosec G115 - offset is calculated from bounded values
+		PollID:  pollID,
+		Column2: voteFilter,
+		Limit:   int32(limit),  // #nosec G115 - limit is bounded by max 100
+		Offset:  int32(offset), // #nosec G115 - offset is calculated from bounded values
 	})
 	if err != nil {
 		return nil, 0, err
@@ -404,7 +393,7 @@ func (s *Service) GetPollVotes(ctx context.Context, pollID pgtype.UUID, voteFilt
 			ID:        votes[i].ID,
 			PollID:    votes[i].PollID,
 			VoterID:   votes[i].VoterID,
-			Vote:      votes[i].Vote,
+			Vote:      string(votes[i].Vote),
 			CreatedAt: utils.FormatTimestamp(votes[i].CreatedAt),
 		}
 	}
@@ -448,7 +437,7 @@ func mapLeaderboardEntryToData(entry *db.GetLeaderboardByBootcampRow) Leaderboar
 		Rank:                 entry.Rank,
 		ProblemsCompleted:    entry.ProblemsCompleted,
 		ProblemsAttempted:    entry.ProblemsAttempted,
-		CompletionRate:       entry.CompletionRate,
+		CompletionRate:       fmt.Sprintf("%.2f", entry.CompletionRate),
 		StreakDays:           entry.StreakDays,
 		Score:                entry.Score,
 		CalculatedAt:         utils.FormatTimestamp(entry.CalculatedAt),
@@ -465,7 +454,7 @@ func mapPollToData(poll *db.ListPollsByBootcampRow) PollData {
 		Question:     poll.Question,
 		CreatedBy:    poll.CreatedBy,
 		CreatedAt:    utils.FormatTimestamp(poll.CreatedAt),
-		ProblemTitle: formatNullableText(poll.ProblemTitle),
+		ProblemTitle: poll.ProblemTitle,
 	}
 }
 
