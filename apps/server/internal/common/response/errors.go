@@ -21,10 +21,6 @@ type ErrorDetail struct {
 
 // ValidationError returns a standardized validation error response
 func ValidationError(c *echo.Context, code string, err error) error {
-	message := "Validation failed"
-	if err != nil {
-		message = err.Error()
-	}
 	return NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", code, nil, err)
 }
 
@@ -70,10 +66,6 @@ func BadRequestError(c *echo.Context, code string, message string) error {
 
 // InternalServerError returns a standardized internal server error response
 func InternalServerError(c *echo.Context, code string, err error) error {
-	message := "Internal server error"
-	if err != nil {
-		message = err.Error()
-	}
 	return NewResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", code, nil, err)
 }
 
