@@ -524,14 +524,71 @@ func (h *Handler) UpdateEnrollmentRole(c *echo.Context, body UpdateEnrollmentRol
 // @Tags Bootcamp Enrollments
 // @Accept json
 // @Produce json
+// @Security BearerAuth
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param bootcampId path string true "Bootcamp ID (UUID)"
 // @Param enrollmentId path string true "Enrollment ID (UUID)"
 // @Success 200 {object} GenericResponse "Enrollment removed successfully"
 // @Failure 400 {object} map[string]any "Bad request - invalid enrollment ID"
-// @Router /v1/enrollments/{enrollmentId} [delete]
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - admin role required"
+// @Failure 404 {object} map[string]any "Not found - enrollment does not exist"
+// @Router /v1/organizations/{orgId}/bootcamps/{bootcampId}/enrollments/{enrollmentId} [delete]
 func (h *Handler) RemoveEnrollment(c *echo.Context) error {
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	orgID, err := utils.StringToUUID((*c).Param("orgId"))
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ORGANIZATION_ID", nil, nil)
+	}
+
+	bootcampID, err := utils.StringToUUID((*c).Param("bootcampId"))
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_BOOTCAMP_ID", nil, nil)
+	}
+
 	enrollmentID, err := utils.StringToUUID((*c).Param("enrollmentId"))
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ENROLLMENT_ID", nil, nil)
+	}
+
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_USER_ID", nil, nil)
+	}
+
+	// Get the organization member to verify admin role
+	member, err := h.service.GetMember(c.Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Validate admin role authorization
+	if member.Role != "admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+
+	// Verify enrollment exists and belongs to the bootcamp
+	enrollment, err := h.service.GetEnrollment(c.Request().Context(), enrollmentID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "ENROLLMENT_NOT_FOUND", nil, nil)
+	}
+
+	if enrollment.BootcampID != bootcampID {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "ENROLLMENT_NOT_FOUND", nil, nil)
+	}
+
+	// Verify bootcamp belongs to the organization
+	bootcamp, err := h.service.GetBootcampByID(c.Request().Context(), bootcampID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "BOOTCAMP_NOT_FOUND", nil, nil)
+	}
+
+	if bootcamp.OrganizationID != orgID {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "BOOTCAMP_NOT_FOUND", nil, nil)
 	}
 
 	err = h.service.RemoveEnrollment(c.Request().Context(), enrollmentID)
