@@ -44,7 +44,7 @@ func (s *Service) Signup(ctx context.Context, req SignupRequest) (*AuthResponseD
 		return nil, err
 	}
 
-	return s.generateAuthData(ctx, user)
+	return s.generateAuthData(ctx, &user)
 }
 
 func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponseData, error) {
@@ -57,7 +57,7 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponseDat
 		return nil, errors.New("INVALID_CREDENTIALS")
 	}
 
-	return s.generateAuthData(ctx, user)
+	return s.generateAuthData(ctx, &user)
 }
 
 func (s *Service) Refresh(ctx context.Context, refreshToken string) (*AuthResponseData, error) {
@@ -68,7 +68,7 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*AuthRespon
 	}
 
 	if rt.ExpiresAt.Time.Before(time.Now()) {
-		s.queries.DeleteRefreshToken(ctx, tokenHash)
+		_ = s.queries.DeleteRefreshToken(ctx, tokenHash)
 		return nil, errors.New("EXPIRED_REFRESH_TOKEN")
 	}
 
@@ -78,9 +78,9 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*AuthRespon
 	}
 
 	// Delete old refresh token (rotation)
-	s.queries.DeleteRefreshToken(ctx, tokenHash)
+	_ = s.queries.DeleteRefreshToken(ctx, tokenHash)
 
-	return s.generateAuthData(ctx, user)
+	return s.generateAuthData(ctx, &user)
 }
 
 func (s *Service) Logout(ctx context.Context, refreshToken string) error {
@@ -102,7 +102,7 @@ func (s *Service) GetUserByID(ctx context.Context, userID pgtype.UUID) (*AuthUse
 	}, nil
 }
 
-func (s *Service) generateAuthData(ctx context.Context, user db.User) (*AuthResponseData, error) {
+func (s *Service) generateAuthData(ctx context.Context, user *db.User) (*AuthResponseData, error) {
 	// Generate Access Token
 	payload := utils.TokenPayload{
 		UserID:   utils.UUIDToString(user.ID),

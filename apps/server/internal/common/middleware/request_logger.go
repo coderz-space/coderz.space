@@ -10,7 +10,15 @@ import (
 // Example usage:
 //
 //	e.Use(middleware.ZapLogger())
-var logger, _ = zap.NewProduction()
+var logger *zap.Logger
+
+func init() {
+	var err error
+	logger, err = zap.NewProduction()
+	if err != nil {
+		panic(err)
+	}
+}
 
 func ZapLogger() echo.MiddlewareFunc {
 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{

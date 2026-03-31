@@ -28,6 +28,7 @@ type Querier interface {
 	CountBootcampsByOrg(ctx context.Context, arg CountBootcampsByOrgParams) (int64, error)
 	CountOrganizationAdmins(ctx context.Context, organizationID pgtype.UUID) (int64, error)
 	CountOrganizationMembers(ctx context.Context, organizationID pgtype.UUID) (int64, error)
+	CountTagUsage(ctx context.Context, tagID pgtype.UUID) (int64, error)
 	CountUserOrganizations(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CreateAssignmentGroup(ctx context.Context, arg CreateAssignmentGroupParams) (AssignmentGroup, error)
 	CreateBootcamp(ctx context.Context, arg CreateBootcampParams) (Bootcamp, error)
@@ -45,6 +46,7 @@ type Querier interface {
 	DeletePasswordResetToken(ctx context.Context, tokenHash string) error
 	DeleteProblemResource(ctx context.Context, id pgtype.UUID) error
 	DeleteRefreshToken(ctx context.Context, tokenHash string) error
+	DeleteTag(ctx context.Context, id pgtype.UUID) error
 	DeleteUser(ctx context.Context, id pgtype.UUID) error
 	DeleteUserPasswordResetTokens(ctx context.Context, userID pgtype.UUID) error
 	DeleteUserRefreshTokens(ctx context.Context, userID pgtype.UUID) error
@@ -66,7 +68,11 @@ type Querier interface {
 	GetPoll(ctx context.Context, id pgtype.UUID) (Poll, error)
 	GetPollResults(ctx context.Context, pollID pgtype.UUID) ([]GetPollResultsRow, error)
 	GetProblem(ctx context.Context, id pgtype.UUID) (Problem, error)
+	GetProblemResource(ctx context.Context, id pgtype.UUID) (ProblemResource, error)
 	GetRefreshToken(ctx context.Context, tokenHash string) (RefreshToken, error)
+	GetTag(ctx context.Context, id pgtype.UUID) (Tag, error)
+	GetTagByName(ctx context.Context, arg GetTagByNameParams) (Tag, error)
+	GetTagsByIDs(ctx context.Context, dollar_1 []pgtype.UUID) ([]Tag, error)
 	GetUserByEmail(ctx context.Context, email pgtype.Text) (User, error)
 	GetUserByGoogleId(ctx context.Context, googleID pgtype.Text) (User, error)
 	GetUserById(ctx context.Context, id pgtype.UUID) (User, error)
@@ -94,6 +100,7 @@ type Querier interface {
 	RemoveProblemFromAssignmentGroup(ctx context.Context, arg RemoveProblemFromAssignmentGroupParams) error
 	RemoveTagFromProblem(ctx context.Context, arg RemoveTagFromProblemParams) error
 	ResolveDoubt(ctx context.Context, arg ResolveDoubtParams) (Doubt, error)
+	SearchTagsByName(ctx context.Context, arg SearchTagsByNameParams) ([]Tag, error)
 	UpdateAssignmentProblemProgress(ctx context.Context, arg UpdateAssignmentProblemProgressParams) (AssignmentProblem, error)
 	UpdateAssignmentStatus(ctx context.Context, arg UpdateAssignmentStatusParams) (Assignment, error)
 	UpdateBootcamp(ctx context.Context, arg UpdateBootcampParams) (Bootcamp, error)
@@ -102,6 +109,8 @@ type Querier interface {
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Organization, error)
 	UpdateOrganizationMemberRole(ctx context.Context, arg UpdateOrganizationMemberRoleParams) (OrganizationMember, error)
 	UpdateProblem(ctx context.Context, arg UpdateProblemParams) (Problem, error)
+	UpdateProblemResource(ctx context.Context, arg UpdateProblemResourceParams) (ProblemResource, error)
+	UpdateTag(ctx context.Context, arg UpdateTagParams) (Tag, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpsertLeaderboardEntry(ctx context.Context, arg UpsertLeaderboardEntryParams) (LeaderboardEntry, error)

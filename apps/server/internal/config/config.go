@@ -36,20 +36,19 @@ const envFilePath = ".env"
 type Config struct {
 	AppName               string
 	Version               string
-	Environment           Environment
 	Port                  string
 	JWT_SECRET            string
 	JWT_EXPIRES           string
+	FrontendOrigin        string
+	DB_URL                string
+	Environment           Environment
 	REFRESH_TOKEN_EXPIRES time.Duration
+	MaxDBConnLifetime     time.Duration
+	MaxDBConnIdleTime     time.Duration
+	MaxDBConns            int
+	MinDBConns            int
 	LOG_LEVEL             zapcore.Level
 	FILE_LOG_LEVEL        zapcore.Level
-	FrontendOrigin        string
-	// DB config
-	DB_URL            string
-	MaxDBConns        int
-	MinDBConns        int
-	MaxDBConnLifetime time.Duration
-	MaxDBConnIdleTime time.Duration
 }
 
 func parseLevel(level string) zapcore.Level {

@@ -33,12 +33,18 @@ func (v *validator) ValidateField(field interface{}, tag string) error {
 // registerCustomValidators registers all custom validation functions
 func (v *validator) registerCustomValidators() {
 	// Register alphanum_hyphen validator for slugs
-	v.validator.RegisterValidation("alphanum_hyphen", func(fl go_validator.FieldLevel) bool {
+	err := v.validator.RegisterValidation("alphanum_hyphen", func(fl go_validator.FieldLevel) bool {
 		value := fl.Field().String()
 		// Slug should be lowercase, alphanumeric with hyphens
-		match, _ := regexp.MatchString(`^[a-z0-9-]+$`, value)
+		match, err := regexp.MatchString(`^[a-z0-9-]+$`, value)
+		if err != nil {
+			return false
+		}
 		return match
 	})
+	if err != nil {
+		panic(err)
+	}
 }
 
 // you can register your custom validation

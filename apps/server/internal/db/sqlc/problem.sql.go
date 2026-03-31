@@ -68,6 +68,18 @@ func (q *Queries) ArchiveProblem(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const countTagUsage = `-- name: CountTagUsage :one
+SELECT COUNT(*) FROM problem_tags
+WHERE tag_id = $1
+`
+
+func (q *Queries) CountTagUsage(ctx context.Context, tagID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countTagUsage, tagID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createProblem = `-- name: CreateProblem :one
 INSERT INTO problems (
     organization_id, created_by, title, description, difficulty, external_link
@@ -118,7 +130,6 @@ INSERT INTO tags (
 ) VALUES (
     $1, $2, $3
 )
-ON CONFLICT (organization_id, name) DO UPDATE SET name = EXCLUDED.name
 RETURNING id, organization_id, created_by, name, created_at
 `
 
@@ -152,6 +163,16 @@ func (q *Queries) DeleteProblemResource(ctx context.Context, id pgtype.UUID) err
 	return err
 }
 
+const deleteTag = `-- name: DeleteTag :exec
+DELETE FROM tags
+WHERE id = $1
+`
+
+func (q *Queries) DeleteTag(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteTag, id)
+	return err
+}
+
 const getProblem = `-- name: GetProblem :one
 SELECT id, organization_id, created_by, title, description, difficulty, external_link, archived_at, created_at, updated_at FROM problems
 WHERE id = $1 AND archived_at IS NULL LIMIT 1
@@ -173,6 +194,96 @@ func (q *Queries) GetProblem(ctx context.Context, id pgtype.UUID) (Problem, erro
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const getProblemResource = `-- name: GetProblemResource :one
+SELECT id, problem_id, title, url, created_at FROM problem_resources
+WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetProblemResource(ctx context.Context, id pgtype.UUID) (ProblemResource, error) {
+	row := q.db.QueryRow(ctx, getProblemResource, id)
+	var i ProblemResource
+	err := row.Scan(
+		&i.ID,
+		&i.ProblemID,
+		&i.Title,
+		&i.Url,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getTag = `-- name: GetTag :one
+SELECT id, organization_id, created_by, name, created_at FROM tags
+WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetTag(ctx context.Context, id pgtype.UUID) (Tag, error) {
+	row := q.db.QueryRow(ctx, getTag, id)
+	var i Tag
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.CreatedBy,
+		&i.Name,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getTagByName = `-- name: GetTagByName :one
+SELECT id, organization_id, created_by, name, created_at FROM tags
+WHERE organization_id = $1 AND name = $2 LIMIT 1
+`
+
+type GetTagByNameParams struct {
+	OrganizationID pgtype.UUID `db:"organization_id" json:"organization_id"`
+	Name           string      `db:"name" json:"name"`
+}
+
+func (q *Queries) GetTagByName(ctx context.Context, arg GetTagByNameParams) (Tag, error) {
+	row := q.db.QueryRow(ctx, getTagByName, arg.OrganizationID, arg.Name)
+	var i Tag
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.CreatedBy,
+		&i.Name,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getTagsByIDs = `-- name: GetTagsByIDs :many
+SELECT id, organization_id, created_by, name, created_at FROM tags
+WHERE id = ANY($1::uuid[])
+`
+
+func (q *Queries) GetTagsByIDs(ctx context.Context, dollar_1 []pgtype.UUID) ([]Tag, error) {
+	rows, err := q.db.Query(ctx, getTagsByIDs, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Tag{}
+	for rows.Next() {
+		var i Tag
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.CreatedBy,
+			&i.Name,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listProblemResources = `-- name: ListProblemResources :many
@@ -323,6 +434,43 @@ func (q *Queries) RemoveTagFromProblem(ctx context.Context, arg RemoveTagFromPro
 	return err
 }
 
+const searchTagsByName = `-- name: SearchTagsByName :many
+SELECT id, organization_id, created_by, name, created_at FROM tags
+WHERE organization_id = $1 AND name ILIKE '%' || $2::text || '%'
+ORDER BY name ASC
+`
+
+type SearchTagsByNameParams struct {
+	OrganizationID pgtype.UUID `db:"organization_id" json:"organization_id"`
+	Name           string      `db:"name" json:"name"`
+}
+
+func (q *Queries) SearchTagsByName(ctx context.Context, arg SearchTagsByNameParams) ([]Tag, error) {
+	rows, err := q.db.Query(ctx, searchTagsByName, arg.OrganizationID, arg.Name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Tag{}
+	for rows.Next() {
+		var i Tag
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.CreatedBy,
+			&i.Name,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateProblem = `-- name: UpdateProblem :one
 UPDATE problems
 SET 
@@ -363,6 +511,59 @@ func (q *Queries) UpdateProblem(ctx context.Context, arg UpdateProblemParams) (P
 		&i.ArchivedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateProblemResource = `-- name: UpdateProblemResource :one
+UPDATE problem_resources
+SET 
+    title = COALESCE($2, title),
+    url = COALESCE($3, url)
+WHERE id = $1
+RETURNING id, problem_id, title, url, created_at
+`
+
+type UpdateProblemResourceParams struct {
+	ID    pgtype.UUID `db:"id" json:"id"`
+	Title pgtype.Text `db:"title" json:"title"`
+	Url   pgtype.Text `db:"url" json:"url"`
+}
+
+func (q *Queries) UpdateProblemResource(ctx context.Context, arg UpdateProblemResourceParams) (ProblemResource, error) {
+	row := q.db.QueryRow(ctx, updateProblemResource, arg.ID, arg.Title, arg.Url)
+	var i ProblemResource
+	err := row.Scan(
+		&i.ID,
+		&i.ProblemID,
+		&i.Title,
+		&i.Url,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const updateTag = `-- name: UpdateTag :one
+UPDATE tags
+SET name = $2
+WHERE id = $1
+RETURNING id, organization_id, created_by, name, created_at
+`
+
+type UpdateTagParams struct {
+	ID   pgtype.UUID `db:"id" json:"id"`
+	Name string      `db:"name" json:"name"`
+}
+
+func (q *Queries) UpdateTag(ctx context.Context, arg UpdateTagParams) (Tag, error) {
+	row := q.db.QueryRow(ctx, updateTag, arg.ID, arg.Name)
+	var i Tag
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.CreatedBy,
+		&i.Name,
+		&i.CreatedAt,
 	)
 	return i, err
 }

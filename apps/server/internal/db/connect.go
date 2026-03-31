@@ -17,8 +17,12 @@ func InitDB(cfg *config.Config) (*pgxpool.Pool, error) {
 	}
 
 	// set pool configuration
-	config.MaxConns = int32(cfg.MaxDBConns)
-	config.MinConns = int32(cfg.MinDBConns)
+	if cfg.MaxDBConns > 0 {
+		config.MaxConns = int32(cfg.MaxDBConns)
+	}
+	if cfg.MinDBConns > 0 {
+		config.MinConns = int32(cfg.MinDBConns)
+	}
 	config.MaxConnLifetime = cfg.MaxDBConnLifetime
 	config.MaxConnIdleTime = cfg.MaxDBConnIdleTime
 

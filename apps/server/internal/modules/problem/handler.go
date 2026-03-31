@@ -47,12 +47,21 @@ func (h *Handler) CreateProblem(c *echo.Context, body CreateProblemRequest) erro
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ORGANIZATION_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
-	_ = body
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
+	// Create problem
+	problem, err := h.service.CreateProblem((*c).Request().Context(), body, orgID, userID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "ORGANIZATION_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusCreated, "CREATED", "PROBLEM_CREATED", problem, nil)
 }
 
 // ListProblems godoc
@@ -87,11 +96,24 @@ func (h *Handler) ListProblems(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ORGANIZATION_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
+	// Verify user is a member of the organization
+	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// List problems
+	problems, err := h.service.ListProblems((*c).Request().Context(), orgID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "SUCCESS", "PROBLEMS_RETRIEVED", problems, nil)
 }
 
 // GetProblem godoc
@@ -125,12 +147,32 @@ func (h *Handler) GetProblem(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_PROBLEM_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
-	_ = problemID
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
+	// Verify user is a member of the organization
+	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Get problem
+	problem, err := h.service.GetProblem((*c).Request().Context(), problemID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	// Verify problem belongs to the organization
+	if problem.OrganizationID.Bytes != orgID.Bytes {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "SUCCESS", "PROBLEM_RETRIEVED", problem, nil)
 }
 
 // UpdateProblem godoc
@@ -165,13 +207,40 @@ func (h *Handler) UpdateProblem(c *echo.Context, body UpdateProblemRequest) erro
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_PROBLEM_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
-	_ = problemID
-	_ = body
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
+	// Verify user is a member of the organization
+	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Verify problem exists and belongs to organization
+	existingProblem, err := h.service.GetProblem((*c).Request().Context(), problemID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	if existingProblem.OrganizationID.Bytes != orgID.Bytes {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+	}
+
+	// Update problem
+	problem, err := h.service.UpdateProblem((*c).Request().Context(), body, problemID)
+	if err != nil {
+		if err.Error() == "NO_FIELDS_PROVIDED" {
+			return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "NO_FIELDS_PROVIDED", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "SUCCESS", "PROBLEM_UPDATED", problem, nil)
 }
 
 // DeleteProblem godoc
@@ -206,12 +275,37 @@ func (h *Handler) DeleteProblem(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_PROBLEM_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
-	_ = problemID
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
+	// Verify user is a member of the organization
+	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Verify problem exists and belongs to organization
+	existingProblem, err := h.service.GetProblem((*c).Request().Context(), problemID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	if existingProblem.OrganizationID.Bytes != orgID.Bytes {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+	}
+
+	// Delete (archive) problem
+	err = h.service.DeleteProblem((*c).Request().Context(), problemID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "SUCCESS", "PROBLEM_ARCHIVED", map[string]any{"message": "Problem archived successfully"}, nil)
 }
 
 // Tag handlers
@@ -242,12 +336,27 @@ func (h *Handler) CreateTag(c *echo.Context, body CreateTagRequest) error {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ORGANIZATION_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
-	_ = body
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
+	// Verify user is a member of the organization
+	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Create tag
+	tag, err := h.service.CreateTag((*c).Request().Context(), body, orgID, userID)
+	if err != nil {
+		if err.Error() == "TAG_ALREADY_EXISTS" {
+			return response.NewResponse(c, http.StatusConflict, "CONFLICT", "TAG_NAME_ALREADY_EXISTS", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusCreated, "CREATED", "TAG_CREATED", tag, nil)
 }
 
 // ListTags godoc
@@ -275,12 +384,16 @@ func (h *Handler) ListTags(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ORGANIZATION_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
-}
+	// Verify user is a member of the organization
+	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+
 
 // UpdateTag godoc
 // @Summary Update tag name

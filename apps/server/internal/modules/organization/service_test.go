@@ -193,9 +193,9 @@ func TestSlugUniquenessValidation(t *testing.T) {
 func TestStatusTransitionValidation(t *testing.T) {
 	tests := []struct {
 		name          string
+		expectedError string
 		currentStatus db.OrgStatus
 		canApprove    bool
-		expectedError string
 	}{
 		{
 			name:          "pending_approval can be approved",

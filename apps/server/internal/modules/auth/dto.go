@@ -18,9 +18,9 @@ type SignupRequest struct {
 // AuthUser represents the authenticated user data
 type AuthUser struct {
 	ID            pgtype.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	EmailVerified bool        `json:"emailVerified" example:"false"`
 	Name          string      `json:"name" example:"John Doe"`
 	Email         string      `json:"email" example:"user@example.com"`
-	EmailVerified bool        `json:"emailVerified" example:"false"`
 }
 
 // AuthResponseData contains authentication tokens and user data
@@ -32,8 +32,8 @@ type AuthResponseData struct {
 
 // AuthResponse is the response for login and signup
 type AuthResponse struct {
-	Success bool             `json:"success" example:"true"`
 	Data    AuthResponseData `json:"data"`
+	Success bool             `json:"success" example:"true"`
 }
 
 // RefreshResponseData contains the new access token
@@ -43,14 +43,14 @@ type RefreshResponseData struct {
 
 // RefreshResponse is the response for token refresh
 type RefreshResponse struct {
-	Success bool                `json:"success" example:"true"`
 	Data    RefreshResponseData `json:"data"`
+	Success bool                `json:"success" example:"true"`
 }
 
 // UserProfileResponse is the response for user profile
 type UserProfileResponse struct {
-	Success bool     `json:"success" example:"true"`
 	Data    AuthUser `json:"data"`
+	Success bool     `json:"success" example:"true"`
 }
 
 // ForgotPasswordRequest represents the forgot password request
@@ -66,6 +66,6 @@ type ResetPasswordRequest struct {
 
 // GenericResponse is a generic success response
 type GenericResponse struct {
-	Success bool           `json:"success" example:"true"`
 	Data    map[string]any `json:"data"`
+	Success bool           `json:"success" example:"true"`
 }

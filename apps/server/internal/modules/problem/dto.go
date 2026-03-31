@@ -19,9 +19,6 @@ type UpdateProblemRequest struct {
 }
 
 type ProblemData struct {
-	ID             pgtype.UUID    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	OrganizationID pgtype.UUID    `json:"organizationId" example:"660e8400-e29b-41d4-a716-446655440000"`
-	CreatedBy      pgtype.UUID    `json:"createdBy" example:"770e8400-e29b-41d4-a716-446655440000"`
 	Title          string         `json:"title" example:"Two Sum"`
 	Description    string         `json:"description" example:"Given an array of integers, return indices of the two numbers that add up to a specific target."`
 	Difficulty     string         `json:"difficulty" example:"easy"`
@@ -31,17 +28,20 @@ type ProblemData struct {
 	ArchivedAt     string         `json:"archivedAt,omitempty" example:""`
 	Tags           []TagData      `json:"tags,omitempty"`
 	Resources      []ResourceData `json:"resources,omitempty"`
+	ID             pgtype.UUID    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	OrganizationID pgtype.UUID    `json:"organizationId" example:"660e8400-e29b-41d4-a716-446655440000"`
+	CreatedBy      pgtype.UUID    `json:"createdBy" example:"770e8400-e29b-41d4-a716-446655440000"`
 }
 
 type ProblemResponse struct {
-	Success bool        `json:"success" example:"true"`
 	Data    ProblemData `json:"data"`
+	Success bool        `json:"success" example:"true"`
 }
 
 type ProblemListResponse struct {
-	Success bool            `json:"success" example:"true"`
-	Data    []ProblemData   `json:"data"`
 	Meta    *PaginationMeta `json:"meta,omitempty"`
+	Data    []ProblemData   `json:"data"`
+	Success bool            `json:"success" example:"true"`
 }
 
 // Tag DTOs
@@ -59,20 +59,20 @@ type AttachTagsRequest struct {
 }
 
 type TagData struct {
-	ID             pgtype.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	OrganizationID pgtype.UUID `json:"organizationId" example:"660e8400-e29b-41d4-a716-446655440000"`
 	Name           string      `json:"name" example:"arrays"`
 	CreatedAt      string      `json:"createdAt" example:"2024-01-01T10:00:00Z"`
+	ID             pgtype.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	OrganizationID pgtype.UUID `json:"organizationId" example:"660e8400-e29b-41d4-a716-446655440000"`
 }
 
 type TagResponse struct {
-	Success bool    `json:"success" example:"true"`
 	Data    TagData `json:"data"`
+	Success bool    `json:"success" example:"true"`
 }
 
 type TagListResponse struct {
-	Success bool      `json:"success" example:"true"`
 	Data    []TagData `json:"data"`
+	Success bool      `json:"success" example:"true"`
 }
 
 // Resource DTOs
@@ -88,21 +88,21 @@ type UpdateResourceRequest struct {
 }
 
 type ResourceData struct {
-	ID        pgtype.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	ProblemID pgtype.UUID `json:"problemId" example:"660e8400-e29b-41d4-a716-446655440000"`
 	Title     string      `json:"title" example:"Two Sum Solution Explanation"`
 	URL       string      `json:"url" example:"https://www.youtube.com/watch?v=example"`
 	CreatedAt string      `json:"createdAt" example:"2024-01-01T10:00:00Z"`
+	ID        pgtype.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	ProblemID pgtype.UUID `json:"problemId" example:"660e8400-e29b-41d4-a716-446655440000"`
 }
 
 type ResourceResponse struct {
-	Success bool         `json:"success" example:"true"`
 	Data    ResourceData `json:"data"`
+	Success bool         `json:"success" example:"true"`
 }
 
 type ResourceListResponse struct {
-	Success bool           `json:"success" example:"true"`
 	Data    []ResourceData `json:"data"`
+	Success bool           `json:"success" example:"true"`
 }
 
 // Common DTOs
@@ -114,6 +114,6 @@ type PaginationMeta struct {
 }
 
 type GenericResponse struct {
-	Success bool           `json:"success" example:"true"`
 	Data    map[string]any `json:"data"`
+	Success bool           `json:"success" example:"true"`
 }

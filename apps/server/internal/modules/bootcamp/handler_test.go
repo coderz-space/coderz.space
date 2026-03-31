@@ -190,9 +190,9 @@ func TestGetBootcampAccessValidation(t *testing.T) {
 	tests := []struct {
 		name           string
 		userRole       string
-		isEnrolled     bool
-		expectedStatus int
 		scenario       string
+		expectedStatus int
+		isEnrolled     bool
 	}{
 		{
 			name:           "admin can access any bootcamp in organization",
@@ -349,8 +349,8 @@ func TestUpdateBootcampAdminAuthorization(t *testing.T) {
 	tests := []struct {
 		name           string
 		userRole       string
-		expectedStatus int
 		scenario       string
+		expectedStatus int
 	}{
 		{
 			name:           "admin can update bootcamp",
@@ -390,8 +390,8 @@ func TestUpdateBootcampFieldValidation(t *testing.T) {
 	tests := []struct {
 		name           string
 		scenario       string
-		expectedStatus int
 		expectedError  string
+		expectedStatus int
 	}{
 		{
 			name:           "rejects update with no fields",
@@ -442,9 +442,9 @@ func TestUpdateBootcampFieldValidation(t *testing.T) {
 func TestUpdateBootcampNameConstraints(t *testing.T) {
 	tests := []struct {
 		name           string
+		scenario       string
 		nameLength     int
 		expectedStatus int
-		scenario       string
 	}{
 		{
 			name:           "rejects name shorter than 3 characters",
@@ -490,8 +490,8 @@ func TestUpdateBootcampDateConstraints(t *testing.T) {
 	tests := []struct {
 		name           string
 		scenario       string
-		expectedStatus int
 		expectedError  string
+		expectedStatus int
 	}{
 		{
 			name:           "rejects start_date after end_date",
@@ -653,9 +653,9 @@ func TestDeactivateBootcampAdminAuthorization(t *testing.T) {
 	tests := []struct {
 		name           string
 		userRole       string
-		expectSuccess  bool
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
+		expectSuccess  bool
 	}{
 		{
 			name:           "admin can deactivate bootcamp",
@@ -699,9 +699,9 @@ func TestDeactivateBootcampCrossOrgValidation(t *testing.T) {
 		name           string
 		bootcampOrgID  string
 		requestOrgID   string
-		expectSuccess  bool
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
+		expectSuccess  bool
 	}{
 		{
 			name:           "can deactivate bootcamp in own organization",
@@ -738,9 +738,9 @@ func TestDeactivateBootcampCrossOrgValidation(t *testing.T) {
 func TestDeactivateBootcampAuthentication(t *testing.T) {
 	tests := []struct {
 		name           string
-		hasAuth        bool
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
+		hasAuth        bool
 	}{
 		{
 			name:           "authenticated user can attempt deactivation",
@@ -773,9 +773,9 @@ func TestDeactivateBootcampAuthentication(t *testing.T) {
 func TestDeactivateBootcampNotFound(t *testing.T) {
 	tests := []struct {
 		name           string
-		bootcampExists bool
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
+		bootcampExists bool
 	}{
 		{
 			name:           "existing bootcamp can be deactivated",
@@ -836,8 +836,8 @@ func TestDeactivateBootcampInvalidParameters(t *testing.T) {
 		name           string
 		orgID          string
 		bootcampID     string
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
 	}{
 		{
 			name:           "valid UUIDs proceed to authorization",
@@ -879,9 +879,9 @@ func TestDeactivateBootcampInvalidParameters(t *testing.T) {
 func TestDeactivateBootcampMembershipValidation(t *testing.T) {
 	tests := []struct {
 		name           string
-		isMember       bool
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
+		isMember       bool
 	}{
 		{
 			name:           "organization member can attempt deactivation",
@@ -915,9 +915,9 @@ func TestEnrollMemberAdminAuthorization(t *testing.T) {
 	tests := []struct {
 		name           string
 		userRole       string
-		expectSuccess  bool
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
+		expectSuccess  bool
 	}{
 		{
 			name:           "admin can enroll members",
@@ -961,9 +961,9 @@ func TestEnrollMemberCrossOrgValidation(t *testing.T) {
 		name           string
 		memberOrgID    string
 		bootcampOrgID  string
-		expectSuccess  bool
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
+		expectSuccess  bool
 	}{
 		{
 			name:           "can enroll member from same organization",
@@ -1000,10 +1000,10 @@ func TestEnrollMemberCrossOrgValidation(t *testing.T) {
 func TestEnrollMemberBootcampActiveValidation(t *testing.T) {
 	tests := []struct {
 		name           string
+		expectedCode   string
+		expectedStatus int
 		bootcampActive bool
 		expectSuccess  bool
-		expectedStatus int
-		expectedCode   string
 	}{
 		{
 			name:           "can enroll in active bootcamp",
@@ -1038,10 +1038,10 @@ func TestEnrollMemberBootcampActiveValidation(t *testing.T) {
 func TestEnrollMemberUniqueConstraint(t *testing.T) {
 	tests := []struct {
 		name            string
+		scenario        string
+		expectedStatus  int
 		alreadyEnrolled bool
 		expectSuccess   bool
-		expectedStatus  int
-		scenario        string
 	}{
 		{
 			name:            "can enroll member not yet enrolled",
@@ -1077,9 +1077,9 @@ func TestEnrollMemberRoleValidation(t *testing.T) {
 	tests := []struct {
 		name           string
 		role           string
-		expectSuccess  bool
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
+		expectSuccess  bool
 	}{
 		{
 			name:           "can enroll as mentor",
@@ -1121,9 +1121,9 @@ func TestEnrollMemberRoleValidation(t *testing.T) {
 func TestEnrollMemberAuthentication(t *testing.T) {
 	tests := []struct {
 		name           string
-		hasAuth        bool
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
+		hasAuth        bool
 	}{
 		{
 			name:           "authenticated admin can enroll members",
@@ -1156,9 +1156,9 @@ func TestEnrollMemberAuthentication(t *testing.T) {
 func TestEnrollMemberMembershipValidation(t *testing.T) {
 	tests := []struct {
 		name           string
-		isMember       bool
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
+		isMember       bool
 	}{
 		{
 			name:           "organization member can enroll others",
@@ -1194,8 +1194,8 @@ func TestEnrollMemberInvalidParameters(t *testing.T) {
 		orgID          string
 		bootcampID     string
 		memberID       string
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
 	}{
 		{
 			name:           "valid UUIDs proceed to enrollment",
@@ -1249,9 +1249,9 @@ func TestEnrollMemberInvalidParameters(t *testing.T) {
 func TestEnrollMemberBootcampNotFound(t *testing.T) {
 	tests := []struct {
 		name           string
-		bootcampExists bool
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
+		bootcampExists bool
 	}{
 		{
 			name:           "existing bootcamp allows enrollment",

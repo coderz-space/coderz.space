@@ -39,13 +39,39 @@ INSERT INTO tags (
 ) VALUES (
     $1, $2, $3
 )
-ON CONFLICT (organization_id, name) DO UPDATE SET name = EXCLUDED.name
 RETURNING *;
+
+-- name: GetTag :one
+SELECT * FROM tags
+WHERE id = $1 LIMIT 1;
+
+-- name: GetTagByName :one
+SELECT * FROM tags
+WHERE organization_id = $1 AND name = $2 LIMIT 1;
 
 -- name: ListTagsByOrg :many
 SELECT * FROM tags
 WHERE organization_id = $1
 ORDER BY name ASC;
+
+-- name: SearchTagsByName :many
+SELECT * FROM tags
+WHERE organization_id = $1 AND name ILIKE '%' || sqlc.arg('name')::text || '%'
+ORDER BY name ASC;
+
+-- name: UpdateTag :one
+UPDATE tags
+SET name = $2
+WHERE id = $1
+RETURNING *;
+
+-- name: DeleteTag :exec
+DELETE FROM tags
+WHERE id = $1;
+
+-- name: CountTagUsage :one
+SELECT COUNT(*) FROM problem_tags
+WHERE tag_id = $1;
 
 -- name: AddTagToProblem :exec
 INSERT INTO problem_tags (problem_id, tag_id)
@@ -61,6 +87,10 @@ SELECT t.* FROM tags t
 JOIN problem_tags pt ON t.id = pt.tag_id
 WHERE pt.problem_id = $1;
 
+-- name: GetTagsByIDs :many
+SELECT * FROM tags
+WHERE id = ANY($1::uuid[]);
+
 -- Resources
 
 -- name: AddProblemResource :one
@@ -71,10 +101,22 @@ INSERT INTO problem_resources (
 )
 RETURNING *;
 
+-- name: GetProblemResource :one
+SELECT * FROM problem_resources
+WHERE id = $1 LIMIT 1;
+
 -- name: ListProblemResources :many
 SELECT * FROM problem_resources
 WHERE problem_id = $1
 ORDER BY created_at ASC;
+
+-- name: UpdateProblemResource :one
+UPDATE problem_resources
+SET 
+    title = COALESCE(sqlc.narg('title'), title),
+    url = COALESCE(sqlc.narg('url'), url)
+WHERE id = $1
+RETURNING *;
 
 -- name: DeleteProblemResource :exec
 DELETE FROM problem_resources
