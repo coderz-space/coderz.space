@@ -325,6 +325,17 @@ func (s *Service) GetMemberID(ctx context.Context, orgID pgtype.UUID, userID pgt
 	return member.ID, nil
 }
 
+func (s *Service) GetMember(ctx context.Context, orgID pgtype.UUID, userID pgtype.UUID) (*db.OrganizationMember, error) {
+	member, err := s.queries.GetOrganizationMember(ctx, db.GetOrganizationMemberParams{
+		OrganizationID: orgID,
+		UserID:         userID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &member, nil
+}
+
 func (s *Service) mapBootcampToData(bootcamp db.Bootcamp) *BootcampData {
 	return &BootcampData{
 		ID:             bootcamp.ID,
