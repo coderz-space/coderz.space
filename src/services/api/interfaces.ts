@@ -10,6 +10,7 @@ import {
   LeaderboardEntry,
   Doubt,
   PaginatedResponse,
+  LeaderboardPeriod,
 
   // ✅ NEW TYPES
   SignupPayload,
@@ -87,6 +88,12 @@ export interface IMenteeService {
     orgId: string;
     bootcampId: string;
   }): Promise<LeaderboardEntry[]>;
+
+  getLeaderboard(params: {
+    orgId: string;
+    bootcampId: string
+  },
+    period?: LeaderboardPeriod): Promise<LeaderboardEntry[]>;
 }
 
 // ─── Mentor ───────────────────────────────────────────────────
