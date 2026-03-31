@@ -1,5 +1,319 @@
+basePath: /api
+definitions:
+  bootcamp.BootcampData:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      description:
+        type: string
+      endDate:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        type: string
+      organizationId:
+        type: string
+      startDate:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  bootcamp.BootcampListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/bootcamp.BootcampData'
+        type: array
+      meta:
+        $ref: '#/definitions/bootcamp.PaginationMeta'
+      success:
+        type: boolean
+    type: object
+  bootcamp.BootcampResponse:
+    properties:
+      data:
+        $ref: '#/definitions/bootcamp.BootcampData'
+      success:
+        type: boolean
+    type: object
+  bootcamp.CreateBootcampRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      endDate:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        maxLength: 120
+        minLength: 3
+        type: string
+      startDate:
+        type: string
+    required:
+    - name
+    type: object
+  bootcamp.EnrollMemberRequest:
+    properties:
+      organizationMemberId:
+        type: string
+      role:
+        enum:
+        - mentor
+        - mentee
+        type: string
+    required:
+    - organizationMemberId
+    - role
+    type: object
+  bootcamp.EnrollmentData:
+    properties:
+      avatarUrl:
+        type: string
+      bootcampId:
+        type: string
+      email:
+        type: string
+      enrolledAt:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      orgRole:
+        type: string
+      organizationMemberId:
+        type: string
+      role:
+        type: string
+      status:
+        type: string
+    type: object
+  bootcamp.EnrollmentListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/bootcamp.EnrollmentData'
+        type: array
+      meta:
+        $ref: '#/definitions/bootcamp.PaginationMeta'
+      success:
+        type: boolean
+    type: object
+  bootcamp.EnrollmentResponse:
+    properties:
+      data:
+        $ref: '#/definitions/bootcamp.EnrollmentData'
+      success:
+        type: boolean
+    type: object
+  bootcamp.GenericResponse:
+    properties:
+      data:
+        additionalProperties: {}
+        type: object
+      success:
+        type: boolean
+    type: object
+  bootcamp.PaginationMeta:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  bootcamp.UpdateBootcampRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      endDate:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        maxLength: 120
+        minLength: 3
+        type: string
+      startDate:
+        type: string
+    type: object
+  bootcamp.UpdateEnrollmentRoleRequest:
+    properties:
+      role:
+        enum:
+        - mentor
+        - mentee
+        type: string
+    required:
+    - role
+    type: object
+  internal_modules_organization.AddMemberRequest:
+    properties:
+      role:
+        enum:
+        - admin
+        - mentor
+        - mentee
+        type: string
+      userId:
+        type: string
+    required:
+    - role
+    - userId
+    type: object
+  internal_modules_organization.CreateOrganizationRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      name:
+        maxLength: 120
+        minLength: 3
+        type: string
+      slug:
+        maxLength: 80
+        minLength: 3
+        type: string
+    required:
+    - name
+    - slug
+    type: object
+  internal_modules_organization.GenericResponse:
+    properties:
+      data:
+        additionalProperties: {}
+        type: object
+      success:
+        type: boolean
+    type: object
+  internal_modules_organization.MemberData:
+    properties:
+      avatarUrl:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      joinedAt:
+        type: string
+      name:
+        type: string
+      organizationId:
+        type: string
+      role:
+        type: string
+      userId:
+        type: string
+    type: object
+  internal_modules_organization.MemberListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_organization.MemberData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_organization.PaginationMeta'
+      success:
+        type: boolean
+    type: object
+  internal_modules_organization.MemberResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_organization.MemberData'
+      success:
+        type: boolean
+    type: object
+  internal_modules_organization.OrganizationData:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      slug:
+        type: string
+      status:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  internal_modules_organization.OrganizationListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_organization.OrganizationData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_organization.PaginationMeta'
+      success:
+        type: boolean
+    type: object
+  internal_modules_organization.OrganizationResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_organization.OrganizationData'
+      success:
+        type: boolean
+    type: object
+  internal_modules_organization.PaginationMeta:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  internal_modules_organization.UpdateMemberRoleRequest:
+    properties:
+      role:
+        enum:
+        - admin
+        - mentor
+        - mentee
+        type: string
+    required:
+    - role
+    type: object
+  internal_modules_organization.UpdateOrganizationRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      name:
+        maxLength: 120
+        minLength: 3
+        type: string
+      slug:
+        maxLength: 80
+        minLength: 3
+        type: string
+    type: object
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: support@coderz.space
+    name: API Support
+  description: Comprehensive bootcamp management platform API with multi-tenant architecture
+    and role-based access control
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Coderz.space Bootcamp Management API
+  version: "1.0"
 paths:
   /health:
     get:
@@ -16,4 +330,853 @@ paths:
       summary: Health check
       tags:
       - health
+  /v1/bootcamps/{bootcampId}/enrollments:
+    get:
+      consumes:
+      - application/json
+      description: Get all enrollments for a bootcamp
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of enrollments
+          schema:
+            $ref: '#/definitions/bootcamp.EnrollmentListResponse'
+        "400":
+          description: Bad request - invalid bootcamp ID
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List bootcamp enrollments
+      tags:
+      - Bootcamp Enrollments
+  /v1/enrollments/{enrollmentId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a member's enrollment from a bootcamp (admin only)
+      parameters:
+      - description: Enrollment ID (UUID)
+        in: path
+        name: enrollmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Enrollment removed successfully
+          schema:
+            $ref: '#/definitions/bootcamp.GenericResponse'
+        "400":
+          description: Bad request - invalid enrollment ID
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Remove enrollment
+      tags:
+      - Bootcamp Enrollments
+    patch:
+      consumes:
+      - application/json
+      description: Update the role of a bootcamp enrollment (admin only)
+      parameters:
+      - description: Enrollment ID (UUID)
+        in: path
+        name: enrollmentId
+        required: true
+        type: string
+      - description: New role
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/bootcamp.UpdateEnrollmentRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Enrollment role updated successfully
+          schema:
+            $ref: '#/definitions/bootcamp.EnrollmentResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update enrollment role
+      tags:
+      - Bootcamp Enrollments
+  /v1/organizations:
+    get:
+      consumes:
+      - application/json
+      description: Get all organizations where the authenticated user is a member
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of organizations with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_organization.OrganizationListResponse'
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List user's organizations
+      tags:
+      - Organizations
+    post:
+      consumes:
+      - application/json
+      description: Create a new organization with PENDING_APPROVAL status and auto-assign
+        creator as admin
+      parameters:
+      - description: Organization details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_organization.CreateOrganizationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Organization created successfully
+          schema:
+            $ref: '#/definitions/internal_modules_organization.OrganizationResponse'
+        "400":
+          description: Bad request - validation error or invalid slug format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - slug already exists
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new organization
+      tags:
+      - Organizations
+  /v1/organizations/{orgId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve organization details by organization ID
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization details
+          schema:
+            $ref: '#/definitions/internal_modules_organization.OrganizationResponse'
+        "400":
+          description: Bad request - invalid organization ID
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - organization does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get organization by ID
+      tags:
+      - Organizations
+    patch:
+      consumes:
+      - application/json
+      description: Update organization information (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Updated organization details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_organization.UpdateOrganizationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_organization.OrganizationResponse'
+        "400":
+          description: Bad request - validation error or no fields provided
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - slug already exists
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update organization details
+      tags:
+      - Organizations
+  /v1/organizations/{orgId}/approve:
+    post:
+      consumes:
+      - application/json
+      description: Change organization status from PENDING_APPROVAL to APPROVED
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization approved successfully
+          schema:
+            $ref: '#/definitions/internal_modules_organization.OrganizationResponse'
+        "400":
+          description: Bad request - invalid organization ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - super admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - organization does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - organization not in pending status
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Approve organization (super admin only)
+      tags:
+      - Organizations
+  /v1/organizations/{orgId}/bootcamps:
+    get:
+      consumes:
+      - application/json
+      description: Get bootcamps with role-based filtering (mentees see only enrolled
+        bootcamps)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by active status
+        in: query
+        name: is_active
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of bootcamps with pagination
+          schema:
+            $ref: '#/definitions/bootcamp.BootcampListResponse'
+        "400":
+          description: Bad request - invalid organization ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not an organization member
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List bootcamps
+      tags:
+      - Bootcamps
+    post:
+      consumes:
+      - application/json
+      description: Create a new bootcamp within an organization (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/bootcamp.CreateBootcampRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Bootcamp created successfully
+          schema:
+            $ref: '#/definitions/bootcamp.BootcampResponse'
+        "400":
+          description: Bad request - validation error or invalid date range
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not an organization member
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - organization does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - organization not approved
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new bootcamp
+      tags:
+      - Bootcamps
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve bootcamp details by ID with role-based access control
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bootcamp details
+          schema:
+            $ref: '#/definitions/bootcamp.BootcampResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not an organization member
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - bootcamp does not exist or not enrolled
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get bootcamp by ID
+      tags:
+      - Bootcamps
+    patch:
+      consumes:
+      - application/json
+      description: Update bootcamp information (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Updated bootcamp details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/bootcamp.UpdateBootcampRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bootcamp updated successfully
+          schema:
+            $ref: '#/definitions/bootcamp.BootcampResponse'
+        "400":
+          description: Bad request - validation error or no fields provided
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - bootcamp does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update bootcamp details
+      tags:
+      - Bootcamps
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/deactivate:
+    post:
+      consumes:
+      - application/json
+      description: Set bootcamp is_active to false (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bootcamp deactivated successfully
+          schema:
+            $ref: '#/definitions/bootcamp.GenericResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - bootcamp does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Deactivate bootcamp
+      tags:
+      - Bootcamps
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/enrollments:
+    post:
+      consumes:
+      - application/json
+      description: Enroll an organization member into a bootcamp with specified role
+        (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Enrollment details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/bootcamp.EnrollMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Member enrolled successfully
+          schema:
+            $ref: '#/definitions/bootcamp.EnrollmentResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - bootcamp does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - bootcamp inactive or cross-org violation
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Enroll member in bootcamp
+      tags:
+      - Bootcamp Enrollments
+  /v1/organizations/{orgId}/members:
+    get:
+      consumes:
+      - application/json
+      description: Get all members of an organization with pagination
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of members with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_organization.MemberListResponse'
+        "400":
+          description: Bad request - invalid organization ID
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List organization members
+      tags:
+      - Organization Members
+    post:
+      consumes:
+      - application/json
+      description: Add a new member to the organization with specified role (admin
+        only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Member details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_organization.AddMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Member added successfully
+          schema:
+            $ref: '#/definitions/internal_modules_organization.MemberResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add member to organization
+      tags:
+      - Organization Members
+  /v1/organizations/{orgId}/members/{userId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a member from the organization (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Member removed successfully
+          schema:
+            $ref: '#/definitions/internal_modules_organization.GenericResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - member does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - cannot remove last admin
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove member from organization
+      tags:
+      - Organization Members
+    patch:
+      consumes:
+      - application/json
+      description: Update the role of an organization member (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: New role
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_organization.UpdateMemberRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Member role updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_organization.MemberResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - member does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - cannot remove last admin
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update member role
+      tags:
+      - Organization Members
+  /v1/organizations/pending:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all organizations with PENDING_APPROVAL status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of pending organizations
+          schema:
+            $ref: '#/definitions/internal_modules_organization.OrganizationListResponse'
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - super admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get pending organizations (super admin only)
+      tags:
+      - Organizations
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
+tags:
+- description: Organization management endpoints
+  name: Organizations
+- description: Organization member management endpoints
+  name: Organization Members
+- description: Bootcamp lifecycle management endpoints
+  name: Bootcamps
+- description: Bootcamp enrollment management endpoints
+  name: Bootcamp Enrollments

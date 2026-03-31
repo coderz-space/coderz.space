@@ -15,13 +15,36 @@ import (
 	"go.uber.org/zap"
 )
 
-
-
-// @title Coderz.space API
+// @title Coderz.space Bootcamp Management API
 // @version 1.0
-// @description This is a server for Coderz.space
+// @description Comprehensive bootcamp management platform API with multi-tenant architecture and role-based access control
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.email support@coderz.space
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
 // @host localhost:8080
 // @BasePath /api
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
+
+// @tag.name Organizations
+// @tag.description Organization management endpoints
+
+// @tag.name Organization Members
+// @tag.description Organization member management endpoints
+
+// @tag.name Bootcamps
+// @tag.description Bootcamp lifecycle management endpoints
+
+// @tag.name Bootcamp Enrollments
+// @tag.description Bootcamp enrollment management endpoints
 func main() {
 
 	cfg := config.LoadConfig()
