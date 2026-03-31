@@ -30,6 +30,7 @@ WHERE om.user_id = $1;
 UPDATE organizations
 SET 
     name = COALESCE(sqlc.narg('name'), name),
+    slug = COALESCE(sqlc.narg('slug'), slug),
     description = COALESCE(sqlc.narg('description'), description),
     status = COALESCE(sqlc.narg('status'), status),
     updated_at = CURRENT_TIMESTAMP

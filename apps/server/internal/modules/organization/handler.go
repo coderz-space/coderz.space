@@ -115,8 +115,38 @@ func (h *Handler) UpdateOrganization(c *echo.Context, body UpdateOrganizationReq
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ORGANIZATION_ID", nil, nil)
 	}
 
+	// Get authenticated user
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_USER_ID", nil, nil)
+	}
+
+	// Check if user is an admin of the organization
+	member, err := h.service.GetMember(c.Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	if member.Role != "admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+
 	data, err := h.service.UpdateOrganization(c.Request().Context(), orgID, body)
 	if err != nil {
+		if err.Error() == "NO_FIELDS_PROVIDED" {
+			return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "NO_FIELDS_PROVIDED", nil, nil)
+		}
+		if err.Error() == "SLUG_ALREADY_EXISTS" {
+			return response.NewResponse(c, http.StatusConflict, "CONFLICT", "SLUG_ALREADY_EXISTS", nil, nil)
+		}
+		if err.Error() == "INVALID_SLUG_FORMAT" {
+			return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_SLUG_FORMAT", nil, nil)
+		}
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", err.Error(), nil, nil)
 	}
 
@@ -127,6 +157,16 @@ func (h *Handler) UpdateOrganization(c *echo.Context, body UpdateOrganizationReq
 }
 
 func (h *Handler) ApproveOrganization(c *echo.Context) error {
+	// Validate super_admin role
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	if claims.Role != "super_admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "SUPER_ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+
 	orgID, err := utils.StringToUUID((*c).Param("orgId"))
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ORGANIZATION_ID", nil, nil)
@@ -134,6 +174,12 @@ func (h *Handler) ApproveOrganization(c *echo.Context) error {
 
 	data, err := h.service.ApproveOrganization(c.Request().Context(), orgID)
 	if err != nil {
+		if err.Error() == "ORGANIZATION_NOT_FOUND" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "ORGANIZATION_NOT_FOUND", nil, nil)
+		}
+		if err.Error() == "ORGANIZATION_NOT_PENDING" {
+			return response.NewResponse(c, http.StatusConflict, "CONFLICT", "ORGANIZATION_NOT_PENDING", nil, nil)
+		}
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", err.Error(), nil, nil)
 	}
 
@@ -144,6 +190,16 @@ func (h *Handler) ApproveOrganization(c *echo.Context) error {
 }
 
 func (h *Handler) GetPendingOrganizations(c *echo.Context) error {
+	// Validate super_admin role
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	if claims.Role != "super_admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "SUPER_ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+
 	data, err := h.service.GetPendingOrganizations(c.Request().Context())
 	if err != nil {
 		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error(), nil, nil)
@@ -161,6 +217,27 @@ func (h *Handler) AddMember(c *echo.Context, body AddMemberRequest) error {
 	orgID, err := utils.StringToUUID((*c).Param("orgId"))
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ORGANIZATION_ID", nil, nil)
+	}
+
+	// Get authenticated user
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_USER_ID", nil, nil)
+	}
+
+	// Check if user is an admin of the organization
+	member, err := h.service.GetMember(c.Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	if member.Role != "admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "ADMIN_ROLE_REQUIRED", nil, nil)
 	}
 
 	data, err := h.service.AddMember(c.Request().Context(), orgID, body)

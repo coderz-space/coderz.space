@@ -115,9 +115,28 @@ func (s *Service) ListUserOrganizations(ctx context.Context, userID pgtype.UUID,
 }
 
 func (s *Service) UpdateOrganization(ctx context.Context, orgID pgtype.UUID, req UpdateOrganizationRequest) (*OrganizationData, error) {
+	// Validate at least one field is provided
+	if req.Name == "" && req.Slug == "" && req.Description == "" {
+		return nil, errors.New("NO_FIELDS_PROVIDED")
+	}
+
+	// If slug is being updated, validate format and uniqueness
+	if req.Slug != "" {
+		if !ValidateSlug(req.Slug) {
+			return nil, errors.New("INVALID_SLUG_FORMAT")
+		}
+
+		// Check if slug already exists (excluding current organization)
+		existingOrg, err := s.queries.GetOrganizationBySlug(ctx, req.Slug)
+		if err == nil && existingOrg.ID != orgID {
+			return nil, errors.New("SLUG_ALREADY_EXISTS")
+		}
+	}
+
 	org, err := s.queries.UpdateOrganization(ctx, db.UpdateOrganizationParams{
 		ID:          orgID,
 		Name:        pgtype.Text{String: req.Name, Valid: req.Name != ""},
+		Slug:        pgtype.Text{String: req.Slug, Valid: req.Slug != ""},
 		Description: pgtype.Text{String: req.Description, Valid: req.Description != ""},
 		Status:      db.NullOrgStatus{Valid: false},
 	})
@@ -129,6 +148,18 @@ func (s *Service) UpdateOrganization(ctx context.Context, orgID pgtype.UUID, req
 }
 
 func (s *Service) ApproveOrganization(ctx context.Context, orgID pgtype.UUID) (*OrganizationData, error) {
+	// First, get the organization to validate its current status
+	existingOrg, err := s.queries.GetOrganizationById(ctx, orgID)
+	if err != nil {
+		return nil, errors.New("ORGANIZATION_NOT_FOUND")
+	}
+
+	// Validate organization is in PENDING_APPROVAL status
+	if existingOrg.Status != db.OrgStatusPendingApproval {
+		return nil, errors.New("ORGANIZATION_NOT_PENDING")
+	}
+
+	// Update status to APPROVED
 	org, err := s.queries.UpdateOrganization(ctx, db.UpdateOrganizationParams{
 		ID:          orgID,
 		Name:        pgtype.Text{Valid: false},

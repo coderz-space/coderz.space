@@ -296,8 +296,9 @@ const updateOrganization = `-- name: UpdateOrganization :one
 UPDATE organizations
 SET 
     name = COALESCE($2, name),
-    description = COALESCE($3, description),
-    status = COALESCE($4, status),
+    slug = COALESCE($3, slug),
+    description = COALESCE($4, description),
+    status = COALESCE($5, status),
     updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
 RETURNING id, name, slug, description, status, created_at, updated_at
@@ -306,6 +307,7 @@ RETURNING id, name, slug, description, status, created_at, updated_at
 type UpdateOrganizationParams struct {
 	ID          pgtype.UUID   `db:"id" json:"id"`
 	Name        pgtype.Text   `db:"name" json:"name"`
+	Slug        pgtype.Text   `db:"slug" json:"slug"`
 	Description pgtype.Text   `db:"description" json:"description"`
 	Status      NullOrgStatus `db:"status" json:"status"`
 }
@@ -314,6 +316,7 @@ func (q *Queries) UpdateOrganization(ctx context.Context, arg UpdateOrganization
 	row := q.db.QueryRow(ctx, updateOrganization,
 		arg.ID,
 		arg.Name,
+		arg.Slug,
 		arg.Description,
 		arg.Status,
 	)
