@@ -394,8 +394,19 @@ func (h *Handler) VotePoll(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ENROLLED_IN_BOOTCAMP", nil, nil)
 	}
 
+	// Validate poll belongs to bootcamp
+	poll, err := h.service.GetPoll(c.Request().Context(), bootcampID, pollID, voterEnrollmentID)
+	if err != nil {
+		switch err.Error() {
+		case "POLL_NOT_FOUND":
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "POLL_NOT_FOUND", nil, nil)
+		default:
+			return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error(), nil, nil)
+		}
+	}
+
 	// Cast vote
-	vote, isNew, err := h.service.VotePoll(c.Request().Context(), pollID, voterEnrollmentID, body.Vote)
+	vote, isNew, err := h.service.VotePoll(c.Request().Context(), poll.Data.ID, voterEnrollmentID, body.Vote)
 	if err != nil {
 		switch err.Error() {
 		case "POLL_NOT_FOUND":
