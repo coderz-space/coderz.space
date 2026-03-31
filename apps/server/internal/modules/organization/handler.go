@@ -300,8 +300,35 @@ func (h *Handler) UpdateMemberRole(c *echo.Context, body UpdateMemberRoleRequest
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
 	}
 
+	// Get authenticated user
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	requestingUserID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_USER_ID", nil, nil)
+	}
+
+	// Check if requesting user is an admin of the organization
+	member, err := h.service.GetMember(c.Request().Context(), orgID, requestingUserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	if member.Role != "admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+
 	data, err := h.service.UpdateMemberRole(c.Request().Context(), orgID, userID, body)
 	if err != nil {
+		if err.Error() == "CANNOT_REMOVE_LAST_ADMIN" {
+			return response.NewResponse(c, http.StatusConflict, "CONFLICT", "CANNOT_REMOVE_LAST_ADMIN", nil, nil)
+		}
+		if err.Error() == "MEMBER_NOT_FOUND" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "MEMBER_NOT_FOUND", nil, nil)
+		}
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", err.Error(), nil, nil)
 	}
 
@@ -322,8 +349,35 @@ func (h *Handler) RemoveMember(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
 	}
 
+	// Get authenticated user
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	requestingUserID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_USER_ID", nil, nil)
+	}
+
+	// Check if requesting user is an admin of the organization
+	member, err := h.service.GetMember(c.Request().Context(), orgID, requestingUserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	if member.Role != "admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+
 	err = h.service.RemoveMember(c.Request().Context(), orgID, userID)
 	if err != nil {
+		if err.Error() == "CANNOT_REMOVE_LAST_ADMIN" {
+			return response.NewResponse(c, http.StatusConflict, "CONFLICT", "CANNOT_REMOVE_LAST_ADMIN", nil, nil)
+		}
+		if err.Error() == "MEMBER_NOT_FOUND" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "MEMBER_NOT_FOUND", nil, nil)
+		}
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", err.Error(), nil, nil)
 	}
 

@@ -41,6 +41,18 @@ func (q *Queries) AddOrganizationMember(ctx context.Context, arg AddOrganization
 	return i, err
 }
 
+const countOrganizationAdmins = `-- name: CountOrganizationAdmins :one
+SELECT COUNT(*) FROM organization_members
+WHERE organization_id = $1 AND role = 'admin'
+`
+
+func (q *Queries) CountOrganizationAdmins(ctx context.Context, organizationID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countOrganizationAdmins, organizationID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countOrganizationMembers = `-- name: CountOrganizationMembers :one
 SELECT COUNT(*) FROM organization_members
 WHERE organization_id = $1

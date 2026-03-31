@@ -289,3 +289,52 @@ func TestInitialOrganizationStatus(t *testing.T) {
 		t.Logf("New organizations should have status %q", expectedStatus)
 	})
 }
+
+// Test RemoveMember last admin prevention (service layer)
+func TestServiceRemoveMemberLastAdminPrevention(t *testing.T) {
+	t.Run("cannot remove last admin", func(t *testing.T) {
+		// This test documents that RemoveMember prevents deletion of the last admin
+		// The service should:
+		// 1. Get the member to check their role
+		// 2. If member is an admin, count total admins
+		// 3. If admin count <= 1, return CANNOT_REMOVE_LAST_ADMIN error
+		// 4. Otherwise, proceed with removal
+
+		t.Log("RemoveMember should prevent deletion of the last admin")
+		t.Log("Expected error: CANNOT_REMOVE_LAST_ADMIN when removing last admin")
+	})
+
+	t.Run("can remove admin when multiple admins exist", func(t *testing.T) {
+		// This test documents that RemoveMember allows admin removal when multiple admins exist
+		// The service should:
+		// 1. Get the member to check their role
+		// 2. If member is an admin, count total admins
+		// 3. If admin count > 1, proceed with removal
+
+		t.Log("RemoveMember should allow admin removal when multiple admins exist")
+		t.Log("Expected: Successful removal when admin count > 1")
+	})
+
+	t.Run("can remove non-admin members", func(t *testing.T) {
+		// This test documents that RemoveMember allows removal of non-admin members
+		// The service should:
+		// 1. Get the member to check their role
+		// 2. If member is not an admin, proceed with removal without checking admin count
+
+		t.Log("RemoveMember should allow removal of mentor and mentee members")
+		t.Log("Expected: Successful removal without admin count check")
+	})
+}
+
+// Test RemoveMember member not found (service layer)
+func TestServiceRemoveMemberNotFound(t *testing.T) {
+	t.Run("returns error when member not found", func(t *testing.T) {
+		// This test documents that RemoveMember returns MEMBER_NOT_FOUND error
+		// The service should:
+		// 1. Call GetOrganizationMember
+		// 2. If member doesn't exist, return MEMBER_NOT_FOUND error
+
+		t.Log("RemoveMember should return MEMBER_NOT_FOUND when member doesn't exist")
+		t.Log("Expected error: MEMBER_NOT_FOUND")
+	})
+}

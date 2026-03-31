@@ -14,6 +14,8 @@ private.md
 # Environment / Secrets
 #######################################
 
+main
+*SUMMARY.md
 .env
 .env.*
 !.env.example

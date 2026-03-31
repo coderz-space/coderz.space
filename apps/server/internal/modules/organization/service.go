@@ -255,6 +255,27 @@ func (s *Service) UpdateMemberRole(ctx context.Context, orgID pgtype.UUID, userI
 		return nil, err
 	}
 
+	// Get current member to check their current role
+	currentMember, err := s.queries.GetOrganizationMember(ctx, db.GetOrganizationMemberParams{
+		OrganizationID: orgID,
+		UserID:         userID,
+	})
+	if err != nil {
+		return nil, errors.New("MEMBER_NOT_FOUND")
+	}
+
+	// If changing from admin to non-admin, check if they're the last admin
+	if currentMember.Role == db.OrgMemberRoleAdmin && role != db.OrgMemberRoleAdmin {
+		adminCount, err := s.queries.CountOrganizationAdmins(ctx, orgID)
+		if err != nil {
+			return nil, err
+		}
+
+		if adminCount <= 1 {
+			return nil, errors.New("CANNOT_REMOVE_LAST_ADMIN")
+		}
+	}
+
 	member, err := s.queries.UpdateOrganizationMemberRole(ctx, db.UpdateOrganizationMemberRoleParams{
 		OrganizationID: orgID,
 		UserID:         userID,
@@ -268,6 +289,27 @@ func (s *Service) UpdateMemberRole(ctx context.Context, orgID pgtype.UUID, userI
 }
 
 func (s *Service) RemoveMember(ctx context.Context, orgID pgtype.UUID, userID pgtype.UUID) error {
+	// Get the member to check their role
+	member, err := s.queries.GetOrganizationMember(ctx, db.GetOrganizationMemberParams{
+		OrganizationID: orgID,
+		UserID:         userID,
+	})
+	if err != nil {
+		return errors.New("MEMBER_NOT_FOUND")
+	}
+
+	// If removing an admin, check if they're the last admin
+	if member.Role == db.OrgMemberRoleAdmin {
+		adminCount, err := s.queries.CountOrganizationAdmins(ctx, orgID)
+		if err != nil {
+			return err
+		}
+
+		if adminCount <= 1 {
+			return errors.New("CANNOT_REMOVE_LAST_ADMIN")
+		}
+	}
+
 	return s.queries.RemoveOrganizationMember(ctx, db.RemoveOrganizationMemberParams{
 		OrganizationID: orgID,
 		UserID:         userID,

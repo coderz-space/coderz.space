@@ -74,6 +74,10 @@ SET role = $3
 WHERE organization_id = $1 AND user_id = $2
 RETURNING *;
 
+-- name: CountOrganizationAdmins :one
+SELECT COUNT(*) FROM organization_members
+WHERE organization_id = $1 AND role = 'admin';
+
 -- name: RemoveOrganizationMember :exec
 DELETE FROM organization_members
 WHERE organization_id = $1 AND user_id = $2;
