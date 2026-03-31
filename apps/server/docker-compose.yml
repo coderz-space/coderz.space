@@ -1,0 +1,27 @@
+name: coderz-space-bootcamp
+
+services:
+  postgres:
+    image: postgres:18
+    container_name: coderz-space-postgres
+    environment:
+      POSTGRES_USER: coderz-space
+      POSTGRES_PASSWORD: coderz-space
+      POSTGRES_DB: coderz
+    ports:
+      - "5432:5432"
+    volumes:
+      - coderz-space-postgres-data:/var/lib/postgresql
+
+  migrate:
+    image: migrate/migrate
+    volumes:
+      - type: bind
+        source: ./db/migrations
+        target: /migrations
+    depends_on:
+      - postgres
+    restart: on-failure
+
+volumes:
+  coderz-space-postgres-data:

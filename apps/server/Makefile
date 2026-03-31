@@ -1,3 +1,8 @@
+# Load .env file :
+-include .env
+export
+
+
 .PHONY: build run clear-logs swagger sqlc
 
 MAIN="cmd/main.go"
@@ -33,3 +38,25 @@ clear-swagger:
 sqlc:
 	@echo "Generating sqlc queries..."
 	sqlc generate -f db/sqlc.yaml
+
+
+# Migrations : 
+migrate-up:
+	@echo "Applying migrations (up)"
+	docker compose run --rm migrate -path /migrations -database "${DB_DSN}" up
+
+migrate-down:
+	@echo "Rolling back latest migration"
+	docker compose run --rm migrate -path /migrations -database "${DB_DSN}" down 1
+
+
+
+# Docker : 
+docker-up:
+	@echo "Starting docker containers..."
+	@docker compose up -d
+
+
+docker-down:
+	@echo "Stopping docker containers..."
+	@docker compose down
