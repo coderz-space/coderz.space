@@ -1,30 +1,48 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withDelay, withSpring,
+  useSharedValue,
+  useAnimatedStyle,
+  withDelay,
+  withSpring,
 } from 'react-native-reanimated';
 import ScreenWrapper from '../../components/layout/ScreenWrapper';
 import { SkeletonMenteeRow } from '../../components/atoms/SkeletonLoader';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../../theme';
 import { useMenteeStore } from '../../store/menteeStore';
 import { useAuthStore } from '../../store/authStore';
-import { LeaderboardEntry } from '../../types';
+import { LeaderboardEntry, LeaderboardPeriod } from '../../types';
 
 const MEDAL = ['🥇', '🥈', '🥉'];
 
 export default function LeaderboardScreen() {
+  const navigation = useNavigation();
   const { session } = useAuthStore();
-  const { leaderboard, isLoadingLeaderboard, fetchLeaderboard } = useMenteeStore();
+  const {
+    leaderboard,
+    isLoadingLeaderboard,
+    leaderboardPeriod,
+    setLeaderboardPeriod,
+    fetchLeaderboard,
+  } = useMenteeStore();
 
   useEffect(() => {
     if (!session) return;
     fetchLeaderboard({
       orgId: session.activeOrgId,
       bootcampId: session.activeBootcampId,
+      period: leaderboardPeriod,
     });
-  }, []);
+  }, [leaderboardPeriod, session]);
 
   const myEnrollmentId = session?.bootcampEnrollmentId;
+
+  const periodOptions: { label: string; value: LeaderboardPeriod }[] = [
+    { label: 'Weekly', value: 'weekly' },
+    { label: 'Monthly', value: 'monthly' },
+    { label: 'All Time', value: 'allTime' },
+  ];
 
   return (
     <ScreenWrapper scrollable padded>
@@ -34,7 +52,30 @@ export default function LeaderboardScreen() {
         <Text style={styles.subtitle}>Bootcamp rankings</Text>
       </View>
 
-      {/* Top 3 podium */}
+      {/* Period Filter */}
+      <View style={styles.filterContainer}>
+        {periodOptions.map((opt) => (
+          <TouchableOpacity
+            key={opt.value}
+            style={[
+              styles.filterTab,
+              leaderboardPeriod === opt.value && styles.filterTabActive,
+            ]}
+            onPress={() => setLeaderboardPeriod(opt.value)}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                leaderboardPeriod === opt.value && styles.filterTextActive,
+              ]}
+            >
+              {opt.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Top 3 Podium */}
       {!isLoadingLeaderboard && leaderboard.length >= 3 && (
         <View style={styles.podium}>
           {[leaderboard[1], leaderboard[0], leaderboard[2]].map((entry, i) => {
@@ -47,7 +88,12 @@ export default function LeaderboardScreen() {
               >
                 <Text style={styles.medal}>{MEDAL[rank - 1]}</Text>
                 <View style={[styles.podiumAvatar, isTop && styles.podiumAvatarTop]}>
-                  <Text style={[styles.podiumAvatarText, isTop && styles.podiumAvatarTextTop]}>
+                  <Text
+                    style={[
+                      styles.podiumAvatarText,
+                      isTop && styles.podiumAvatarTextTop,
+                    ]}
+                  >
                     {entry.user.name.slice(0, 2).toUpperCase()}
                   </Text>
                 </View>
@@ -61,20 +107,27 @@ export default function LeaderboardScreen() {
         </View>
       )}
 
-      {/* Full list */}
+      {/* Full Rankings List */}
       <Text style={styles.sectionTitle}>All Rankings</Text>
-
       {isLoadingLeaderboard ? (
-        <><SkeletonMenteeRow /><SkeletonMenteeRow /><SkeletonMenteeRow /></>
+        <>
+          <SkeletonMenteeRow />
+          <SkeletonMenteeRow />
+          <SkeletonMenteeRow />
+        </>
       ) : (
-        leaderboard.map((entry, i) => (
-          <LeaderboardRow
-            key={entry.bootcampEnrollmentId}
-            entry={entry}
-            index={i}
-            isMe={entry.bootcampEnrollmentId === myEnrollmentId}
-          />
-        ))
+        <FlatList
+          data={leaderboard}
+          keyExtractor={(item) => item.bootcampEnrollmentId}
+          renderItem={({ item, index }) => (
+            <LeaderboardRow
+              entry={item}
+              index={index}
+              isMe={item.bootcampEnrollmentId === myEnrollmentId}
+            />
+          )}
+          scrollEnabled={false}
+        />
       )}
     </ScreenWrapper>
   );
@@ -103,37 +156,29 @@ function LeaderboardRow({
   }));
 
   return (
-    <Animated.View
-      style={[
-        styles.row,
-        isMe && styles.rowMe,
-        animStyle,
-      ]}
-    >
+    <Animated.View style={[styles.row, isMe && styles.rowMe, animStyle]}>
       {/* Rank */}
       <View style={[styles.rankBox, entry.rank <= 3 && styles.rankBoxTop]}>
         <Text style={[styles.rank, entry.rank <= 3 && styles.rankTop]}>
           {entry.rank <= 3 ? MEDAL[entry.rank - 1] : `#${entry.rank}`}
         </Text>
       </View>
-
       {/* Avatar */}
       <View style={[styles.avatar, isMe && styles.avatarMe]}>
         <Text style={[styles.avatarText, isMe && styles.avatarTextMe]}>
           {entry.user.name.slice(0, 2).toUpperCase()}
         </Text>
       </View>
-
       {/* Info */}
       <View style={styles.info}>
         <Text style={[styles.name, isMe && styles.nameMe]}>
-          {entry.user.name}{isMe ? ' (You)' : ''}
+          {entry.user.name}
+          {isMe ? ' (You)' : ''}
         </Text>
         <Text style={styles.meta}>
-          {entry.problemsCompleted} done · {entry.streakDays}d streak
+          {entry.problemsCompleted} done • {entry.streakDays} d streak
         </Text>
       </View>
-
       {/* Score */}
       <View style={styles.scoreBox}>
         <Text style={[styles.score, isMe && styles.scoreMe]}>{entry.score}</Text>
@@ -156,6 +201,29 @@ const styles = StyleSheet.create({
     ...Typography.bodySmall,
     color: Colors.textSecondary,
     marginTop: 2,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    padding: 4,
+    marginBottom: Spacing.xl,
+  },
+  filterTab: {
+    flex: 1,
+    paddingVertical: Spacing.sm,
+    alignItems: 'center',
+    borderRadius: BorderRadius.md,
+  },
+  filterTabActive: {
+    backgroundColor: Colors.primary,
+  },
+  filterText: {
+    ...Typography.label,
+    color: Colors.textSecondary,
+  },
+  filterTextActive: {
+    color: Colors.textInverse,
   },
   podium: {
     flexDirection: 'row',

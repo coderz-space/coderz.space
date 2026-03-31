@@ -16,7 +16,7 @@ export type MenteeStatus =
   | 'completed';
 
 export type AssignmentStatus = 'active' | 'completed' | 'expired';
-
+export type LeaderboardPeriod = 'weekly' | 'monthly' | 'allTime';
 // ─── Auth ─────────────────────────────────────────────────────
 
 export interface User {
