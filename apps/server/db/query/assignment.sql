@@ -163,6 +163,20 @@ JOIN problems p ON ap.problem_id = p.id
 WHERE ap.assignment_id = $1
 ORDER BY ap.created_at ASC;
 
+-- name: GetAssignmentProblem :one
+SELECT ap.*, p.title, p.difficulty 
+FROM assignment_problems ap
+JOIN problems p ON ap.problem_id = p.id
+WHERE ap.assignment_id = $1 AND ap.problem_id = $2
+LIMIT 1;
+
+-- name: GetAssignmentWithEnrollment :one
+SELECT a.*, be.organization_member_id
+FROM assignments a
+JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
+WHERE a.id = $1 AND a.archived_at IS NULL
+LIMIT 1;
+
 -- name: CountAssignmentsByGroup :one
 SELECT COUNT(*) FROM assignments
 WHERE assignment_group_id = $1 AND archived_at IS NULL;

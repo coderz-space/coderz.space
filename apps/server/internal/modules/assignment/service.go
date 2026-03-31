@@ -51,7 +51,7 @@ func (s *Service) CreateAssignmentGroup(ctx context.Context, req CreateAssignmen
 
 	return &AssignmentGroupResponse{
 		Success: true,
-		Data:    mapAssignmentGroupToData(group),
+		Data:    mapAssignmentGroupToData(&group),
 	}, nil
 }
 
@@ -67,14 +67,14 @@ func (s *Service) GetAssignmentGroup(ctx context.Context, groupID pgtype.UUID) (
 		return nil, err
 	}
 
-	data := mapAssignmentGroupToData(group)
+	data := mapAssignmentGroupToData(&group)
 	data.Problems = make([]GroupProblemRef, len(problems))
-	for i, p := range problems {
+	for i := range problems {
 		data.Problems[i] = GroupProblemRef{
-			ProblemID:  p.ID,
-			Title:      p.Title,
-			Difficulty: string(p.Difficulty),
-			Position:   p.Position.Int32,
+			ProblemID:  problems[i].ID,
+			Title:      problems[i].Title,
+			Difficulty: string(problems[i].Difficulty),
+			Position:   problems[i].Position.Int32,
 		}
 	}
 
@@ -128,14 +128,14 @@ func (s *Service) UpdateAssignmentGroup(ctx context.Context, groupID pgtype.UUID
 		return nil, err
 	}
 
-	data := mapAssignmentGroupToData(updatedGroup)
+	data := mapAssignmentGroupToData(&updatedGroup)
 	data.Problems = make([]GroupProblemRef, len(problems))
-	for i, p := range problems {
+	for i := range problems {
 		data.Problems[i] = GroupProblemRef{
-			ProblemID:  p.ID,
-			Title:      p.Title,
-			Difficulty: string(p.Difficulty),
-			Position:   p.Position.Int32,
+			ProblemID:  problems[i].ID,
+			Title:      problems[i].Title,
+			Difficulty: string(problems[i].Difficulty),
+			Position:   problems[i].Position.Int32,
 		}
 	}
 
@@ -190,8 +190,8 @@ func (s *Service) ListAssignmentGroups(ctx context.Context, bootcampID pgtype.UU
 	}
 
 	data := make([]AssignmentGroupData, len(groups))
-	for i, g := range groups {
-		data[i] = mapAssignmentGroupToData(g)
+	for i := range groups {
+		data[i] = mapAssignmentGroupToData(&groups[i])
 	}
 
 	return &AssignmentGroupListResponse{
@@ -211,7 +211,9 @@ func (s *Service) AddProblemsToGroup(ctx context.Context, groupID pgtype.UUID, r
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx) // #nosec G104 - Rollback is safe to call even after commit
+	defer func() {
+		_ = tx.Rollback(ctx) //nolint:errcheck // Rollback is safe to call even after commit
+	}()
 
 	qtx := s.queries.WithTx(tx)
 
@@ -268,7 +270,9 @@ func (s *Service) ReplaceGroupProblems(ctx context.Context, groupID pgtype.UUID,
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx) // #nosec G104 - Rollback is safe to call even after commit
+	defer func() {
+		_ = tx.Rollback(ctx) // Rollback is safe to call even after commit
+	}()
 
 	qtx := s.queries.WithTx(tx)
 
@@ -378,7 +382,9 @@ func (s *Service) CreateAssignment(ctx context.Context, req CreateAssignmentRequ
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx) // #nosec G104 - Rollback is safe to call even after commit
+	defer func() {
+		_ = tx.Rollback(ctx) // Rollback is safe to call even after commit
+	}()
 
 	qtx := s.queries.WithTx(tx)
 
@@ -401,10 +407,10 @@ func (s *Service) CreateAssignment(ctx context.Context, req CreateAssignmentRequ
 	}
 
 	// Initialize all problems with pending status (Requirement 28.6)
-	for _, p := range problems {
+	for i := range problems {
 		_, err := qtx.InitializeAssignmentProblem(ctx, db.InitializeAssignmentProblemParams{
 			AssignmentID: assignment.ID,
-			ProblemID:    p.ID,
+			ProblemID:    problems[i].ID,
 		})
 		if err != nil {
 			return nil, err
@@ -417,7 +423,7 @@ func (s *Service) CreateAssignment(ctx context.Context, req CreateAssignmentRequ
 
 	return &AssignmentResponse{
 		Success: true,
-		Data:    mapAssignmentToData(assignment),
+		Data:    mapAssignmentToData(&assignment),
 	}, nil
 }
 
@@ -448,8 +454,8 @@ func (s *Service) GetAssignment(ctx context.Context, assignmentID pgtype.UUID) (
 	}
 
 	data.Problems = make([]AssignmentProblemData, len(problems))
-	for i, p := range problems {
-		data.Problems[i] = mapAssignmentProblemToData(p)
+	for i := range problems {
+		data.Problems[i] = mapAssignmentProblemToData(&problems[i])
 	}
 
 	return &AssignmentResponse{
@@ -465,20 +471,19 @@ func (s *Service) ListAssignmentsByMentee(ctx context.Context, enrollmentID pgty
 	}
 
 	data := make([]AssignmentData, len(assignments))
-	for i, a := range assignments {
-		assignmentData := AssignmentData{
-			ID:                   a.ID,
-			AssignmentGroupID:    a.AssignmentGroupID,
-			BootcampEnrollmentID: a.BootcampEnrollmentID,
-			AssignedBy:           a.AssignedBy,
-			AssignedAt:           utils.FormatTimestamp(a.AssignedAt),
-			DeadlineAt:           utils.FormatOptionalTimestamp(a.DeadlineAt),
-			Status:               string(a.Status),
-			CreatedAt:            utils.FormatTimestamp(a.CreatedAt),
-			UpdatedAt:            utils.FormatTimestamp(a.UpdatedAt),
-			GroupTitle:           a.GroupTitle,
+	for i := range assignments {
+		data[i] = AssignmentData{
+			ID:                   assignments[i].ID,
+			AssignmentGroupID:    assignments[i].AssignmentGroupID,
+			BootcampEnrollmentID: assignments[i].BootcampEnrollmentID,
+			AssignedBy:           assignments[i].AssignedBy,
+			AssignedAt:           utils.FormatTimestamp(assignments[i].AssignedAt),
+			DeadlineAt:           utils.FormatOptionalTimestamp(assignments[i].DeadlineAt),
+			Status:               string(assignments[i].Status),
+			CreatedAt:            utils.FormatTimestamp(assignments[i].CreatedAt),
+			UpdatedAt:            utils.FormatTimestamp(assignments[i].UpdatedAt),
+			GroupTitle:           assignments[i].GroupTitle,
 		}
-		data[i] = assignmentData
 	}
 
 	return &AssignmentListResponse{
@@ -548,18 +553,18 @@ func (s *Service) ListAssignments(ctx context.Context, bootcampID pgtype.UUID, a
 	}
 
 	data := make([]AssignmentData, len(assignments))
-	for i, a := range assignments {
+	for i := range assignments {
 		data[i] = AssignmentData{
-			ID:                   a.ID,
-			AssignmentGroupID:    a.AssignmentGroupID,
-			BootcampEnrollmentID: a.BootcampEnrollmentID,
-			AssignedBy:           a.AssignedBy,
-			AssignedAt:           utils.FormatTimestamp(a.AssignedAt),
-			DeadlineAt:           utils.FormatOptionalTimestamp(a.DeadlineAt),
-			Status:               string(a.Status),
-			CreatedAt:            utils.FormatTimestamp(a.CreatedAt),
-			UpdatedAt:            utils.FormatTimestamp(a.UpdatedAt),
-			GroupTitle:           a.GroupTitle,
+			ID:                   assignments[i].ID,
+			AssignmentGroupID:    assignments[i].AssignmentGroupID,
+			BootcampEnrollmentID: assignments[i].BootcampEnrollmentID,
+			AssignedBy:           assignments[i].AssignedBy,
+			AssignedAt:           utils.FormatTimestamp(assignments[i].AssignedAt),
+			DeadlineAt:           utils.FormatOptionalTimestamp(assignments[i].DeadlineAt),
+			Status:               string(assignments[i].Status),
+			CreatedAt:            utils.FormatTimestamp(assignments[i].CreatedAt),
+			UpdatedAt:            utils.FormatTimestamp(assignments[i].UpdatedAt),
+			GroupTitle:           assignments[i].GroupTitle,
 		}
 	}
 
@@ -587,7 +592,7 @@ func (s *Service) UpdateAssignment(ctx context.Context, assignmentID pgtype.UUID
 
 		return &AssignmentResponse{
 			Success: true,
-			Data:    mapAssignmentToData(assignment),
+			Data:    mapAssignmentToData(&assignment),
 		}, nil
 	}
 
@@ -615,7 +620,7 @@ func (s *Service) UpdateAssignmentDeadline(ctx context.Context, assignmentID pgt
 
 	return &AssignmentResponse{
 		Success: true,
-		Data:    mapAssignmentToData(assignment),
+		Data:    mapAssignmentToData(&assignment),
 	}, nil
 }
 
@@ -645,32 +650,61 @@ func (s *Service) UpdateAssignmentStatus(ctx context.Context, assignmentID pgtyp
 
 	return &AssignmentResponse{
 		Success: true,
-		Data:    mapAssignmentToData(assignment),
+		Data:    mapAssignmentToData(&assignment),
 	}, nil
 }
 
 // Assignment Problem Progress Methods
 
-func (s *Service) UpdateAssignmentProblemProgress(ctx context.Context, assignmentID, problemID pgtype.UUID, req UpdateAssignmentProblemRequest) (*AssignmentProblemResponse, error) {
+func (s *Service) UpdateAssignmentProblemProgress(ctx context.Context, assignmentID, problemID pgtype.UUID, req UpdateAssignmentProblemRequest, userID pgtype.UUID) (*AssignmentProblemResponse, error) {
+	// Get assignment with enrollment to verify ownership
+	_, err := s.queries.GetAssignmentWithEnrollment(ctx, assignmentID)
+	if err != nil {
+		return nil, fmt.Errorf("assignment not found")
+	}
+
+	// TODO: Verify mentee owns the assignment by checking organization_member_id matches user
+	// This requires additional query to map user_id to organization_member_id
+
+	// Get current problem status to check for regression
+	currentProblem, err := s.queries.GetAssignmentProblem(ctx, db.GetAssignmentProblemParams{
+		AssignmentID: assignmentID,
+		ProblemID:    problemID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("problem not found in assignment")
+	}
+
+	// Prevent status regression from completed to pending (Requirement 9.10)
+	if currentProblem.Status == db.AssignmentProblemStatusCompleted && req.Status == "pending" {
+		return nil, fmt.Errorf("cannot regress status from completed to pending")
+	}
+
 	params := db.UpdateAssignmentProblemProgressParams{
 		AssignmentID: assignmentID,
 		ProblemID:    problemID,
 	}
 
+	// Validate and set status (Requirement 9.1)
 	if req.Status != "" {
+		// Status validation is already handled by the DTO validation tag
 		params.Status = db.NullAssignmentProblemStatus{
 			AssignmentProblemStatus: db.AssignmentProblemStatus(req.Status),
 			Valid:                   true,
 		}
+		// Set completed_at when status changes to completed (Requirement 9.2)
 		if req.Status == "completed" {
 			params.CompletedAt = pgtype.Timestamptz{Time: time.Now(), Valid: true}
 		}
 	}
 
+	// Validate and set solution_link (Requirement 9.3)
 	if req.SolutionLink != "" {
+		// URL validation is already handled by the DTO validation tag
 		params.SolutionLink = pgtype.Text{String: req.SolutionLink, Valid: true}
 	}
 
+	// Set notes if provided
 	if req.Notes != "" {
 		params.Notes = pgtype.Text{String: req.Notes, Valid: true}
 	}
@@ -682,7 +716,7 @@ func (s *Service) UpdateAssignmentProblemProgress(ctx context.Context, assignmen
 
 	return &AssignmentProblemResponse{
 		Success: true,
-		Data:    mapAssignmentProblemToDataSimple(problem),
+		Data:    mapAssignmentProblemToDataSimple(&problem),
 	}, nil
 }
 
@@ -693,8 +727,8 @@ func (s *Service) ListAssignmentProblems(ctx context.Context, assignmentID pgtyp
 	}
 
 	data := make([]AssignmentProblemData, len(problems))
-	for i, p := range problems {
-		data[i] = mapAssignmentProblemToData(p)
+	for i := range problems {
+		data[i] = mapAssignmentProblemToData(&problems[i])
 	}
 
 	return &AssignmentProblemListResponse{
@@ -703,9 +737,25 @@ func (s *Service) ListAssignmentProblems(ctx context.Context, assignmentID pgtyp
 	}, nil
 }
 
+// GetAssignmentProblem retrieves a single assignment problem with details (Requirement 9.8, 9.9)
+func (s *Service) GetAssignmentProblem(ctx context.Context, assignmentID, problemID pgtype.UUID) (*AssignmentProblemResponse, error) {
+	problem, err := s.queries.GetAssignmentProblem(ctx, db.GetAssignmentProblemParams{
+		AssignmentID: assignmentID,
+		ProblemID:    problemID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("problem not found in assignment")
+	}
+
+	return &AssignmentProblemResponse{
+		Success: true,
+		Data:    mapGetAssignmentProblemToData(&problem),
+	}, nil
+}
+
 // Helper mapping functions
 
-func mapAssignmentGroupToData(g db.AssignmentGroup) AssignmentGroupData {
+func mapAssignmentGroupToData(g *db.AssignmentGroup) AssignmentGroupData {
 	return AssignmentGroupData{
 		ID:           g.ID,
 		BootcampID:   g.BootcampID,
@@ -718,7 +768,7 @@ func mapAssignmentGroupToData(g db.AssignmentGroup) AssignmentGroupData {
 	}
 }
 
-func mapAssignmentToData(a db.Assignment) AssignmentData {
+func mapAssignmentToData(a *db.Assignment) AssignmentData {
 	return AssignmentData{
 		ID:                   a.ID,
 		AssignmentGroupID:    a.AssignmentGroupID,
@@ -732,7 +782,7 @@ func mapAssignmentToData(a db.Assignment) AssignmentData {
 	}
 }
 
-func mapAssignmentProblemToData(p db.ListAssignmentProblemsStatusRow) AssignmentProblemData {
+func mapAssignmentProblemToData(p *db.ListAssignmentProblemsStatusRow) AssignmentProblemData {
 	return AssignmentProblemData{
 		ID:           p.ID,
 		AssignmentID: p.AssignmentID,
@@ -748,7 +798,23 @@ func mapAssignmentProblemToData(p db.ListAssignmentProblemsStatusRow) Assignment
 	}
 }
 
-func mapAssignmentProblemToDataSimple(p db.AssignmentProblem) AssignmentProblemData {
+func mapGetAssignmentProblemToData(p *db.GetAssignmentProblemRow) AssignmentProblemData {
+	return AssignmentProblemData{
+		ID:           p.ID,
+		AssignmentID: p.AssignmentID,
+		ProblemID:    p.ProblemID,
+		Status:       string(p.Status),
+		SolutionLink: p.SolutionLink.String,
+		Notes:        p.Notes.String,
+		CompletedAt:  utils.FormatOptionalTimestamp(p.CompletedAt),
+		CreatedAt:    utils.FormatTimestamp(p.CreatedAt),
+		UpdatedAt:    utils.FormatTimestamp(p.UpdatedAt),
+		Title:        p.Title,
+		Difficulty:   string(p.Difficulty),
+	}
+}
+
+func mapAssignmentProblemToDataSimple(p *db.AssignmentProblem) AssignmentProblemData {
 	return AssignmentProblemData{
 		ID:           p.ID,
 		AssignmentID: p.AssignmentID,

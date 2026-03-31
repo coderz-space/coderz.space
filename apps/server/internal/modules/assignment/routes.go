@@ -43,5 +43,6 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 	problemProgressRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
 
 	problemProgressRouter.GET("", handler.ListAssignmentProblems)
+	problemProgressRouter.GET("/:problemId", handler.GetAssignmentProblem)
 	problemProgressRouter.PATCH("/:problemId", core.WithBody(handler.UpdateAssignmentProblemProgress))
 }

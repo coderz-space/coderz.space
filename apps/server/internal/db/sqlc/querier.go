@@ -60,6 +60,8 @@ type Querier interface {
 	EnrollInBootcamp(ctx context.Context, arg EnrollInBootcampParams) (BootcampEnrollment, error)
 	GetAssignment(ctx context.Context, id pgtype.UUID) (Assignment, error)
 	GetAssignmentGroup(ctx context.Context, id pgtype.UUID) (AssignmentGroup, error)
+	GetAssignmentProblem(ctx context.Context, arg GetAssignmentProblemParams) (GetAssignmentProblemRow, error)
+	GetAssignmentWithEnrollment(ctx context.Context, id pgtype.UUID) (GetAssignmentWithEnrollmentRow, error)
 	GetAssignmentWithGroup(ctx context.Context, id pgtype.UUID) (GetAssignmentWithGroupRow, error)
 	GetBootcamp(ctx context.Context, id pgtype.UUID) (Bootcamp, error)
 	GetDoubt(ctx context.Context, id pgtype.UUID) (Doubt, error)

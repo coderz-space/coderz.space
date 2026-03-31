@@ -2390,12 +2390,103 @@ paths:
       tags:
       - Assignment Progress
   /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/problems/{problemId}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific problem in an assignment
+        including notes
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment ID (UUID)
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assignment problem details
+          schema:
+            $ref: '#/definitions/assignment.AssignmentProblemResponse'
+        "400":
+          description: Bad request - invalid IDs
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not authorized to view this problem
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - problem not found in assignment
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get assignment problem details
+      tags:
+      - Assignment Progress
     patch:
       consumes:
       - application/json
-      description: Update status, solution link, or notes for an assigned problem
-        (mentee)
+      - application/json
+      description: |-
+        Update status, solution link, or notes for an assigned problem (mentee)
+        Update progress status, solution link, and notes for an assignment problem (mentee only)
       parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment ID (UUID)
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      - description: Progress update details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/assignment.UpdateAssignmentProblemRequest'
       - description: Organization ID (UUID)
         in: path
         name: orgId
@@ -2424,13 +2515,14 @@ paths:
           $ref: '#/definitions/assignment.UpdateAssignmentProblemRequest'
       produces:
       - application/json
+      - application/json
       responses:
         "200":
           description: Progress updated successfully
           schema:
             $ref: '#/definitions/assignment.AssignmentProblemResponse'
         "400":
-          description: Bad request - validation error
+          description: Bad request - invalid IDs or validation error
           schema:
             additionalProperties: true
             type: object
@@ -2440,19 +2532,26 @@ paths:
             additionalProperties: true
             type: object
         "403":
-          description: Forbidden - not authorized to update this problem
+          description: Forbidden - not the assignment owner or status regression
           schema:
             additionalProperties: true
             type: object
         "404":
-          description: Not found - assignment problem does not exist
+          description: Not found - assignment or problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
           schema:
             additionalProperties: true
             type: object
       security:
       - BearerAuth: []
-      summary: Update problem progress
+      - BearerAuth: []
+      summary: Update assignment problem progress
       tags:
+      - Assignment Progress
       - Assignment Progress
   /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/status:
     patch:

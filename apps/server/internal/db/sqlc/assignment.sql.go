@@ -261,6 +261,93 @@ func (q *Queries) GetAssignmentGroup(ctx context.Context, id pgtype.UUID) (Assig
 	return i, err
 }
 
+const getAssignmentProblem = `-- name: GetAssignmentProblem :one
+SELECT ap.id, ap.assignment_id, ap.problem_id, ap.status, ap.solution_link, ap.notes, ap.completed_at, ap.created_at, ap.updated_at, p.title, p.difficulty 
+FROM assignment_problems ap
+JOIN problems p ON ap.problem_id = p.id
+WHERE ap.assignment_id = $1 AND ap.problem_id = $2
+LIMIT 1
+`
+
+type GetAssignmentProblemParams struct {
+	AssignmentID pgtype.UUID `db:"assignment_id" json:"assignment_id"`
+	ProblemID    pgtype.UUID `db:"problem_id" json:"problem_id"`
+}
+
+type GetAssignmentProblemRow struct {
+	ID           pgtype.UUID             `db:"id" json:"id"`
+	AssignmentID pgtype.UUID             `db:"assignment_id" json:"assignment_id"`
+	ProblemID    pgtype.UUID             `db:"problem_id" json:"problem_id"`
+	Status       AssignmentProblemStatus `db:"status" json:"status"`
+	SolutionLink pgtype.Text             `db:"solution_link" json:"solution_link"`
+	Notes        pgtype.Text             `db:"notes" json:"notes"`
+	CompletedAt  pgtype.Timestamptz      `db:"completed_at" json:"completed_at"`
+	CreatedAt    pgtype.Timestamptz      `db:"created_at" json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz      `db:"updated_at" json:"updated_at"`
+	Title        string                  `db:"title" json:"title"`
+	Difficulty   DifficultyLevel         `db:"difficulty" json:"difficulty"`
+}
+
+func (q *Queries) GetAssignmentProblem(ctx context.Context, arg GetAssignmentProblemParams) (GetAssignmentProblemRow, error) {
+	row := q.db.QueryRow(ctx, getAssignmentProblem, arg.AssignmentID, arg.ProblemID)
+	var i GetAssignmentProblemRow
+	err := row.Scan(
+		&i.ID,
+		&i.AssignmentID,
+		&i.ProblemID,
+		&i.Status,
+		&i.SolutionLink,
+		&i.Notes,
+		&i.CompletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Title,
+		&i.Difficulty,
+	)
+	return i, err
+}
+
+const getAssignmentWithEnrollment = `-- name: GetAssignmentWithEnrollment :one
+SELECT a.id, a.assignment_group_id, a.bootcamp_enrollment_id, a.assigned_by, a.assigned_at, a.deadline_at, a.status, a.archived_at, a.created_at, a.updated_at, be.organization_member_id
+FROM assignments a
+JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
+WHERE a.id = $1 AND a.archived_at IS NULL
+LIMIT 1
+`
+
+type GetAssignmentWithEnrollmentRow struct {
+	ID                   pgtype.UUID        `db:"id" json:"id"`
+	AssignmentGroupID    pgtype.UUID        `db:"assignment_group_id" json:"assignment_group_id"`
+	BootcampEnrollmentID pgtype.UUID        `db:"bootcamp_enrollment_id" json:"bootcamp_enrollment_id"`
+	AssignedBy           pgtype.UUID        `db:"assigned_by" json:"assigned_by"`
+	AssignedAt           pgtype.Timestamptz `db:"assigned_at" json:"assigned_at"`
+	DeadlineAt           pgtype.Timestamptz `db:"deadline_at" json:"deadline_at"`
+	Status               AssignmentStatus   `db:"status" json:"status"`
+	ArchivedAt           pgtype.Timestamptz `db:"archived_at" json:"archived_at"`
+	CreatedAt            pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt            pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	OrganizationMemberID pgtype.UUID        `db:"organization_member_id" json:"organization_member_id"`
+}
+
+func (q *Queries) GetAssignmentWithEnrollment(ctx context.Context, id pgtype.UUID) (GetAssignmentWithEnrollmentRow, error) {
+	row := q.db.QueryRow(ctx, getAssignmentWithEnrollment, id)
+	var i GetAssignmentWithEnrollmentRow
+	err := row.Scan(
+		&i.ID,
+		&i.AssignmentGroupID,
+		&i.BootcampEnrollmentID,
+		&i.AssignedBy,
+		&i.AssignedAt,
+		&i.DeadlineAt,
+		&i.Status,
+		&i.ArchivedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.OrganizationMemberID,
+	)
+	return i, err
+}
+
 const getAssignmentWithGroup = `-- name: GetAssignmentWithGroup :one
 SELECT a.id, a.assignment_group_id, a.bootcamp_enrollment_id, a.assigned_by, a.assigned_at, a.deadline_at, a.status, a.archived_at, a.created_at, a.updated_at, ag.title as group_title, ag.description as group_description
 FROM assignments a

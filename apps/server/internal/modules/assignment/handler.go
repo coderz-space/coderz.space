@@ -726,8 +726,27 @@ func (h *Handler) UpdateAssignmentStatus(c *echo.Context, body UpdateAssignmentS
 // @Failure 403 {object} map[string]any "Forbidden - not authorized to update this problem"
 // @Failure 404 {object} map[string]any "Not found - assignment problem does not exist"
 // @Router /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/problems/{problemId} [patch]
+// UpdateAssignmentProblemProgress godoc
+// @Summary Update assignment problem progress
+// @Description Update progress status, solution link, and notes for an assignment problem (mentee only)
+// @Tags Assignment Progress
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param bootcampId path string true "Bootcamp ID (UUID)"
+// @Param assignmentId path string true "Assignment ID (UUID)"
+// @Param problemId path string true "Problem ID (UUID)"
+// @Param body body UpdateAssignmentProblemRequest true "Progress update details"
+// @Success 200 {object} AssignmentProblemResponse "Progress updated successfully"
+// @Failure 400 {object} map[string]any "Bad request - invalid IDs or validation error"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - not the assignment owner or status regression"
+// @Failure 404 {object} map[string]any "Not found - assignment or problem does not exist"
+// @Failure 500 {object} map[string]any "Internal server error"
+// @Router /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/problems/{problemId} [patch]
 func (h *Handler) UpdateAssignmentProblemProgress(c *echo.Context, body UpdateAssignmentProblemRequest) error {
-	_, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
 	if !ok {
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
 	}
@@ -742,8 +761,19 @@ func (h *Handler) UpdateAssignmentProblemProgress(c *echo.Context, body UpdateAs
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_PROBLEM_ID", nil, nil)
 	}
 
-	result, err := h.service.UpdateAssignmentProblemProgress((*c).Request().Context(), assignmentID, problemID, body)
+	userID, err := utils.StringToUUID(claims.UserID)
 	if err != nil {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_USER_ID", nil, nil)
+	}
+
+	result, err := h.service.UpdateAssignmentProblemProgress((*c).Request().Context(), assignmentID, problemID, body, userID)
+	if err != nil {
+		if err.Error() == "assignment not found" || err.Error() == "problem not found in assignment" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", err.Error(), nil, nil)
+		}
+		if err.Error() == "cannot regress status from completed to pending" {
+			return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "STATUS_REGRESSION_NOT_ALLOWED", nil, nil)
+		}
 		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
 	}
 
@@ -783,4 +813,49 @@ func (h *Handler) ListAssignmentProblems(c *echo.Context) error {
 	}
 
 	return response.NewResponse(c, http.StatusOK, "OK", "ASSIGNMENT_PROBLEMS_RETRIEVED", result, nil)
+}
+
+// GetAssignmentProblem godoc
+// @Summary Get assignment problem details
+// @Description Get detailed information about a specific problem in an assignment including notes
+// @Tags Assignment Progress
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param bootcampId path string true "Bootcamp ID (UUID)"
+// @Param assignmentId path string true "Assignment ID (UUID)"
+// @Param problemId path string true "Problem ID (UUID)"
+// @Success 200 {object} AssignmentProblemResponse "Assignment problem details"
+// @Failure 400 {object} map[string]any "Bad request - invalid IDs"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - not authorized to view this problem"
+// @Failure 404 {object} map[string]any "Not found - problem not found in assignment"
+// @Failure 500 {object} map[string]any "Internal server error"
+// @Router /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/problems/{problemId} [get]
+func (h *Handler) GetAssignmentProblem(c *echo.Context) error {
+	_, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	assignmentID, err := utils.StringToUUID((*c).Param("assignmentId"))
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ASSIGNMENT_ID", nil, nil)
+	}
+
+	problemID, err := utils.StringToUUID((*c).Param("problemId"))
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_PROBLEM_ID", nil, nil)
+	}
+
+	result, err := h.service.GetAssignmentProblem((*c).Request().Context(), assignmentID, problemID)
+	if err != nil {
+		if err.Error() == "problem not found in assignment" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", err.Error(), nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "OK", "ASSIGNMENT_PROBLEM_RETRIEVED", result, nil)
 }

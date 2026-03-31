@@ -2121,13 +2121,13 @@ const docTemplate = `{
             }
         },
         "/v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/problems/{problemId}": {
-            "patch": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update status, solution link, or notes for an assigned problem (mentee)",
+                "description": "Get detailed information about a specific problem in an assignment including notes",
                 "consumes": [
                     "application/json"
                 ],
@@ -2137,8 +2137,142 @@ const docTemplate = `{
                 "tags": [
                     "Assignment Progress"
                 ],
-                "summary": "Update problem progress",
+                "summary": "Get assignment problem details",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID (UUID)",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Assignment ID (UUID)",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Problem ID (UUID)",
+                        "name": "problemId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Assignment problem details",
+                        "schema": {
+                            "$ref": "#/definitions/assignment.AssignmentProblemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid IDs",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - not authorized to view this problem",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - problem not found in assignment",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update status, solution link, or notes for an assigned problem (mentee)\nUpdate progress status, solution link, and notes for an assignment problem (mentee only)",
+                "consumes": [
+                    "application/json",
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/json"
+                ],
+                "tags": [
+                    "Assignment Progress",
+                    "Assignment Progress"
+                ],
+                "summary": "Update assignment problem progress",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID (UUID)",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Assignment ID (UUID)",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Problem ID (UUID)",
+                        "name": "problemId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Progress update details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/assignment.UpdateAssignmentProblemRequest"
+                        }
+                    },
                     {
                         "type": "string",
                         "description": "Organization ID (UUID)",
@@ -2185,7 +2319,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad request - validation error",
+                        "description": "Bad request - invalid IDs or validation error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -2199,14 +2333,21 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden - not authorized to update this problem",
+                        "description": "Forbidden - not the assignment owner or status regression",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "404": {
-                        "description": "Not found - assignment problem does not exist",
+                        "description": "Not found - assignment or problem does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
