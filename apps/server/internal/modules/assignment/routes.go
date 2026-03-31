@@ -1,9 +1,9 @@
 package assignment
 
 import (
-	"github.com/DSAwithGautam/Coderz.space/internal/common/core"
-	"github.com/DSAwithGautam/Coderz.space/internal/common/middleware/auth"
-	"github.com/DSAwithGautam/Coderz.space/internal/config"
+	"github.com/coderz-space/coderz.space/internal/common/core"
+	"github.com/coderz-space/coderz.space/internal/common/middleware/auth"
+	"github.com/coderz-space/coderz.space/internal/config"
 	"github.com/labstack/echo/v5"
 )
 

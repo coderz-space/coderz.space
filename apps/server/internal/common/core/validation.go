@@ -3,8 +3,8 @@ package core
 import (
 	"net/http"
 
-	"github.com/DSAwithGautam/Coderz.space/internal/common/response"
-	"github.com/DSAwithGautam/Coderz.space/internal/common/validator"
+	"github.com/coderz-space/coderz.space/internal/common/response"
+	"github.com/coderz-space/coderz.space/internal/common/validator"
 	"github.com/labstack/echo/v5"
 )
 

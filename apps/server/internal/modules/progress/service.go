@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/DSAwithGautam/Coderz.space/internal/common/utils"
-	db "github.com/DSAwithGautam/Coderz.space/internal/db/sqlc"
+	"github.com/coderz-space/coderz.space/internal/common/utils"
+	db "github.com/coderz-space/coderz.space/internal/db/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

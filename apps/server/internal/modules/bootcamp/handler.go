@@ -3,10 +3,10 @@ package bootcamp
 import (
 	"net/http"
 
-	"github.com/DSAwithGautam/Coderz.space/internal/common/middleware/auth"
-	"github.com/DSAwithGautam/Coderz.space/internal/common/response"
-	"github.com/DSAwithGautam/Coderz.space/internal/common/utils"
-	"github.com/DSAwithGautam/Coderz.space/internal/common/validator"
+	"github.com/coderz-space/coderz.space/internal/common/middleware/auth"
+	"github.com/coderz-space/coderz.space/internal/common/response"
+	"github.com/coderz-space/coderz.space/internal/common/utils"
+	"github.com/coderz-space/coderz.space/internal/common/validator"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v5"
 )

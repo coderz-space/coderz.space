@@ -1,16 +1,16 @@
 package container
 
 import (
-	"github.com/DSAwithGautam/Coderz.space/internal/config"
-	"github.com/DSAwithGautam/Coderz.space/internal/db"
-	db_sqlc "github.com/DSAwithGautam/Coderz.space/internal/db/sqlc"
-	"github.com/DSAwithGautam/Coderz.space/internal/modules/analytics"
-	"github.com/DSAwithGautam/Coderz.space/internal/modules/assignment"
-	"github.com/DSAwithGautam/Coderz.space/internal/modules/auth"
-	"github.com/DSAwithGautam/Coderz.space/internal/modules/bootcamp"
-	"github.com/DSAwithGautam/Coderz.space/internal/modules/organization"
-	"github.com/DSAwithGautam/Coderz.space/internal/modules/problem"
-	"github.com/DSAwithGautam/Coderz.space/internal/modules/progress"
+	"github.com/coderz-space/coderz.space/internal/config"
+	"github.com/coderz-space/coderz.space/internal/db"
+	db_sqlc "github.com/coderz-space/coderz.space/internal/db/sqlc"
+	"github.com/coderz-space/coderz.space/internal/modules/analytics"
+	"github.com/coderz-space/coderz.space/internal/modules/assignment"
+	"github.com/coderz-space/coderz.space/internal/modules/auth"
+	"github.com/coderz-space/coderz.space/internal/modules/bootcamp"
+	"github.com/coderz-space/coderz.space/internal/modules/organization"
+	"github.com/coderz-space/coderz.space/internal/modules/problem"
+	"github.com/coderz-space/coderz.space/internal/modules/progress"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )

@@ -3,8 +3,8 @@ package auth
 import (
 	"net/http"
 
-	"github.com/DSAwithGautam/Coderz.space/internal/common/response"
-	"github.com/DSAwithGautam/Coderz.space/internal/common/utils"
+	"github.com/coderz-space/coderz.space/internal/common/response"
+	"github.com/coderz-space/coderz.space/internal/common/utils"
 	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v5"
 	"github.com/labstack/echo/v5"

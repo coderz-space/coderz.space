@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/DSAwithGautam/Coderz.space/internal/common/logger"
-	"github.com/DSAwithGautam/Coderz.space/internal/config"
+	"github.com/coderz-space/coderz.space/internal/common/logger"
+	"github.com/coderz-space/coderz.space/internal/config"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

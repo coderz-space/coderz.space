@@ -236,7 +236,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of enrollments",
                         "schema": {
-                            "$ref": "#/definitions/bootcamp.EnrollmentListResponse"
+                            "$ref": "#/definitions/internal_modules_bootcamp.EnrollmentListResponse"
                         }
                     },
                     "400": {
@@ -248,6 +248,630 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/bootcamps/{bootcampId}/leaderboard": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve pre-calculated leaderboard rankings for a bootcamp. Returns snapshot data without real-time recalculation. User must be enrolled in the bootcamp.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Leaderboards"
+                ],
+                "summary": "Get bootcamp leaderboard",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default: 20, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Leaderboard entries with pagination",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_analytics.LeaderboardResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid bootcamp ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - not enrolled in bootcamp",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - bootcamp does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/bootcamps/{bootcampId}/leaderboard/{enrollmentId}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve a specific leaderboard entry by enrollment ID. Mentees can only view their own entry.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Leaderboards"
+                ],
+                "summary": "Get leaderboard entry",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bootcamp Enrollment ID (UUID)",
+                        "name": "enrollmentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Leaderboard entry details",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_analytics.LeaderboardEntryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - access denied",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - entry does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/bootcamps/{bootcampId}/polls": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "List polls for a bootcamp with optional problem filtering. Includes user's vote if they have voted. User must be enrolled in bootcamp.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Polls"
+                ],
+                "summary": "List polls",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by problem ID (UUID)",
+                        "name": "problemId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default: 20, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of polls with pagination",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_analytics.PollListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid bootcamp ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - not enrolled in bootcamp",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a difficulty poll for a problem in a bootcamp (mentor/admin only). Supports idempotency via Idempotency-Key header.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Polls"
+                ],
+                "summary": "Create a poll",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Poll details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_analytics.CreatePollRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Idempotency key for safe retries",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Poll created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_analytics.PollResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - validation error or invalid problem ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - mentor/admin role required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - problem does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/bootcamps/{bootcampId}/polls/{pollId}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve full details of a specific poll including user's vote state. User must be enrolled in bootcamp.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Polls"
+                ],
+                "summary": "Get poll details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Poll ID (UUID)",
+                        "name": "pollId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Poll details",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_analytics.PollResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid poll ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - not enrolled in bootcamp",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - poll does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/bootcamps/{bootcampId}/polls/{pollId}/results": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve aggregated poll results with vote counts and percentages (mentor/admin/super_admin only). Mentees cannot access results.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Polls"
+                ],
+                "summary": "Get poll results",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Poll ID (UUID)",
+                        "name": "pollId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Aggregated poll results",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_analytics.PollResultsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid poll ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - mentor/admin/super_admin role required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - poll does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/bootcamps/{bootcampId}/polls/{pollId}/vote": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cast or update a vote on a poll (mentee only). Uses PUT method for idempotent vote creation/update. Returns 201 for first vote, 200 for updates.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Polls"
+                ],
+                "summary": "Vote on a poll",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Poll ID (UUID)",
+                        "name": "pollId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Vote details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_analytics.VotePollRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Vote updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_analytics.VoteResponse"
+                        }
+                    },
+                    "201": {
+                        "description": "Vote created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_analytics.VoteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - validation error or invalid poll ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - only mentees can vote",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - poll does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/bootcamps/{bootcampId}/polls/{pollId}/votes": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve individual vote records with optional filtering by vote value (mentor/admin/super_admin only). Includes voter enrollment ID but not internal user identifiers.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Polls"
+                ],
+                "summary": "Get individual poll votes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Poll ID (UUID)",
+                        "name": "pollId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by vote value (easy, medium, hard)",
+                        "name": "vote",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default: 20, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of individual votes with pagination",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_analytics.PollVotesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid poll ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - mentor/admin/super_admin role required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - poll does not exist",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1089,7 +1713,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of bootcamps with pagination",
                         "schema": {
-                            "$ref": "#/definitions/bootcamp.BootcampListResponse"
+                            "$ref": "#/definitions/internal_modules_bootcamp.BootcampListResponse"
                         }
                     },
                     "400": {
@@ -1153,7 +1777,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/bootcamp.CreateBootcampRequest"
+                            "$ref": "#/definitions/internal_modules_bootcamp.CreateBootcampRequest"
                         }
                     }
                 ],
@@ -1161,7 +1785,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Bootcamp created successfully",
                         "schema": {
-                            "$ref": "#/definitions/bootcamp.BootcampResponse"
+                            "$ref": "#/definitions/internal_modules_bootcamp.BootcampResponse"
                         }
                     },
                     "400": {
@@ -1240,7 +1864,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Bootcamp details",
                         "schema": {
-                            "$ref": "#/definitions/bootcamp.BootcampResponse"
+                            "$ref": "#/definitions/internal_modules_bootcamp.BootcampResponse"
                         }
                     },
                     "400": {
@@ -1311,7 +1935,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/bootcamp.UpdateBootcampRequest"
+                            "$ref": "#/definitions/internal_modules_bootcamp.UpdateBootcampRequest"
                         }
                     }
                 ],
@@ -1319,7 +1943,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Bootcamp updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/bootcamp.BootcampResponse"
+                            "$ref": "#/definitions/internal_modules_bootcamp.BootcampResponse"
                         }
                     },
                     "400": {
@@ -1409,7 +2033,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of assignment groups with pagination",
                         "schema": {
-                            "$ref": "#/definitions/assignment.AssignmentGroupListResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.AssignmentGroupListResponse"
                         }
                     },
                     "400": {
@@ -1480,7 +2104,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/assignment.CreateAssignmentGroupRequest"
+                            "$ref": "#/definitions/internal_modules_assignment.CreateAssignmentGroupRequest"
                         }
                     }
                 ],
@@ -1488,7 +2112,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Assignment group created successfully",
                         "schema": {
-                            "$ref": "#/definitions/assignment.AssignmentGroupResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.AssignmentGroupResponse"
                         }
                     },
                     "400": {
@@ -1567,7 +2191,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Assignment group details",
                         "schema": {
-                            "$ref": "#/definitions/assignment.AssignmentGroupResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.AssignmentGroupResponse"
                         }
                     },
                     "400": {
@@ -1644,7 +2268,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Assignment group deleted successfully",
                         "schema": {
-                            "$ref": "#/definitions/assignment.GenericResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.GenericResponse"
                         }
                     },
                     "400": {
@@ -1729,7 +2353,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/assignment.UpdateAssignmentGroupRequest"
+                            "$ref": "#/definitions/internal_modules_assignment.UpdateAssignmentGroupRequest"
                         }
                     }
                 ],
@@ -1737,7 +2361,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Assignment group updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/assignment.AssignmentGroupResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.AssignmentGroupResponse"
                         }
                     },
                     "400": {
@@ -1817,7 +2441,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/assignment.ReplaceGroupProblemsRequest"
+                            "$ref": "#/definitions/internal_modules_assignment.ReplaceGroupProblemsRequest"
                         }
                     }
                 ],
@@ -1825,7 +2449,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Problems replaced successfully",
                         "schema": {
-                            "$ref": "#/definitions/assignment.GenericResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.GenericResponse"
                         }
                     },
                     "400": {
@@ -1903,7 +2527,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/assignment.AddProblemsToGroupRequest"
+                            "$ref": "#/definitions/internal_modules_assignment.AddProblemsToGroupRequest"
                         }
                     }
                 ],
@@ -1911,7 +2535,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Problems added successfully",
                         "schema": {
-                            "$ref": "#/definitions/assignment.GenericResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.GenericResponse"
                         }
                     },
                     "400": {
@@ -1997,7 +2621,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Problem removed successfully",
                         "schema": {
-                            "$ref": "#/definitions/assignment.GenericResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.GenericResponse"
                         }
                     },
                     "400": {
@@ -2093,7 +2717,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of assignments with pagination",
                         "schema": {
-                            "$ref": "#/definitions/assignment.AssignmentListResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.AssignmentListResponse"
                         }
                     },
                     "400": {
@@ -2170,7 +2794,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/assignment.CreateAssignmentRequest"
+                            "$ref": "#/definitions/internal_modules_assignment.CreateAssignmentRequest"
                         }
                     }
                 ],
@@ -2178,7 +2802,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Assignment created successfully",
                         "schema": {
-                            "$ref": "#/definitions/assignment.AssignmentResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.AssignmentResponse"
                         }
                     },
                     "400": {
@@ -2264,7 +2888,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Assignment details with problems",
                         "schema": {
-                            "$ref": "#/definitions/assignment.AssignmentResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.AssignmentResponse"
                         }
                     },
                     "400": {
@@ -2342,7 +2966,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/assignment.UpdateAssignmentRequest"
+                            "$ref": "#/definitions/internal_modules_assignment.UpdateAssignmentRequest"
                         }
                     }
                 ],
@@ -2350,7 +2974,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Assignment updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/assignment.AssignmentResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.AssignmentResponse"
                         }
                     },
                     "400": {
@@ -2430,7 +3054,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/assignment.UpdateAssignmentDeadlineRequest"
+                            "$ref": "#/definitions/internal_modules_assignment.UpdateAssignmentDeadlineRequest"
                         }
                     }
                 ],
@@ -2438,7 +3062,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Assignment deadline updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/assignment.AssignmentResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.AssignmentResponse"
                         }
                     },
                     "400": {
@@ -2517,7 +3141,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of assignment problems with progress",
                         "schema": {
-                            "$ref": "#/definitions/assignment.AssignmentProblemListResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.AssignmentProblemListResponse"
                         }
                     },
                     "400": {
@@ -2603,7 +3227,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Assignment problem details",
                         "schema": {
-                            "$ref": "#/definitions/assignment.AssignmentProblemResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.AssignmentProblemResponse"
                         }
                     },
                     "400": {
@@ -2701,7 +3325,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/assignment.UpdateAssignmentProblemRequest"
+                            "$ref": "#/definitions/internal_modules_assignment.UpdateAssignmentProblemRequest"
                         }
                     },
                     {
@@ -2738,7 +3362,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/assignment.UpdateAssignmentProblemRequest"
+                            "$ref": "#/definitions/internal_modules_assignment.UpdateAssignmentProblemRequest"
                         }
                     }
                 ],
@@ -2746,7 +3370,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Progress updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/assignment.AssignmentProblemResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.AssignmentProblemResponse"
                         }
                     },
                     "400": {
@@ -2833,7 +3457,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/assignment.UpdateAssignmentStatusRequest"
+                            "$ref": "#/definitions/internal_modules_assignment.UpdateAssignmentStatusRequest"
                         }
                     }
                 ],
@@ -2841,7 +3465,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Assignment status updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/assignment.AssignmentResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.AssignmentResponse"
                         }
                     },
                     "400": {
@@ -2913,7 +3537,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Bootcamp deactivated successfully",
                         "schema": {
-                            "$ref": "#/definitions/bootcamp.GenericResponse"
+                            "$ref": "#/definitions/internal_modules_bootcamp.GenericResponse"
                         }
                     },
                     "400": {
@@ -2986,7 +3610,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/bootcamp.EnrollMemberRequest"
+                            "$ref": "#/definitions/internal_modules_bootcamp.EnrollMemberRequest"
                         }
                     }
                 ],
@@ -2994,7 +3618,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Member enrolled successfully",
                         "schema": {
-                            "$ref": "#/definitions/bootcamp.EnrollmentResponse"
+                            "$ref": "#/definitions/internal_modules_bootcamp.EnrollmentResponse"
                         }
                     },
                     "400": {
@@ -3080,7 +3704,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Enrollment removed successfully",
                         "schema": {
-                            "$ref": "#/definitions/bootcamp.GenericResponse"
+                            "$ref": "#/definitions/internal_modules_bootcamp.GenericResponse"
                         }
                     },
                     "400": {
@@ -3153,7 +3777,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/bootcamp.UpdateEnrollmentRoleRequest"
+                            "$ref": "#/definitions/internal_modules_bootcamp.UpdateEnrollmentRoleRequest"
                         }
                     }
                 ],
@@ -3161,7 +3785,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Enrollment role updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/bootcamp.EnrollmentResponse"
+                            "$ref": "#/definitions/internal_modules_bootcamp.EnrollmentResponse"
                         }
                     },
                     "400": {
@@ -3219,7 +3843,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of assignments",
                         "schema": {
-                            "$ref": "#/definitions/assignment.AssignmentListResponse"
+                            "$ref": "#/definitions/internal_modules_assignment.AssignmentListResponse"
                         }
                     },
                     "400": {
@@ -3614,7 +4238,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of problems with pagination",
                         "schema": {
-                            "$ref": "#/definitions/problem.ProblemListResponse"
+                            "$ref": "#/definitions/internal_modules_problem.ProblemListResponse"
                         }
                     },
                     "400": {
@@ -3678,7 +4302,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/problem.CreateProblemRequest"
+                            "$ref": "#/definitions/internal_modules_problem.CreateProblemRequest"
                         }
                     }
                 ],
@@ -3686,7 +4310,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Problem created successfully",
                         "schema": {
-                            "$ref": "#/definitions/problem.ProblemResponse"
+                            "$ref": "#/definitions/internal_modules_problem.ProblemResponse"
                         }
                     },
                     "400": {
@@ -3758,7 +4382,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Problem details",
                         "schema": {
-                            "$ref": "#/definitions/problem.ProblemResponse"
+                            "$ref": "#/definitions/internal_modules_problem.ProblemResponse"
                         }
                     },
                     "400": {
@@ -3828,7 +4452,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Problem archived successfully",
                         "schema": {
-                            "$ref": "#/definitions/problem.GenericResponse"
+                            "$ref": "#/definitions/internal_modules_problem.GenericResponse"
                         }
                     },
                     "400": {
@@ -3906,7 +4530,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/problem.UpdateProblemRequest"
+                            "$ref": "#/definitions/internal_modules_problem.UpdateProblemRequest"
                         }
                     }
                 ],
@@ -3914,7 +4538,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Problem updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/problem.ProblemResponse"
+                            "$ref": "#/definitions/internal_modules_problem.ProblemResponse"
                         }
                     },
                     "400": {
@@ -3986,7 +4610,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of resources",
                         "schema": {
-                            "$ref": "#/definitions/problem.ResourceListResponse"
+                            "$ref": "#/definitions/internal_modules_problem.ResourceListResponse"
                         }
                     },
                     "400": {
@@ -4057,7 +4681,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/problem.CreateResourceRequest"
+                            "$ref": "#/definitions/internal_modules_problem.CreateResourceRequest"
                         }
                     }
                 ],
@@ -4065,7 +4689,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Resource added successfully",
                         "schema": {
-                            "$ref": "#/definitions/problem.ResourceResponse"
+                            "$ref": "#/definitions/internal_modules_problem.ResourceResponse"
                         }
                     },
                     "400": {
@@ -4144,7 +4768,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Resource deleted successfully",
                         "schema": {
-                            "$ref": "#/definitions/problem.GenericResponse"
+                            "$ref": "#/definitions/internal_modules_problem.GenericResponse"
                         }
                     },
                     "400": {
@@ -4222,7 +4846,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/problem.UpdateResourceRequest"
+                            "$ref": "#/definitions/internal_modules_problem.UpdateResourceRequest"
                         }
                     }
                 ],
@@ -4230,7 +4854,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Resource updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/problem.ResourceResponse"
+                            "$ref": "#/definitions/internal_modules_problem.ResourceResponse"
                         }
                     },
                     "400": {
@@ -4303,7 +4927,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/problem.AttachTagsRequest"
+                            "$ref": "#/definitions/internal_modules_problem.AttachTagsRequest"
                         }
                     }
                 ],
@@ -4311,7 +4935,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Tags attached successfully",
                         "schema": {
-                            "$ref": "#/definitions/problem.GenericResponse"
+                            "$ref": "#/definitions/internal_modules_problem.GenericResponse"
                         }
                     },
                     "400": {
@@ -4397,7 +5021,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Tag detached successfully",
                         "schema": {
-                            "$ref": "#/definitions/problem.GenericResponse"
+                            "$ref": "#/definitions/internal_modules_problem.GenericResponse"
                         }
                     },
                     "400": {
@@ -4468,7 +5092,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of tags",
                         "schema": {
-                            "$ref": "#/definitions/problem.TagListResponse"
+                            "$ref": "#/definitions/internal_modules_problem.TagListResponse"
                         }
                     },
                     "400": {
@@ -4525,7 +5149,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/problem.CreateTagRequest"
+                            "$ref": "#/definitions/internal_modules_problem.CreateTagRequest"
                         }
                     }
                 ],
@@ -4533,7 +5157,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Tag created successfully",
                         "schema": {
-                            "$ref": "#/definitions/problem.TagResponse"
+                            "$ref": "#/definitions/internal_modules_problem.TagResponse"
                         }
                     },
                     "400": {
@@ -4605,7 +5229,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Tag deleted successfully",
                         "schema": {
-                            "$ref": "#/definitions/problem.GenericResponse"
+                            "$ref": "#/definitions/internal_modules_problem.GenericResponse"
                         }
                     },
                     "400": {
@@ -4683,7 +5307,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/problem.UpdateTagRequest"
+                            "$ref": "#/definitions/internal_modules_problem.UpdateTagRequest"
                         }
                     }
                 ],
@@ -4691,7 +5315,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Tag updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/problem.TagResponse"
+                            "$ref": "#/definitions/internal_modules_problem.TagResponse"
                         }
                     },
                     "400": {
@@ -4734,7 +5358,338 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "assignment.AddProblemsToGroupRequest": {
+        "internal_modules_analytics.CreatePollRequest": {
+            "description": "Request body for creating a poll on a problem",
+            "type": "object",
+            "required": [
+                "problemId",
+                "question"
+            ],
+            "properties": {
+                "problemId": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "question": {
+                    "type": "string",
+                    "maxLength": 240,
+                    "minLength": 10,
+                    "example": "How difficult did you find this problem?"
+                }
+            }
+        },
+        "internal_modules_analytics.LeaderboardEntryData": {
+            "description": "Leaderboard entry with user details and performance metrics",
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "type": "string",
+                    "example": "https://example.com/avatar.jpg"
+                },
+                "bootcampEnrollmentId": {
+                    "type": "string",
+                    "example": "770e8400-e29b-41d4-a716-446655440000"
+                },
+                "bootcampId": {
+                    "type": "string",
+                    "example": "660e8400-e29b-41d4-a716-446655440000"
+                },
+                "calculatedAt": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "completionRate": {
+                    "type": "string",
+                    "example": "83.33"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "problemsAttempted": {
+                    "type": "integer",
+                    "example": 30
+                },
+                "problemsCompleted": {
+                    "type": "integer",
+                    "example": 25
+                },
+                "rank": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "score": {
+                    "type": "integer",
+                    "example": 850
+                },
+                "streakDays": {
+                    "type": "integer",
+                    "example": 7
+                }
+            }
+        },
+        "internal_modules_analytics.LeaderboardEntryResponse": {
+            "description": "Response containing a single leaderboard entry",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_modules_analytics.LeaderboardEntryData"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_analytics.LeaderboardResponse": {
+            "description": "Response containing leaderboard entries with pagination",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_modules_analytics.LeaderboardEntryData"
+                    }
+                },
+                "meta": {
+                    "$ref": "#/definitions/internal_modules_analytics.OffsetPagination"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_analytics.OffsetPagination": {
+            "description": "Offset-based pagination metadata",
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "internal_modules_analytics.PollData": {
+            "description": "Poll details with problem information",
+            "type": "object",
+            "properties": {
+                "bootcampId": {
+                    "type": "string",
+                    "example": "660e8400-e29b-41d4-a716-446655440000"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2024-01-15T09:00:00Z"
+                },
+                "createdBy": {
+                    "type": "string",
+                    "example": "880e8400-e29b-41d4-a716-446655440000"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "myVote": {
+                    "type": "string",
+                    "example": "medium"
+                },
+                "problemId": {
+                    "type": "string",
+                    "example": "770e8400-e29b-41d4-a716-446655440000"
+                },
+                "problemTitle": {
+                    "type": "string",
+                    "example": "Two Sum"
+                },
+                "question": {
+                    "type": "string",
+                    "example": "How difficult did you find this problem?"
+                }
+            }
+        },
+        "internal_modules_analytics.PollListResponse": {
+            "description": "Response containing a list of polls with pagination",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_modules_analytics.PollData"
+                    }
+                },
+                "meta": {
+                    "$ref": "#/definitions/internal_modules_analytics.OffsetPagination"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_analytics.PollResponse": {
+            "description": "Response containing a single poll",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_modules_analytics.PollData"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_analytics.PollResultsData": {
+            "description": "Aggregated poll results with vote counts and percentages",
+            "type": "object",
+            "properties": {
+                "easyCount": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "easyPercent": {
+                    "type": "number",
+                    "example": 20
+                },
+                "hardCount": {
+                    "type": "integer",
+                    "example": 30
+                },
+                "hardPercent": {
+                    "type": "number",
+                    "example": 30
+                },
+                "mediumCount": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "mediumPercent": {
+                    "type": "number",
+                    "example": 50
+                },
+                "percentBreakup": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "number",
+                        "format": "float64"
+                    }
+                },
+                "totalVotes": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "voteBreakdown": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            }
+        },
+        "internal_modules_analytics.PollResultsResponse": {
+            "description": "Response containing aggregated poll results",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_modules_analytics.PollResultsData"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_analytics.PollVotesResponse": {
+            "description": "Response containing individual poll votes with pagination",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_modules_analytics.VoteData"
+                    }
+                },
+                "meta": {
+                    "$ref": "#/definitions/internal_modules_analytics.OffsetPagination"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_analytics.VoteData": {
+            "description": "Poll vote details",
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2024-01-15T09:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "pollId": {
+                    "type": "string",
+                    "example": "660e8400-e29b-41d4-a716-446655440000"
+                },
+                "vote": {
+                    "type": "string",
+                    "example": "medium"
+                },
+                "voterId": {
+                    "type": "string",
+                    "example": "770e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "internal_modules_analytics.VotePollRequest": {
+            "description": "Request body for casting or updating a vote on a poll",
+            "type": "object",
+            "required": [
+                "vote"
+            ],
+            "properties": {
+                "vote": {
+                    "type": "string",
+                    "enum": [
+                        "easy",
+                        "medium",
+                        "hard"
+                    ],
+                    "example": "medium"
+                }
+            }
+        },
+        "internal_modules_analytics.VoteResponse": {
+            "description": "Response containing a single vote",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_modules_analytics.VoteData"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_assignment.AddProblemsToGroupRequest": {
             "type": "object",
             "required": [
                 "problems"
@@ -4744,12 +5699,12 @@ const docTemplate = `{
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/assignment.GroupProblemInput"
+                        "$ref": "#/definitions/internal_modules_assignment.GroupProblemInput"
                     }
                 }
             }
         },
-        "assignment.AssignmentData": {
+        "internal_modules_assignment.AssignmentData": {
             "type": "object",
             "properties": {
                 "assignedAt": {
@@ -4787,7 +5742,7 @@ const docTemplate = `{
                 "problems": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/assignment.AssignmentProblemData"
+                        "$ref": "#/definitions/internal_modules_assignment.AssignmentProblemData"
                     }
                 },
                 "status": {
@@ -4800,7 +5755,7 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.AssignmentGroupData": {
+        "internal_modules_assignment.AssignmentGroupData": {
             "type": "object",
             "properties": {
                 "bootcampId": {
@@ -4830,7 +5785,7 @@ const docTemplate = `{
                 "problems": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/assignment.GroupProblemRef"
+                        "$ref": "#/definitions/internal_modules_assignment.GroupProblemRef"
                     }
                 },
                 "title": {
@@ -4843,17 +5798,17 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.AssignmentGroupListResponse": {
+        "internal_modules_assignment.AssignmentGroupListResponse": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/assignment.AssignmentGroupData"
+                        "$ref": "#/definitions/internal_modules_assignment.AssignmentGroupData"
                     }
                 },
                 "meta": {
-                    "$ref": "#/definitions/assignment.PaginationMeta"
+                    "$ref": "#/definitions/internal_modules_assignment.PaginationMeta"
                 },
                 "success": {
                     "type": "boolean",
@@ -4861,11 +5816,11 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.AssignmentGroupResponse": {
+        "internal_modules_assignment.AssignmentGroupResponse": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/assignment.AssignmentGroupData"
+                    "$ref": "#/definitions/internal_modules_assignment.AssignmentGroupData"
                 },
                 "success": {
                     "type": "boolean",
@@ -4873,17 +5828,17 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.AssignmentListResponse": {
+        "internal_modules_assignment.AssignmentListResponse": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/assignment.AssignmentData"
+                        "$ref": "#/definitions/internal_modules_assignment.AssignmentData"
                     }
                 },
                 "meta": {
-                    "$ref": "#/definitions/assignment.PaginationMeta"
+                    "$ref": "#/definitions/internal_modules_assignment.PaginationMeta"
                 },
                 "success": {
                     "type": "boolean",
@@ -4891,7 +5846,7 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.AssignmentProblemData": {
+        "internal_modules_assignment.AssignmentProblemData": {
             "type": "object",
             "properties": {
                 "assignmentId": {
@@ -4940,13 +5895,13 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.AssignmentProblemListResponse": {
+        "internal_modules_assignment.AssignmentProblemListResponse": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/assignment.AssignmentProblemData"
+                        "$ref": "#/definitions/internal_modules_assignment.AssignmentProblemData"
                     }
                 },
                 "success": {
@@ -4955,11 +5910,11 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.AssignmentProblemResponse": {
+        "internal_modules_assignment.AssignmentProblemResponse": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/assignment.AssignmentProblemData"
+                    "$ref": "#/definitions/internal_modules_assignment.AssignmentProblemData"
                 },
                 "success": {
                     "type": "boolean",
@@ -4967,11 +5922,11 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.AssignmentResponse": {
+        "internal_modules_assignment.AssignmentResponse": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/assignment.AssignmentData"
+                    "$ref": "#/definitions/internal_modules_assignment.AssignmentData"
                 },
                 "success": {
                     "type": "boolean",
@@ -4979,7 +5934,7 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.CreateAssignmentGroupRequest": {
+        "internal_modules_assignment.CreateAssignmentGroupRequest": {
             "type": "object",
             "required": [
                 "deadlineDays",
@@ -5004,7 +5959,7 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.CreateAssignmentRequest": {
+        "internal_modules_assignment.CreateAssignmentRequest": {
             "type": "object",
             "required": [
                 "assignmentGroupId",
@@ -5025,7 +5980,7 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.GenericResponse": {
+        "internal_modules_assignment.GenericResponse": {
             "type": "object",
             "properties": {
                 "data": {
@@ -5038,7 +5993,7 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.GroupProblemInput": {
+        "internal_modules_assignment.GroupProblemInput": {
             "type": "object",
             "required": [
                 "position",
@@ -5056,7 +6011,7 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.GroupProblemRef": {
+        "internal_modules_assignment.GroupProblemRef": {
             "type": "object",
             "properties": {
                 "difficulty": {
@@ -5077,7 +6032,7 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.PaginationMeta": {
+        "internal_modules_assignment.PaginationMeta": {
             "type": "object",
             "properties": {
                 "limit": {
@@ -5094,7 +6049,7 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.ReplaceGroupProblemsRequest": {
+        "internal_modules_assignment.ReplaceGroupProblemsRequest": {
             "type": "object",
             "required": [
                 "problems"
@@ -5104,12 +6059,12 @@ const docTemplate = `{
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/assignment.GroupProblemInput"
+                        "$ref": "#/definitions/internal_modules_assignment.GroupProblemInput"
                     }
                 }
             }
         },
-        "assignment.UpdateAssignmentDeadlineRequest": {
+        "internal_modules_assignment.UpdateAssignmentDeadlineRequest": {
             "type": "object",
             "required": [
                 "deadlineAt"
@@ -5121,7 +6076,7 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.UpdateAssignmentGroupRequest": {
+        "internal_modules_assignment.UpdateAssignmentGroupRequest": {
             "type": "object",
             "properties": {
                 "deadlineDays": {
@@ -5142,7 +6097,7 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.UpdateAssignmentProblemRequest": {
+        "internal_modules_assignment.UpdateAssignmentProblemRequest": {
             "type": "object",
             "properties": {
                 "notes": {
@@ -5165,7 +6120,7 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.UpdateAssignmentRequest": {
+        "internal_modules_assignment.UpdateAssignmentRequest": {
             "type": "object",
             "properties": {
                 "deadlineAt": {
@@ -5183,7 +6138,7 @@ const docTemplate = `{
                 }
             }
         },
-        "assignment.UpdateAssignmentStatusRequest": {
+        "internal_modules_assignment.UpdateAssignmentStatusRequest": {
             "type": "object",
             "required": [
                 "status"
@@ -5197,241 +6152,6 @@ const docTemplate = `{
                         "expired"
                     ],
                     "example": "completed"
-                }
-            }
-        },
-        "bootcamp.BootcampData": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string"
-                },
-                "createdBy": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "endDate": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "isActive": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "organizationId": {
-                    "type": "string"
-                },
-                "startDate": {
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "type": "string"
-                }
-            }
-        },
-        "bootcamp.BootcampListResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/bootcamp.BootcampData"
-                    }
-                },
-                "meta": {
-                    "$ref": "#/definitions/bootcamp.PaginationMeta"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "bootcamp.BootcampResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/bootcamp.BootcampData"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "bootcamp.CreateBootcampRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "maxLength": 500
-                },
-                "endDate": {
-                    "type": "string"
-                },
-                "isActive": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 120,
-                    "minLength": 3
-                },
-                "startDate": {
-                    "type": "string"
-                }
-            }
-        },
-        "bootcamp.EnrollMemberRequest": {
-            "type": "object",
-            "required": [
-                "organizationMemberId",
-                "role"
-            ],
-            "properties": {
-                "organizationMemberId": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string",
-                    "enum": [
-                        "mentor",
-                        "mentee"
-                    ]
-                }
-            }
-        },
-        "bootcamp.EnrollmentData": {
-            "type": "object",
-            "properties": {
-                "avatarUrl": {
-                    "type": "string"
-                },
-                "bootcampId": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "enrolledAt": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "orgRole": {
-                    "type": "string"
-                },
-                "organizationMemberId": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "bootcamp.EnrollmentListResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/bootcamp.EnrollmentData"
-                    }
-                },
-                "meta": {
-                    "$ref": "#/definitions/bootcamp.PaginationMeta"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "bootcamp.EnrollmentResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/bootcamp.EnrollmentData"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "bootcamp.GenericResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "additionalProperties": {}
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "bootcamp.PaginationMeta": {
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer"
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "bootcamp.UpdateBootcampRequest": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "maxLength": 500
-                },
-                "endDate": {
-                    "type": "string"
-                },
-                "isActive": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 120,
-                    "minLength": 3
-                },
-                "startDate": {
-                    "type": "string"
-                }
-            }
-        },
-        "bootcamp.UpdateEnrollmentRoleRequest": {
-            "type": "object",
-            "required": [
-                "role"
-            ],
-            "properties": {
-                "role": {
-                    "type": "string",
-                    "enum": [
-                        "mentor",
-                        "mentee"
-                    ]
                 }
             }
         },
@@ -5570,6 +6290,241 @@ const docTemplate = `{
                     "maxLength": 50,
                     "minLength": 8,
                     "example": "Password123"
+                }
+            }
+        },
+        "internal_modules_bootcamp.BootcampData": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organizationId": {
+                    "type": "string"
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_modules_bootcamp.BootcampListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_modules_bootcamp.BootcampData"
+                    }
+                },
+                "meta": {
+                    "$ref": "#/definitions/internal_modules_bootcamp.PaginationMeta"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_modules_bootcamp.BootcampResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_modules_bootcamp.BootcampData"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_modules_bootcamp.CreateBootcampRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "minLength": 3
+                },
+                "startDate": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_modules_bootcamp.EnrollMemberRequest": {
+            "type": "object",
+            "required": [
+                "organizationMemberId",
+                "role"
+            ],
+            "properties": {
+                "organizationMemberId": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "mentor",
+                        "mentee"
+                    ]
+                }
+            }
+        },
+        "internal_modules_bootcamp.EnrollmentData": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "type": "string"
+                },
+                "bootcampId": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "enrolledAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "orgRole": {
+                    "type": "string"
+                },
+                "organizationMemberId": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_modules_bootcamp.EnrollmentListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_modules_bootcamp.EnrollmentData"
+                    }
+                },
+                "meta": {
+                    "$ref": "#/definitions/internal_modules_bootcamp.PaginationMeta"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_modules_bootcamp.EnrollmentResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_modules_bootcamp.EnrollmentData"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_modules_bootcamp.GenericResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_modules_bootcamp.PaginationMeta": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_modules_bootcamp.UpdateBootcampRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "endDate": {
+                    "type": "string"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "minLength": 3
+                },
+                "startDate": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_modules_bootcamp.UpdateEnrollmentRoleRequest": {
+            "type": "object",
+            "required": [
+                "role"
+            ],
+            "properties": {
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "mentor",
+                        "mentee"
+                    ]
                 }
             }
         },
@@ -5788,6 +6743,367 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_modules_problem.AttachTagsRequest": {
+            "type": "object",
+            "required": [
+                "tagIds"
+            ],
+            "properties": {
+                "tagIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "550e8400-e29b-41d4-a716-446655440000",
+                        "660e8400-e29b-41d4-a716-446655440000"
+                    ]
+                }
+            }
+        },
+        "internal_modules_problem.CreateProblemRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "difficulty",
+                "title"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "minLength": 10,
+                    "example": "Given an array of integers, return indices of the two numbers that add up to a specific target."
+                },
+                "difficulty": {
+                    "type": "string",
+                    "enum": [
+                        "easy",
+                        "medium",
+                        "hard"
+                    ],
+                    "example": "easy"
+                },
+                "externalLink": {
+                    "type": "string",
+                    "example": "https://leetcode.com/problems/two-sum/"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 3,
+                    "example": "Two Sum"
+                }
+            }
+        },
+        "internal_modules_problem.CreateResourceRequest": {
+            "type": "object",
+            "required": [
+                "title",
+                "url"
+            ],
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "maxLength": 150,
+                    "minLength": 2,
+                    "example": "Two Sum Solution Explanation"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://www.youtube.com/watch?v=example"
+                }
+            }
+        },
+        "internal_modules_problem.CreateTagRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "minLength": 2,
+                    "example": "arrays"
+                }
+            }
+        },
+        "internal_modules_problem.GenericResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_problem.PaginationMeta": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "internal_modules_problem.ProblemData": {
+            "type": "object",
+            "properties": {
+                "archivedAt": {
+                    "type": "string",
+                    "example": ""
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2024-01-01T10:00:00Z"
+                },
+                "createdBy": {
+                    "type": "string",
+                    "example": "770e8400-e29b-41d4-a716-446655440000"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Given an array of integers, return indices of the two numbers that add up to a specific target."
+                },
+                "difficulty": {
+                    "type": "string",
+                    "example": "easy"
+                },
+                "externalLink": {
+                    "type": "string",
+                    "example": "https://leetcode.com/problems/two-sum/"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "organizationId": {
+                    "type": "string",
+                    "example": "660e8400-e29b-41d4-a716-446655440000"
+                },
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_modules_problem.ResourceData"
+                    }
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_modules_problem.TagData"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Two Sum"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2024-01-01T10:00:00Z"
+                }
+            }
+        },
+        "internal_modules_problem.ProblemListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_modules_problem.ProblemData"
+                    }
+                },
+                "meta": {
+                    "$ref": "#/definitions/internal_modules_problem.PaginationMeta"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_problem.ProblemResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_modules_problem.ProblemData"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_problem.ResourceData": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2024-01-01T10:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "problemId": {
+                    "type": "string",
+                    "example": "660e8400-e29b-41d4-a716-446655440000"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Two Sum Solution Explanation"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://www.youtube.com/watch?v=example"
+                }
+            }
+        },
+        "internal_modules_problem.ResourceListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_modules_problem.ResourceData"
+                    }
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_problem.ResourceResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_modules_problem.ResourceData"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_problem.TagData": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2024-01-01T10:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "arrays"
+                },
+                "organizationId": {
+                    "type": "string",
+                    "example": "660e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "internal_modules_problem.TagListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_modules_problem.TagData"
+                    }
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_problem.TagResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_modules_problem.TagData"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_problem.UpdateProblemRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "minLength": 10,
+                    "example": "Updated description"
+                },
+                "difficulty": {
+                    "type": "string",
+                    "enum": [
+                        "easy",
+                        "medium",
+                        "hard"
+                    ],
+                    "example": "medium"
+                },
+                "externalLink": {
+                    "type": "string",
+                    "example": "https://leetcode.com/problems/two-sum/"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 3,
+                    "example": "Two Sum Updated"
+                }
+            }
+        },
+        "internal_modules_problem.UpdateResourceRequest": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "maxLength": 150,
+                    "minLength": 2,
+                    "example": "Updated Resource Title"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://www.youtube.com/watch?v=updated"
+                }
+            }
+        },
+        "internal_modules_problem.UpdateTagRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "minLength": 2,
+                    "example": "dynamic-programming"
+                }
+            }
+        },
         "internal_modules_progress.CreateDoubtRequest": {
             "description": "Request body for creating a doubt on an assignment problem",
             "type": "object",
@@ -5938,367 +7254,6 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 1000,
                     "example": "The time complexity is O(n log n) because of the sorting step"
-                }
-            }
-        },
-        "problem.AttachTagsRequest": {
-            "type": "object",
-            "required": [
-                "tagIds"
-            ],
-            "properties": {
-                "tagIds": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "550e8400-e29b-41d4-a716-446655440000",
-                        "660e8400-e29b-41d4-a716-446655440000"
-                    ]
-                }
-            }
-        },
-        "problem.CreateProblemRequest": {
-            "type": "object",
-            "required": [
-                "description",
-                "difficulty",
-                "title"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "minLength": 10,
-                    "example": "Given an array of integers, return indices of the two numbers that add up to a specific target."
-                },
-                "difficulty": {
-                    "type": "string",
-                    "enum": [
-                        "easy",
-                        "medium",
-                        "hard"
-                    ],
-                    "example": "easy"
-                },
-                "externalLink": {
-                    "type": "string",
-                    "example": "https://leetcode.com/problems/two-sum/"
-                },
-                "title": {
-                    "type": "string",
-                    "maxLength": 200,
-                    "minLength": 3,
-                    "example": "Two Sum"
-                }
-            }
-        },
-        "problem.CreateResourceRequest": {
-            "type": "object",
-            "required": [
-                "title",
-                "url"
-            ],
-            "properties": {
-                "title": {
-                    "type": "string",
-                    "maxLength": 150,
-                    "minLength": 2,
-                    "example": "Two Sum Solution Explanation"
-                },
-                "url": {
-                    "type": "string",
-                    "example": "https://www.youtube.com/watch?v=example"
-                }
-            }
-        },
-        "problem.CreateTagRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "maxLength": 80,
-                    "minLength": 2,
-                    "example": "arrays"
-                }
-            }
-        },
-        "problem.GenericResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "additionalProperties": {}
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "problem.PaginationMeta": {
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer",
-                    "example": 20
-                },
-                "page": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "total": {
-                    "type": "integer",
-                    "example": 100
-                }
-            }
-        },
-        "problem.ProblemData": {
-            "type": "object",
-            "properties": {
-                "archivedAt": {
-                    "type": "string",
-                    "example": ""
-                },
-                "createdAt": {
-                    "type": "string",
-                    "example": "2024-01-01T10:00:00Z"
-                },
-                "createdBy": {
-                    "type": "string",
-                    "example": "770e8400-e29b-41d4-a716-446655440000"
-                },
-                "description": {
-                    "type": "string",
-                    "example": "Given an array of integers, return indices of the two numbers that add up to a specific target."
-                },
-                "difficulty": {
-                    "type": "string",
-                    "example": "easy"
-                },
-                "externalLink": {
-                    "type": "string",
-                    "example": "https://leetcode.com/problems/two-sum/"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
-                "organizationId": {
-                    "type": "string",
-                    "example": "660e8400-e29b-41d4-a716-446655440000"
-                },
-                "resources": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/problem.ResourceData"
-                    }
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/problem.TagData"
-                    }
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Two Sum"
-                },
-                "updatedAt": {
-                    "type": "string",
-                    "example": "2024-01-01T10:00:00Z"
-                }
-            }
-        },
-        "problem.ProblemListResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/problem.ProblemData"
-                    }
-                },
-                "meta": {
-                    "$ref": "#/definitions/problem.PaginationMeta"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "problem.ProblemResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/problem.ProblemData"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "problem.ResourceData": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string",
-                    "example": "2024-01-01T10:00:00Z"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
-                "problemId": {
-                    "type": "string",
-                    "example": "660e8400-e29b-41d4-a716-446655440000"
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Two Sum Solution Explanation"
-                },
-                "url": {
-                    "type": "string",
-                    "example": "https://www.youtube.com/watch?v=example"
-                }
-            }
-        },
-        "problem.ResourceListResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/problem.ResourceData"
-                    }
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "problem.ResourceResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/problem.ResourceData"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "problem.TagData": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string",
-                    "example": "2024-01-01T10:00:00Z"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "arrays"
-                },
-                "organizationId": {
-                    "type": "string",
-                    "example": "660e8400-e29b-41d4-a716-446655440000"
-                }
-            }
-        },
-        "problem.TagListResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/problem.TagData"
-                    }
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "problem.TagResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/problem.TagData"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "problem.UpdateProblemRequest": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "minLength": 10,
-                    "example": "Updated description"
-                },
-                "difficulty": {
-                    "type": "string",
-                    "enum": [
-                        "easy",
-                        "medium",
-                        "hard"
-                    ],
-                    "example": "medium"
-                },
-                "externalLink": {
-                    "type": "string",
-                    "example": "https://leetcode.com/problems/two-sum/"
-                },
-                "title": {
-                    "type": "string",
-                    "maxLength": 200,
-                    "minLength": 3,
-                    "example": "Two Sum Updated"
-                }
-            }
-        },
-        "problem.UpdateResourceRequest": {
-            "type": "object",
-            "properties": {
-                "title": {
-                    "type": "string",
-                    "maxLength": 150,
-                    "minLength": 2,
-                    "example": "Updated Resource Title"
-                },
-                "url": {
-                    "type": "string",
-                    "example": "https://www.youtube.com/watch?v=updated"
-                }
-            }
-        },
-        "problem.UpdateTagRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "maxLength": 80,
-                    "minLength": 2,
-                    "example": "dynamic-programming"
                 }
             }
         }

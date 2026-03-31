@@ -1,6 +1,6 @@
 # Coderz.space Server
 
-[![CI](https://github.com/DSAwithGautam/Coderz.space/actions/workflows/ci.yaml/badge.svg)](https://github.com/DSAwithGautam/Coderz.space/actions/workflows/ci.yaml)
+[![CI](https://github.com/coderz-space/coderz.space/actions/workflows/ci.yaml/badge.svg)](https://github.com/coderz-space/coderz.space/actions/workflows/ci.yaml)
 
 Go-based backend server for the Coderz.space bootcamp management platform.
 

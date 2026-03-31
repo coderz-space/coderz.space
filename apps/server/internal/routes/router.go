@@ -4,14 +4,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/DSAwithGautam/Coderz.space/internal/container"
-	"github.com/DSAwithGautam/Coderz.space/internal/modules/analytics"
-	"github.com/DSAwithGautam/Coderz.space/internal/modules/assignment"
-	"github.com/DSAwithGautam/Coderz.space/internal/modules/auth"
-	"github.com/DSAwithGautam/Coderz.space/internal/modules/bootcamp"
-	"github.com/DSAwithGautam/Coderz.space/internal/modules/organization"
-	"github.com/DSAwithGautam/Coderz.space/internal/modules/problem"
-	"github.com/DSAwithGautam/Coderz.space/internal/modules/progress"
+	"github.com/coderz-space/coderz.space/internal/container"
+	"github.com/coderz-space/coderz.space/internal/modules/analytics"
+	"github.com/coderz-space/coderz.space/internal/modules/assignment"
+	"github.com/coderz-space/coderz.space/internal/modules/auth"
+	"github.com/coderz-space/coderz.space/internal/modules/bootcamp"
+	"github.com/coderz-space/coderz.space/internal/modules/organization"
+	"github.com/coderz-space/coderz.space/internal/modules/problem"
+	"github.com/coderz-space/coderz.space/internal/modules/progress"
 	"github.com/labstack/echo/v5"
 )
 

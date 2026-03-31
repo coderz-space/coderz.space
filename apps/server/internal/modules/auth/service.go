@@ -7,9 +7,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/DSAwithGautam/Coderz.space/internal/common/utils"
-	"github.com/DSAwithGautam/Coderz.space/internal/config"
-	db "github.com/DSAwithGautam/Coderz.space/internal/db/sqlc"
+	"github.com/coderz-space/coderz.space/internal/common/utils"
+	"github.com/coderz-space/coderz.space/internal/config"
+	db "github.com/coderz-space/coderz.space/internal/db/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
 )

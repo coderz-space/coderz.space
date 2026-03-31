@@ -1,16 +1,254 @@
 basePath: /api
 definitions:
-  assignment.AddProblemsToGroupRequest:
+  internal_modules_analytics.CreatePollRequest:
+    description: Request body for creating a poll on a problem
+    properties:
+      problemId:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      question:
+        example: How difficult did you find this problem?
+        maxLength: 240
+        minLength: 10
+        type: string
+    required:
+    - problemId
+    - question
+    type: object
+  internal_modules_analytics.LeaderboardEntryData:
+    description: Leaderboard entry with user details and performance metrics
+    properties:
+      avatarUrl:
+        example: https://example.com/avatar.jpg
+        type: string
+      bootcampEnrollmentId:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+      bootcampId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      calculatedAt:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      completionRate:
+        example: "83.33"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: John Doe
+        type: string
+      problemsAttempted:
+        example: 30
+        type: integer
+      problemsCompleted:
+        example: 25
+        type: integer
+      rank:
+        example: 1
+        type: integer
+      score:
+        example: 850
+        type: integer
+      streakDays:
+        example: 7
+        type: integer
+    type: object
+  internal_modules_analytics.LeaderboardEntryResponse:
+    description: Response containing a single leaderboard entry
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_analytics.LeaderboardEntryData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.LeaderboardResponse:
+    description: Response containing leaderboard entries with pagination
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_analytics.LeaderboardEntryData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_analytics.OffsetPagination'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.OffsetPagination:
+    description: Offset-based pagination metadata
+    properties:
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+    type: object
+  internal_modules_analytics.PollData:
+    description: Poll details with problem information
+    properties:
+      bootcampId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      createdAt:
+        example: "2024-01-15T09:00:00Z"
+        type: string
+      createdBy:
+        example: 880e8400-e29b-41d4-a716-446655440000
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      myVote:
+        example: medium
+        type: string
+      problemId:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+      problemTitle:
+        example: Two Sum
+        type: string
+      question:
+        example: How difficult did you find this problem?
+        type: string
+    type: object
+  internal_modules_analytics.PollListResponse:
+    description: Response containing a list of polls with pagination
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_analytics.PollData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_analytics.OffsetPagination'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.PollResponse:
+    description: Response containing a single poll
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_analytics.PollData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.PollResultsData:
+    description: Aggregated poll results with vote counts and percentages
+    properties:
+      easyCount:
+        example: 20
+        type: integer
+      easyPercent:
+        example: 20
+        type: number
+      hardCount:
+        example: 30
+        type: integer
+      hardPercent:
+        example: 30
+        type: number
+      mediumCount:
+        example: 50
+        type: integer
+      mediumPercent:
+        example: 50
+        type: number
+      percentBreakup:
+        additionalProperties:
+          format: float64
+          type: number
+        type: object
+      totalVotes:
+        example: 100
+        type: integer
+      voteBreakdown:
+        additionalProperties:
+          format: int32
+          type: integer
+        type: object
+    type: object
+  internal_modules_analytics.PollResultsResponse:
+    description: Response containing aggregated poll results
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_analytics.PollResultsData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.PollVotesResponse:
+    description: Response containing individual poll votes with pagination
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_analytics.VoteData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_analytics.OffsetPagination'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.VoteData:
+    description: Poll vote details
+    properties:
+      createdAt:
+        example: "2024-01-15T09:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      pollId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      vote:
+        example: medium
+        type: string
+      voterId:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+    type: object
+  internal_modules_analytics.VotePollRequest:
+    description: Request body for casting or updating a vote on a poll
+    properties:
+      vote:
+        enum:
+        - easy
+        - medium
+        - hard
+        example: medium
+        type: string
+    required:
+    - vote
+    type: object
+  internal_modules_analytics.VoteResponse:
+    description: Response containing a single vote
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_analytics.VoteData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_assignment.AddProblemsToGroupRequest:
     properties:
       problems:
         items:
-          $ref: '#/definitions/assignment.GroupProblemInput'
+          $ref: '#/definitions/internal_modules_assignment.GroupProblemInput'
         minItems: 1
         type: array
     required:
     - problems
     type: object
-  assignment.AssignmentData:
+  internal_modules_assignment.AssignmentData:
     properties:
       assignedAt:
         example: "2024-01-01T10:00:00Z"
@@ -38,7 +276,7 @@ definitions:
         type: string
       problems:
         items:
-          $ref: '#/definitions/assignment.AssignmentProblemData'
+          $ref: '#/definitions/internal_modules_assignment.AssignmentProblemData'
         type: array
       status:
         example: active
@@ -47,7 +285,7 @@ definitions:
         example: "2024-01-01T10:00:00Z"
         type: string
     type: object
-  assignment.AssignmentGroupData:
+  internal_modules_assignment.AssignmentGroupData:
     properties:
       bootcampId:
         example: 660e8400-e29b-41d4-a716-446655440000
@@ -69,7 +307,7 @@ definitions:
         type: string
       problems:
         items:
-          $ref: '#/definitions/assignment.GroupProblemRef'
+          $ref: '#/definitions/internal_modules_assignment.GroupProblemRef'
         type: array
       title:
         example: Week 1 - Arrays and Strings
@@ -78,39 +316,39 @@ definitions:
         example: "2024-01-01T10:00:00Z"
         type: string
     type: object
-  assignment.AssignmentGroupListResponse:
+  internal_modules_assignment.AssignmentGroupListResponse:
     properties:
       data:
         items:
-          $ref: '#/definitions/assignment.AssignmentGroupData'
+          $ref: '#/definitions/internal_modules_assignment.AssignmentGroupData'
         type: array
       meta:
-        $ref: '#/definitions/assignment.PaginationMeta'
+        $ref: '#/definitions/internal_modules_assignment.PaginationMeta'
       success:
         example: true
         type: boolean
     type: object
-  assignment.AssignmentGroupResponse:
+  internal_modules_assignment.AssignmentGroupResponse:
     properties:
       data:
-        $ref: '#/definitions/assignment.AssignmentGroupData'
+        $ref: '#/definitions/internal_modules_assignment.AssignmentGroupData'
       success:
         example: true
         type: boolean
     type: object
-  assignment.AssignmentListResponse:
+  internal_modules_assignment.AssignmentListResponse:
     properties:
       data:
         items:
-          $ref: '#/definitions/assignment.AssignmentData'
+          $ref: '#/definitions/internal_modules_assignment.AssignmentData'
         type: array
       meta:
-        $ref: '#/definitions/assignment.PaginationMeta'
+        $ref: '#/definitions/internal_modules_assignment.PaginationMeta'
       success:
         example: true
         type: boolean
     type: object
-  assignment.AssignmentProblemData:
+  internal_modules_assignment.AssignmentProblemData:
     properties:
       assignmentId:
         example: 660e8400-e29b-41d4-a716-446655440000
@@ -146,33 +384,33 @@ definitions:
         example: "2024-01-05T14:30:00Z"
         type: string
     type: object
-  assignment.AssignmentProblemListResponse:
+  internal_modules_assignment.AssignmentProblemListResponse:
     properties:
       data:
         items:
-          $ref: '#/definitions/assignment.AssignmentProblemData'
+          $ref: '#/definitions/internal_modules_assignment.AssignmentProblemData'
         type: array
       success:
         example: true
         type: boolean
     type: object
-  assignment.AssignmentProblemResponse:
+  internal_modules_assignment.AssignmentProblemResponse:
     properties:
       data:
-        $ref: '#/definitions/assignment.AssignmentProblemData'
+        $ref: '#/definitions/internal_modules_assignment.AssignmentProblemData'
       success:
         example: true
         type: boolean
     type: object
-  assignment.AssignmentResponse:
+  internal_modules_assignment.AssignmentResponse:
     properties:
       data:
-        $ref: '#/definitions/assignment.AssignmentData'
+        $ref: '#/definitions/internal_modules_assignment.AssignmentData'
       success:
         example: true
         type: boolean
     type: object
-  assignment.CreateAssignmentGroupRequest:
+  internal_modules_assignment.CreateAssignmentGroupRequest:
     properties:
       deadlineDays:
         example: 7
@@ -191,7 +429,7 @@ definitions:
     - deadlineDays
     - title
     type: object
-  assignment.CreateAssignmentRequest:
+  internal_modules_assignment.CreateAssignmentRequest:
     properties:
       assignmentGroupId:
         example: 550e8400-e29b-41d4-a716-446655440000
@@ -206,7 +444,7 @@ definitions:
     - assignmentGroupId
     - bootcampEnrollmentId
     type: object
-  assignment.GenericResponse:
+  internal_modules_assignment.GenericResponse:
     properties:
       data:
         additionalProperties: {}
@@ -215,7 +453,7 @@ definitions:
         example: true
         type: boolean
     type: object
-  assignment.GroupProblemInput:
+  internal_modules_assignment.GroupProblemInput:
     properties:
       position:
         example: 1
@@ -228,7 +466,7 @@ definitions:
     - position
     - problemId
     type: object
-  assignment.GroupProblemRef:
+  internal_modules_assignment.GroupProblemRef:
     properties:
       difficulty:
         example: easy
@@ -243,7 +481,7 @@ definitions:
         example: Two Sum
         type: string
     type: object
-  assignment.PaginationMeta:
+  internal_modules_assignment.PaginationMeta:
     properties:
       limit:
         example: 20
@@ -255,17 +493,17 @@ definitions:
         example: 100
         type: integer
     type: object
-  assignment.ReplaceGroupProblemsRequest:
+  internal_modules_assignment.ReplaceGroupProblemsRequest:
     properties:
       problems:
         items:
-          $ref: '#/definitions/assignment.GroupProblemInput'
+          $ref: '#/definitions/internal_modules_assignment.GroupProblemInput'
         minItems: 1
         type: array
     required:
     - problems
     type: object
-  assignment.UpdateAssignmentDeadlineRequest:
+  internal_modules_assignment.UpdateAssignmentDeadlineRequest:
     properties:
       deadlineAt:
         example: "2024-01-20T23:59:59Z"
@@ -273,7 +511,7 @@ definitions:
     required:
     - deadlineAt
     type: object
-  assignment.UpdateAssignmentGroupRequest:
+  internal_modules_assignment.UpdateAssignmentGroupRequest:
     properties:
       deadlineDays:
         example: 10
@@ -289,7 +527,7 @@ definitions:
         minLength: 3
         type: string
     type: object
-  assignment.UpdateAssignmentProblemRequest:
+  internal_modules_assignment.UpdateAssignmentProblemRequest:
     properties:
       notes:
         example: Used dynamic programming approach
@@ -306,7 +544,7 @@ definitions:
         example: completed
         type: string
     type: object
-  assignment.UpdateAssignmentRequest:
+  internal_modules_assignment.UpdateAssignmentRequest:
     properties:
       deadlineAt:
         example: "2024-01-20T23:59:59Z"
@@ -319,7 +557,7 @@ definitions:
         example: completed
         type: string
     type: object
-  assignment.UpdateAssignmentStatusRequest:
+  internal_modules_assignment.UpdateAssignmentStatusRequest:
     properties:
       status:
         enum:
@@ -330,162 +568,6 @@ definitions:
         type: string
     required:
     - status
-    type: object
-  bootcamp.BootcampData:
-    properties:
-      createdAt:
-        type: string
-      createdBy:
-        type: string
-      description:
-        type: string
-      endDate:
-        type: string
-      id:
-        type: string
-      isActive:
-        type: boolean
-      name:
-        type: string
-      organizationId:
-        type: string
-      startDate:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  bootcamp.BootcampListResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/bootcamp.BootcampData'
-        type: array
-      meta:
-        $ref: '#/definitions/bootcamp.PaginationMeta'
-      success:
-        type: boolean
-    type: object
-  bootcamp.BootcampResponse:
-    properties:
-      data:
-        $ref: '#/definitions/bootcamp.BootcampData'
-      success:
-        type: boolean
-    type: object
-  bootcamp.CreateBootcampRequest:
-    properties:
-      description:
-        maxLength: 500
-        type: string
-      endDate:
-        type: string
-      isActive:
-        type: boolean
-      name:
-        maxLength: 120
-        minLength: 3
-        type: string
-      startDate:
-        type: string
-    required:
-    - name
-    type: object
-  bootcamp.EnrollMemberRequest:
-    properties:
-      organizationMemberId:
-        type: string
-      role:
-        enum:
-        - mentor
-        - mentee
-        type: string
-    required:
-    - organizationMemberId
-    - role
-    type: object
-  bootcamp.EnrollmentData:
-    properties:
-      avatarUrl:
-        type: string
-      bootcampId:
-        type: string
-      email:
-        type: string
-      enrolledAt:
-        type: string
-      id:
-        type: string
-      name:
-        type: string
-      orgRole:
-        type: string
-      organizationMemberId:
-        type: string
-      role:
-        type: string
-      status:
-        type: string
-    type: object
-  bootcamp.EnrollmentListResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/bootcamp.EnrollmentData'
-        type: array
-      meta:
-        $ref: '#/definitions/bootcamp.PaginationMeta'
-      success:
-        type: boolean
-    type: object
-  bootcamp.EnrollmentResponse:
-    properties:
-      data:
-        $ref: '#/definitions/bootcamp.EnrollmentData'
-      success:
-        type: boolean
-    type: object
-  bootcamp.GenericResponse:
-    properties:
-      data:
-        additionalProperties: {}
-        type: object
-      success:
-        type: boolean
-    type: object
-  bootcamp.PaginationMeta:
-    properties:
-      limit:
-        type: integer
-      page:
-        type: integer
-      total:
-        type: integer
-    type: object
-  bootcamp.UpdateBootcampRequest:
-    properties:
-      description:
-        maxLength: 500
-        type: string
-      endDate:
-        type: string
-      isActive:
-        type: boolean
-      name:
-        maxLength: 120
-        minLength: 3
-        type: string
-      startDate:
-        type: string
-    type: object
-  bootcamp.UpdateEnrollmentRoleRequest:
-    properties:
-      role:
-        enum:
-        - mentor
-        - mentee
-        type: string
-    required:
-    - role
     type: object
   internal_modules_auth.AuthResponse:
     properties:
@@ -585,6 +667,162 @@ definitions:
     - email
     - name
     - password
+    type: object
+  internal_modules_bootcamp.BootcampData:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      description:
+        type: string
+      endDate:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        type: string
+      organizationId:
+        type: string
+      startDate:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  internal_modules_bootcamp.BootcampListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_bootcamp.BootcampData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_bootcamp.PaginationMeta'
+      success:
+        type: boolean
+    type: object
+  internal_modules_bootcamp.BootcampResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_bootcamp.BootcampData'
+      success:
+        type: boolean
+    type: object
+  internal_modules_bootcamp.CreateBootcampRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      endDate:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        maxLength: 120
+        minLength: 3
+        type: string
+      startDate:
+        type: string
+    required:
+    - name
+    type: object
+  internal_modules_bootcamp.EnrollMemberRequest:
+    properties:
+      organizationMemberId:
+        type: string
+      role:
+        enum:
+        - mentor
+        - mentee
+        type: string
+    required:
+    - organizationMemberId
+    - role
+    type: object
+  internal_modules_bootcamp.EnrollmentData:
+    properties:
+      avatarUrl:
+        type: string
+      bootcampId:
+        type: string
+      email:
+        type: string
+      enrolledAt:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      orgRole:
+        type: string
+      organizationMemberId:
+        type: string
+      role:
+        type: string
+      status:
+        type: string
+    type: object
+  internal_modules_bootcamp.EnrollmentListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_bootcamp.EnrollmentData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_bootcamp.PaginationMeta'
+      success:
+        type: boolean
+    type: object
+  internal_modules_bootcamp.EnrollmentResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_bootcamp.EnrollmentData'
+      success:
+        type: boolean
+    type: object
+  internal_modules_bootcamp.GenericResponse:
+    properties:
+      data:
+        additionalProperties: {}
+        type: object
+      success:
+        type: boolean
+    type: object
+  internal_modules_bootcamp.PaginationMeta:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  internal_modules_bootcamp.UpdateBootcampRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      endDate:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        maxLength: 120
+        minLength: 3
+        type: string
+      startDate:
+        type: string
+    type: object
+  internal_modules_bootcamp.UpdateEnrollmentRoleRequest:
+    properties:
+      role:
+        enum:
+        - mentor
+        - mentee
+        type: string
+    required:
+    - role
     type: object
   internal_modules_organization.AddMemberRequest:
     properties:
@@ -731,6 +969,265 @@ definitions:
         minLength: 3
         type: string
     type: object
+  internal_modules_problem.AttachTagsRequest:
+    properties:
+      tagIds:
+        example:
+        - 550e8400-e29b-41d4-a716-446655440000
+        - 660e8400-e29b-41d4-a716-446655440000
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - tagIds
+    type: object
+  internal_modules_problem.CreateProblemRequest:
+    properties:
+      description:
+        example: Given an array of integers, return indices of the two numbers that
+          add up to a specific target.
+        minLength: 10
+        type: string
+      difficulty:
+        enum:
+        - easy
+        - medium
+        - hard
+        example: easy
+        type: string
+      externalLink:
+        example: https://leetcode.com/problems/two-sum/
+        type: string
+      title:
+        example: Two Sum
+        maxLength: 200
+        minLength: 3
+        type: string
+    required:
+    - description
+    - difficulty
+    - title
+    type: object
+  internal_modules_problem.CreateResourceRequest:
+    properties:
+      title:
+        example: Two Sum Solution Explanation
+        maxLength: 150
+        minLength: 2
+        type: string
+      url:
+        example: https://www.youtube.com/watch?v=example
+        type: string
+    required:
+    - title
+    - url
+    type: object
+  internal_modules_problem.CreateTagRequest:
+    properties:
+      name:
+        example: arrays
+        maxLength: 80
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  internal_modules_problem.GenericResponse:
+    properties:
+      data:
+        additionalProperties: {}
+        type: object
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_problem.PaginationMeta:
+    properties:
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+    type: object
+  internal_modules_problem.ProblemData:
+    properties:
+      archivedAt:
+        example: ""
+        type: string
+      createdAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+      createdBy:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+      description:
+        example: Given an array of integers, return indices of the two numbers that
+          add up to a specific target.
+        type: string
+      difficulty:
+        example: easy
+        type: string
+      externalLink:
+        example: https://leetcode.com/problems/two-sum/
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      organizationId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      resources:
+        items:
+          $ref: '#/definitions/internal_modules_problem.ResourceData'
+        type: array
+      tags:
+        items:
+          $ref: '#/definitions/internal_modules_problem.TagData'
+        type: array
+      title:
+        example: Two Sum
+        type: string
+      updatedAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+    type: object
+  internal_modules_problem.ProblemListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_problem.ProblemData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_problem.PaginationMeta'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_problem.ProblemResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_problem.ProblemData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_problem.ResourceData:
+    properties:
+      createdAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      problemId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      title:
+        example: Two Sum Solution Explanation
+        type: string
+      url:
+        example: https://www.youtube.com/watch?v=example
+        type: string
+    type: object
+  internal_modules_problem.ResourceListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_problem.ResourceData'
+        type: array
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_problem.ResourceResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_problem.ResourceData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_problem.TagData:
+    properties:
+      createdAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: arrays
+        type: string
+      organizationId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+    type: object
+  internal_modules_problem.TagListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_problem.TagData'
+        type: array
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_problem.TagResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_problem.TagData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_problem.UpdateProblemRequest:
+    properties:
+      description:
+        example: Updated description
+        minLength: 10
+        type: string
+      difficulty:
+        enum:
+        - easy
+        - medium
+        - hard
+        example: medium
+        type: string
+      externalLink:
+        example: https://leetcode.com/problems/two-sum/
+        type: string
+      title:
+        example: Two Sum Updated
+        maxLength: 200
+        minLength: 3
+        type: string
+    type: object
+  internal_modules_problem.UpdateResourceRequest:
+    properties:
+      title:
+        example: Updated Resource Title
+        maxLength: 150
+        minLength: 2
+        type: string
+      url:
+        example: https://www.youtube.com/watch?v=updated
+        type: string
+    type: object
+  internal_modules_problem.UpdateTagRequest:
+    properties:
+      name:
+        example: dynamic-programming
+        maxLength: 80
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
   internal_modules_progress.CreateDoubtRequest:
     description: Request body for creating a doubt on an assignment problem
     properties:
@@ -841,265 +1338,6 @@ definitions:
         example: The time complexity is O(n log n) because of the sorting step
         maxLength: 1000
         type: string
-    type: object
-  problem.AttachTagsRequest:
-    properties:
-      tagIds:
-        example:
-        - 550e8400-e29b-41d4-a716-446655440000
-        - 660e8400-e29b-41d4-a716-446655440000
-        items:
-          type: string
-        minItems: 1
-        type: array
-    required:
-    - tagIds
-    type: object
-  problem.CreateProblemRequest:
-    properties:
-      description:
-        example: Given an array of integers, return indices of the two numbers that
-          add up to a specific target.
-        minLength: 10
-        type: string
-      difficulty:
-        enum:
-        - easy
-        - medium
-        - hard
-        example: easy
-        type: string
-      externalLink:
-        example: https://leetcode.com/problems/two-sum/
-        type: string
-      title:
-        example: Two Sum
-        maxLength: 200
-        minLength: 3
-        type: string
-    required:
-    - description
-    - difficulty
-    - title
-    type: object
-  problem.CreateResourceRequest:
-    properties:
-      title:
-        example: Two Sum Solution Explanation
-        maxLength: 150
-        minLength: 2
-        type: string
-      url:
-        example: https://www.youtube.com/watch?v=example
-        type: string
-    required:
-    - title
-    - url
-    type: object
-  problem.CreateTagRequest:
-    properties:
-      name:
-        example: arrays
-        maxLength: 80
-        minLength: 2
-        type: string
-    required:
-    - name
-    type: object
-  problem.GenericResponse:
-    properties:
-      data:
-        additionalProperties: {}
-        type: object
-      success:
-        example: true
-        type: boolean
-    type: object
-  problem.PaginationMeta:
-    properties:
-      limit:
-        example: 20
-        type: integer
-      page:
-        example: 1
-        type: integer
-      total:
-        example: 100
-        type: integer
-    type: object
-  problem.ProblemData:
-    properties:
-      archivedAt:
-        example: ""
-        type: string
-      createdAt:
-        example: "2024-01-01T10:00:00Z"
-        type: string
-      createdBy:
-        example: 770e8400-e29b-41d4-a716-446655440000
-        type: string
-      description:
-        example: Given an array of integers, return indices of the two numbers that
-          add up to a specific target.
-        type: string
-      difficulty:
-        example: easy
-        type: string
-      externalLink:
-        example: https://leetcode.com/problems/two-sum/
-        type: string
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
-      organizationId:
-        example: 660e8400-e29b-41d4-a716-446655440000
-        type: string
-      resources:
-        items:
-          $ref: '#/definitions/problem.ResourceData'
-        type: array
-      tags:
-        items:
-          $ref: '#/definitions/problem.TagData'
-        type: array
-      title:
-        example: Two Sum
-        type: string
-      updatedAt:
-        example: "2024-01-01T10:00:00Z"
-        type: string
-    type: object
-  problem.ProblemListResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/problem.ProblemData'
-        type: array
-      meta:
-        $ref: '#/definitions/problem.PaginationMeta'
-      success:
-        example: true
-        type: boolean
-    type: object
-  problem.ProblemResponse:
-    properties:
-      data:
-        $ref: '#/definitions/problem.ProblemData'
-      success:
-        example: true
-        type: boolean
-    type: object
-  problem.ResourceData:
-    properties:
-      createdAt:
-        example: "2024-01-01T10:00:00Z"
-        type: string
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
-      problemId:
-        example: 660e8400-e29b-41d4-a716-446655440000
-        type: string
-      title:
-        example: Two Sum Solution Explanation
-        type: string
-      url:
-        example: https://www.youtube.com/watch?v=example
-        type: string
-    type: object
-  problem.ResourceListResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/problem.ResourceData'
-        type: array
-      success:
-        example: true
-        type: boolean
-    type: object
-  problem.ResourceResponse:
-    properties:
-      data:
-        $ref: '#/definitions/problem.ResourceData'
-      success:
-        example: true
-        type: boolean
-    type: object
-  problem.TagData:
-    properties:
-      createdAt:
-        example: "2024-01-01T10:00:00Z"
-        type: string
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
-      name:
-        example: arrays
-        type: string
-      organizationId:
-        example: 660e8400-e29b-41d4-a716-446655440000
-        type: string
-    type: object
-  problem.TagListResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/problem.TagData'
-        type: array
-      success:
-        example: true
-        type: boolean
-    type: object
-  problem.TagResponse:
-    properties:
-      data:
-        $ref: '#/definitions/problem.TagData'
-      success:
-        example: true
-        type: boolean
-    type: object
-  problem.UpdateProblemRequest:
-    properties:
-      description:
-        example: Updated description
-        minLength: 10
-        type: string
-      difficulty:
-        enum:
-        - easy
-        - medium
-        - hard
-        example: medium
-        type: string
-      externalLink:
-        example: https://leetcode.com/problems/two-sum/
-        type: string
-      title:
-        example: Two Sum Updated
-        maxLength: 200
-        minLength: 3
-        type: string
-    type: object
-  problem.UpdateResourceRequest:
-    properties:
-      title:
-        example: Updated Resource Title
-        maxLength: 150
-        minLength: 2
-        type: string
-      url:
-        example: https://www.youtube.com/watch?v=updated
-        type: string
-    type: object
-  problem.UpdateTagRequest:
-    properties:
-      name:
-        example: dynamic-programming
-        maxLength: 80
-        minLength: 2
-        type: string
-    required:
-    - name
     type: object
 host: localhost:8080
 info:
@@ -1256,7 +1494,7 @@ paths:
         "200":
           description: List of enrollments
           schema:
-            $ref: '#/definitions/bootcamp.EnrollmentListResponse'
+            $ref: '#/definitions/internal_modules_bootcamp.EnrollmentListResponse'
         "400":
           description: Bad request - invalid bootcamp ID
           schema:
@@ -1270,6 +1508,431 @@ paths:
       summary: List bootcamp enrollments
       tags:
       - Bootcamp Enrollments
+  /v1/bootcamps/{bootcampId}/leaderboard:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve pre-calculated leaderboard rankings for a bootcamp. Returns
+        snapshot data without real-time recalculation. User must be enrolled in the
+        bootcamp.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Leaderboard entries with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.LeaderboardResponse'
+        "400":
+          description: Bad request - invalid bootcamp ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not enrolled in bootcamp
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - bootcamp does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get bootcamp leaderboard
+      tags:
+      - Leaderboards
+  /v1/bootcamps/{bootcampId}/leaderboard/{enrollmentId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific leaderboard entry by enrollment ID. Mentees
+        can only view their own entry.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Bootcamp Enrollment ID (UUID)
+        in: path
+        name: enrollmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Leaderboard entry details
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.LeaderboardEntryResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - access denied
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - entry does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get leaderboard entry
+      tags:
+      - Leaderboards
+  /v1/bootcamps/{bootcampId}/polls:
+    get:
+      consumes:
+      - application/json
+      description: List polls for a bootcamp with optional problem filtering. Includes
+        user's vote if they have voted. User must be enrolled in bootcamp.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Filter by problem ID (UUID)
+        in: query
+        name: problemId
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of polls with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.PollListResponse'
+        "400":
+          description: Bad request - invalid bootcamp ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not enrolled in bootcamp
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List polls
+      tags:
+      - Polls
+    post:
+      consumes:
+      - application/json
+      description: Create a difficulty poll for a problem in a bootcamp (mentor/admin
+        only). Supports idempotency via Idempotency-Key header.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Poll details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_analytics.CreatePollRequest'
+      - description: Idempotency key for safe retries
+        in: header
+        name: Idempotency-Key
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Poll created successfully
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.PollResponse'
+        "400":
+          description: Bad request - validation error or invalid problem ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor/admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a poll
+      tags:
+      - Polls
+  /v1/bootcamps/{bootcampId}/polls/{pollId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve full details of a specific poll including user's vote
+        state. User must be enrolled in bootcamp.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Poll ID (UUID)
+        in: path
+        name: pollId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Poll details
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.PollResponse'
+        "400":
+          description: Bad request - invalid poll ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not enrolled in bootcamp
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - poll does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get poll details
+      tags:
+      - Polls
+  /v1/bootcamps/{bootcampId}/polls/{pollId}/results:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve aggregated poll results with vote counts and percentages
+        (mentor/admin/super_admin only). Mentees cannot access results.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Poll ID (UUID)
+        in: path
+        name: pollId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Aggregated poll results
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.PollResultsResponse'
+        "400":
+          description: Bad request - invalid poll ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor/admin/super_admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - poll does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get poll results
+      tags:
+      - Polls
+  /v1/bootcamps/{bootcampId}/polls/{pollId}/vote:
+    put:
+      consumes:
+      - application/json
+      description: Cast or update a vote on a poll (mentee only). Uses PUT method
+        for idempotent vote creation/update. Returns 201 for first vote, 200 for updates.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Poll ID (UUID)
+        in: path
+        name: pollId
+        required: true
+        type: string
+      - description: Vote details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_analytics.VotePollRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Vote updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.VoteResponse'
+        "201":
+          description: Vote created successfully
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.VoteResponse'
+        "400":
+          description: Bad request - validation error or invalid poll ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - only mentees can vote
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - poll does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Vote on a poll
+      tags:
+      - Polls
+  /v1/bootcamps/{bootcampId}/polls/{pollId}/votes:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve individual vote records with optional filtering by vote
+        value (mentor/admin/super_admin only). Includes voter enrollment ID but not
+        internal user identifiers.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Poll ID (UUID)
+        in: path
+        name: pollId
+        required: true
+        type: string
+      - description: Filter by vote value (easy, medium, hard)
+        in: query
+        name: vote
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of individual votes with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.PollVotesResponse'
+        "400":
+          description: Bad request - invalid poll ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor/admin/super_admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - poll does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get individual poll votes
+      tags:
+      - Polls
   /v1/doubts:
     get:
       consumes:
@@ -1794,7 +2457,7 @@ paths:
         "200":
           description: List of bootcamps with pagination
           schema:
-            $ref: '#/definitions/bootcamp.BootcampListResponse'
+            $ref: '#/definitions/internal_modules_bootcamp.BootcampListResponse'
         "400":
           description: Bad request - invalid organization ID
           schema:
@@ -1835,14 +2498,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/bootcamp.CreateBootcampRequest'
+          $ref: '#/definitions/internal_modules_bootcamp.CreateBootcampRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Bootcamp created successfully
           schema:
-            $ref: '#/definitions/bootcamp.BootcampResponse'
+            $ref: '#/definitions/internal_modules_bootcamp.BootcampResponse'
         "400":
           description: Bad request - validation error or invalid date range
           schema:
@@ -1895,7 +2558,7 @@ paths:
         "200":
           description: Bootcamp details
           schema:
-            $ref: '#/definitions/bootcamp.BootcampResponse'
+            $ref: '#/definitions/internal_modules_bootcamp.BootcampResponse'
         "400":
           description: Bad request - invalid ID
           schema:
@@ -1941,14 +2604,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/bootcamp.UpdateBootcampRequest'
+          $ref: '#/definitions/internal_modules_bootcamp.UpdateBootcampRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Bootcamp updated successfully
           schema:
-            $ref: '#/definitions/bootcamp.BootcampResponse'
+            $ref: '#/definitions/internal_modules_bootcamp.BootcampResponse'
         "400":
           description: Bad request - validation error or no fields provided
           schema:
@@ -2009,7 +2672,7 @@ paths:
         "200":
           description: List of assignment groups with pagination
           schema:
-            $ref: '#/definitions/assignment.AssignmentGroupListResponse'
+            $ref: '#/definitions/internal_modules_assignment.AssignmentGroupListResponse'
         "400":
           description: Bad request - invalid bootcamp ID or query parameters
           schema:
@@ -2056,14 +2719,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/assignment.CreateAssignmentGroupRequest'
+          $ref: '#/definitions/internal_modules_assignment.CreateAssignmentGroupRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Assignment group created successfully
           schema:
-            $ref: '#/definitions/assignment.AssignmentGroupResponse'
+            $ref: '#/definitions/internal_modules_assignment.AssignmentGroupResponse'
         "400":
           description: Bad request - validation error
           schema:
@@ -2116,7 +2779,7 @@ paths:
         "200":
           description: Assignment group deleted successfully
           schema:
-            $ref: '#/definitions/assignment.GenericResponse'
+            $ref: '#/definitions/internal_modules_assignment.GenericResponse'
         "400":
           description: Bad request - invalid ID
           schema:
@@ -2173,7 +2836,7 @@ paths:
         "200":
           description: Assignment group details
           schema:
-            $ref: '#/definitions/assignment.AssignmentGroupResponse'
+            $ref: '#/definitions/internal_modules_assignment.AssignmentGroupResponse'
         "400":
           description: Bad request - invalid ID
           schema:
@@ -2225,14 +2888,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/assignment.UpdateAssignmentGroupRequest'
+          $ref: '#/definitions/internal_modules_assignment.UpdateAssignmentGroupRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Assignment group updated successfully
           schema:
-            $ref: '#/definitions/assignment.AssignmentGroupResponse'
+            $ref: '#/definitions/internal_modules_assignment.AssignmentGroupResponse'
         "400":
           description: Bad request - validation error or no fields provided
           schema:
@@ -2285,14 +2948,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/assignment.AddProblemsToGroupRequest'
+          $ref: '#/definitions/internal_modules_assignment.AddProblemsToGroupRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Problems added successfully
           schema:
-            $ref: '#/definitions/assignment.GenericResponse'
+            $ref: '#/definitions/internal_modules_assignment.GenericResponse'
         "400":
           description: Bad request - validation error
           schema:
@@ -2344,14 +3007,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/assignment.ReplaceGroupProblemsRequest'
+          $ref: '#/definitions/internal_modules_assignment.ReplaceGroupProblemsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Problems replaced successfully
           schema:
-            $ref: '#/definitions/assignment.GenericResponse'
+            $ref: '#/definitions/internal_modules_assignment.GenericResponse'
         "400":
           description: Bad request - validation error, duplicate problem IDs, or duplicate
             positions
@@ -2410,7 +3073,7 @@ paths:
         "200":
           description: Problem removed successfully
           schema:
-            $ref: '#/definitions/assignment.GenericResponse'
+            $ref: '#/definitions/internal_modules_assignment.GenericResponse'
         "400":
           description: Bad request - invalid ID
           schema:
@@ -2476,7 +3139,7 @@ paths:
         "200":
           description: List of assignments with pagination
           schema:
-            $ref: '#/definitions/assignment.AssignmentListResponse'
+            $ref: '#/definitions/internal_modules_assignment.AssignmentListResponse'
         "400":
           description: Bad request - invalid bootcamp ID or query parameters
           schema:
@@ -2528,14 +3191,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/assignment.CreateAssignmentRequest'
+          $ref: '#/definitions/internal_modules_assignment.CreateAssignmentRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Assignment created successfully
           schema:
-            $ref: '#/definitions/assignment.AssignmentResponse'
+            $ref: '#/definitions/internal_modules_assignment.AssignmentResponse'
         "400":
           description: Bad request - validation error
           schema:
@@ -2595,7 +3258,7 @@ paths:
         "200":
           description: Assignment details with problems
           schema:
-            $ref: '#/definitions/assignment.AssignmentResponse'
+            $ref: '#/definitions/internal_modules_assignment.AssignmentResponse'
         "400":
           description: Bad request - invalid ID
           schema:
@@ -2646,14 +3309,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/assignment.UpdateAssignmentRequest'
+          $ref: '#/definitions/internal_modules_assignment.UpdateAssignmentRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Assignment updated successfully
           schema:
-            $ref: '#/definitions/assignment.AssignmentResponse'
+            $ref: '#/definitions/internal_modules_assignment.AssignmentResponse'
         "400":
           description: Bad request - validation error or no fields provided
           schema:
@@ -2706,14 +3369,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/assignment.UpdateAssignmentDeadlineRequest'
+          $ref: '#/definitions/internal_modules_assignment.UpdateAssignmentDeadlineRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Assignment deadline updated successfully
           schema:
-            $ref: '#/definitions/assignment.AssignmentResponse'
+            $ref: '#/definitions/internal_modules_assignment.AssignmentResponse'
         "400":
           description: Bad request - invalid deadline format
           schema:
@@ -2766,7 +3429,7 @@ paths:
         "200":
           description: List of assignment problems with progress
           schema:
-            $ref: '#/definitions/assignment.AssignmentProblemListResponse'
+            $ref: '#/definitions/internal_modules_assignment.AssignmentProblemListResponse'
         "400":
           description: Bad request - invalid assignment ID
           schema:
@@ -2825,7 +3488,7 @@ paths:
         "200":
           description: Assignment problem details
           schema:
-            $ref: '#/definitions/assignment.AssignmentProblemResponse'
+            $ref: '#/definitions/internal_modules_assignment.AssignmentProblemResponse'
         "400":
           description: Bad request - invalid IDs
           schema:
@@ -2889,7 +3552,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/assignment.UpdateAssignmentProblemRequest'
+          $ref: '#/definitions/internal_modules_assignment.UpdateAssignmentProblemRequest'
       - description: Organization ID (UUID)
         in: path
         name: orgId
@@ -2915,7 +3578,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/assignment.UpdateAssignmentProblemRequest'
+          $ref: '#/definitions/internal_modules_assignment.UpdateAssignmentProblemRequest'
       produces:
       - application/json
       - application/json
@@ -2923,7 +3586,7 @@ paths:
         "200":
           description: Progress updated successfully
           schema:
-            $ref: '#/definitions/assignment.AssignmentProblemResponse'
+            $ref: '#/definitions/internal_modules_assignment.AssignmentProblemResponse'
         "400":
           description: Bad request - invalid IDs or validation error
           schema:
@@ -2983,14 +3646,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/assignment.UpdateAssignmentStatusRequest'
+          $ref: '#/definitions/internal_modules_assignment.UpdateAssignmentStatusRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Assignment status updated successfully
           schema:
-            $ref: '#/definitions/assignment.AssignmentResponse'
+            $ref: '#/definitions/internal_modules_assignment.AssignmentResponse'
         "400":
           description: Bad request - invalid status
           schema:
@@ -3038,7 +3701,7 @@ paths:
         "200":
           description: Bootcamp deactivated successfully
           schema:
-            $ref: '#/definitions/bootcamp.GenericResponse'
+            $ref: '#/definitions/internal_modules_bootcamp.GenericResponse'
         "400":
           description: Bad request - invalid ID
           schema:
@@ -3086,14 +3749,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/bootcamp.EnrollMemberRequest'
+          $ref: '#/definitions/internal_modules_bootcamp.EnrollMemberRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Member enrolled successfully
           schema:
-            $ref: '#/definitions/bootcamp.EnrollmentResponse'
+            $ref: '#/definitions/internal_modules_bootcamp.EnrollmentResponse'
         "400":
           description: Bad request - validation error
           schema:
@@ -3151,7 +3814,7 @@ paths:
         "200":
           description: Enrollment removed successfully
           schema:
-            $ref: '#/definitions/bootcamp.GenericResponse'
+            $ref: '#/definitions/internal_modules_bootcamp.GenericResponse'
         "400":
           description: Bad request - invalid enrollment ID
           schema:
@@ -3202,14 +3865,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/bootcamp.UpdateEnrollmentRoleRequest'
+          $ref: '#/definitions/internal_modules_bootcamp.UpdateEnrollmentRoleRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Enrollment role updated successfully
           schema:
-            $ref: '#/definitions/bootcamp.EnrollmentResponse'
+            $ref: '#/definitions/internal_modules_bootcamp.EnrollmentResponse'
         "400":
           description: Bad request - validation error
           schema:
@@ -3245,7 +3908,7 @@ paths:
         "200":
           description: List of assignments
           schema:
-            $ref: '#/definitions/assignment.AssignmentListResponse'
+            $ref: '#/definitions/internal_modules_assignment.AssignmentListResponse'
         "400":
           description: Bad request - invalid enrollment ID
           schema:
@@ -3510,7 +4173,7 @@ paths:
         "200":
           description: List of problems with pagination
           schema:
-            $ref: '#/definitions/problem.ProblemListResponse'
+            $ref: '#/definitions/internal_modules_problem.ProblemListResponse'
         "400":
           description: Bad request - invalid organization ID
           schema:
@@ -3551,14 +4214,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/problem.CreateProblemRequest'
+          $ref: '#/definitions/internal_modules_problem.CreateProblemRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Problem created successfully
           schema:
-            $ref: '#/definitions/problem.ProblemResponse'
+            $ref: '#/definitions/internal_modules_problem.ProblemResponse'
         "400":
           description: Bad request - validation error
           schema:
@@ -3606,7 +4269,7 @@ paths:
         "200":
           description: Problem archived successfully
           schema:
-            $ref: '#/definitions/problem.GenericResponse'
+            $ref: '#/definitions/internal_modules_problem.GenericResponse'
         "400":
           description: Bad request - invalid ID
           schema:
@@ -3658,7 +4321,7 @@ paths:
         "200":
           description: Problem details
           schema:
-            $ref: '#/definitions/problem.ProblemResponse'
+            $ref: '#/definitions/internal_modules_problem.ProblemResponse'
         "400":
           description: Bad request - invalid ID
           schema:
@@ -3704,14 +4367,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/problem.UpdateProblemRequest'
+          $ref: '#/definitions/internal_modules_problem.UpdateProblemRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Problem updated successfully
           schema:
-            $ref: '#/definitions/problem.ProblemResponse'
+            $ref: '#/definitions/internal_modules_problem.ProblemResponse'
         "400":
           description: Bad request - validation error or no fields provided
           schema:
@@ -3759,7 +4422,7 @@ paths:
         "200":
           description: List of resources
           schema:
-            $ref: '#/definitions/problem.ResourceListResponse'
+            $ref: '#/definitions/internal_modules_problem.ResourceListResponse'
         "400":
           description: Bad request - invalid ID
           schema:
@@ -3805,14 +4468,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/problem.CreateResourceRequest'
+          $ref: '#/definitions/internal_modules_problem.CreateResourceRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Resource added successfully
           schema:
-            $ref: '#/definitions/problem.ResourceResponse'
+            $ref: '#/definitions/internal_modules_problem.ResourceResponse'
         "400":
           description: Bad request - validation error
           schema:
@@ -3865,7 +4528,7 @@ paths:
         "200":
           description: Resource deleted successfully
           schema:
-            $ref: '#/definitions/problem.GenericResponse'
+            $ref: '#/definitions/internal_modules_problem.GenericResponse'
         "400":
           description: Bad request - invalid ID
           schema:
@@ -3916,14 +4579,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/problem.UpdateResourceRequest'
+          $ref: '#/definitions/internal_modules_problem.UpdateResourceRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Resource updated successfully
           schema:
-            $ref: '#/definitions/problem.ResourceResponse'
+            $ref: '#/definitions/internal_modules_problem.ResourceResponse'
         "400":
           description: Bad request - validation error or no fields provided
           schema:
@@ -3970,14 +4633,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/problem.AttachTagsRequest'
+          $ref: '#/definitions/internal_modules_problem.AttachTagsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Tags attached successfully
           schema:
-            $ref: '#/definitions/problem.GenericResponse'
+            $ref: '#/definitions/internal_modules_problem.GenericResponse'
         "400":
           description: Bad request - validation error
           schema:
@@ -4035,7 +4698,7 @@ paths:
         "200":
           description: Tag detached successfully
           schema:
-            $ref: '#/definitions/problem.GenericResponse'
+            $ref: '#/definitions/internal_modules_problem.GenericResponse'
         "400":
           description: Bad request - invalid ID
           schema:
@@ -4082,7 +4745,7 @@ paths:
         "200":
           description: List of tags
           schema:
-            $ref: '#/definitions/problem.TagListResponse'
+            $ref: '#/definitions/internal_modules_problem.TagListResponse'
         "400":
           description: Bad request - invalid organization ID
           schema:
@@ -4118,14 +4781,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/problem.CreateTagRequest'
+          $ref: '#/definitions/internal_modules_problem.CreateTagRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Tag created successfully
           schema:
-            $ref: '#/definitions/problem.TagResponse'
+            $ref: '#/definitions/internal_modules_problem.TagResponse'
         "400":
           description: Bad request - validation error
           schema:
@@ -4173,7 +4836,7 @@ paths:
         "200":
           description: Tag deleted successfully
           schema:
-            $ref: '#/definitions/problem.GenericResponse'
+            $ref: '#/definitions/internal_modules_problem.GenericResponse'
         "400":
           description: Bad request - invalid ID
           schema:
@@ -4224,14 +4887,14 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/problem.UpdateTagRequest'
+          $ref: '#/definitions/internal_modules_problem.UpdateTagRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Tag updated successfully
           schema:
-            $ref: '#/definitions/problem.TagResponse'
+            $ref: '#/definitions/internal_modules_problem.TagResponse'
         "400":
           description: Bad request - validation error
           schema:

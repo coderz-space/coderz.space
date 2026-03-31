@@ -1,4 +1,4 @@
-module github.com/DSAwithGautam/Coderz.space
+module github.com/coderz-space/coderz.space
 
 go 1.25.0
 
