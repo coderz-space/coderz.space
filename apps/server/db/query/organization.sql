@@ -85,3 +85,13 @@ WHERE organization_id = $1 AND role = 'admin';
 -- name: RemoveOrganizationMember :exec
 DELETE FROM organization_members
 WHERE organization_id = $1 AND user_id = $2;
+
+-- Super Admin Queries
+
+-- name: ListAllOrganizations :many
+SELECT * FROM organizations
+ORDER BY created_at DESC
+LIMIT $1 OFFSET $2;
+
+-- name: CountAllOrganizations :one
+SELECT COUNT(*) FROM organizations;

@@ -556,7 +556,9 @@ type Doubt struct {
 	Resolved            bool               `db:"resolved" json:"resolved"`
 	ResolvedBy          pgtype.UUID        `db:"resolved_by" json:"resolved_by"`
 	ResolvedAt          pgtype.Timestamptz `db:"resolved_at" json:"resolved_at"`
+	ResolutionNote      pgtype.Text        `db:"resolution_note" json:"resolution_note"`
 	CreatedAt           pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
 type LeaderboardEntry struct {

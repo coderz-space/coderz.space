@@ -3,7 +3,7 @@ package logger
 import (
 	"os"
 
-	"github.com/DSAwithGautam/Coderz.space/internal/config"
+	"github.com/coderz-space/coderz.space/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -108,4 +108,62 @@ func WithFields(fields ...zap.Field) *zap.Logger {
 		return Logger.With(fields...)
 	}
 	return nil
+}
+
+// Security event logging helpers
+
+// LogSecurityEvent logs a security-related event for audit purposes
+func LogSecurityEvent(eventType, userID, resource, action, result string, fields ...zap.Field) {
+	if Logger != nil {
+		allFields := append([]zap.Field{
+			zap.String("event_type", "security"),
+			zap.String("security_event", eventType),
+			zap.String("user_id", userID),
+			zap.String("resource", resource),
+			zap.String("action", action),
+			zap.String("result", result),
+		}, fields...)
+		Logger.Info("Security event", allFields...)
+	}
+}
+
+// LogAuthenticationAttempt logs an authentication attempt
+func LogAuthenticationAttempt(email, result string, fields ...zap.Field) {
+	LogSecurityEvent("authentication", email, "auth", "login", result, fields...)
+}
+
+// LogAuthorizationFailure logs an authorization failure
+func LogAuthorizationFailure(userID, resource, action, reason string, fields ...zap.Field) {
+	allFields := append([]zap.Field{
+		zap.String("reason", reason),
+	}, fields...)
+	LogSecurityEvent("authorization_failure", userID, resource, action, "denied", allFields...)
+}
+
+// LogDataAccess logs data access events
+func LogDataAccess(userID, resourceType, resourceID, action string, fields ...zap.Field) {
+	LogSecurityEvent("data_access", userID, resourceType, action, "success", append(fields, zap.String("resource_id", resourceID))...)
+}
+
+// LogCrossOrgAttempt logs cross-organization access attempts
+func LogCrossOrgAttempt(userID, userOrg, targetOrg, resource string, fields ...zap.Field) {
+	allFields := append([]zap.Field{
+		zap.String("user_org", userOrg),
+		zap.String("target_org", targetOrg),
+	}, fields...)
+	LogSecurityEvent("cross_org_violation", userID, resource, "access", "blocked", allFields...)
+}
+
+// LogRateLimitExceeded logs rate limit violations
+func LogRateLimitExceeded(userID, endpoint string, fields ...zap.Field) {
+	LogSecurityEvent("rate_limit", userID, endpoint, "request", "blocked", fields...)
+}
+
+// LogSuspiciousActivity logs suspicious activity
+func LogSuspiciousActivity(userID, activityType, description string, fields ...zap.Field) {
+	allFields := append([]zap.Field{
+		zap.String("activity_type", activityType),
+		zap.String("description", description),
+	}, fields...)
+	LogSecurityEvent("suspicious_activity", userID, "system", "detected", "flagged", allFields...)
 }

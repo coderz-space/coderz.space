@@ -33,12 +33,84 @@ func (v *validator) ValidateField(field interface{}, tag string) error {
 // registerCustomValidators registers all custom validation functions
 func (v *validator) registerCustomValidators() {
 	// Register alphanum_hyphen validator for slugs
-	v.validator.RegisterValidation("alphanum_hyphen", func(fl go_validator.FieldLevel) bool {
+	err := v.validator.RegisterValidation("alphanum_hyphen", func(fl go_validator.FieldLevel) bool {
 		value := fl.Field().String()
 		// Slug should be lowercase, alphanumeric with hyphens
-		match, _ := regexp.MatchString(`^[a-z0-9-]+$`, value)
+		match, err := regexp.MatchString(`^[a-z0-9-]+$`, value)
+		if err != nil {
+			return false
+		}
 		return match
 	})
+	if err != nil {
+		panic(err)
+	}
+
+	// Register slug validator (more strict)
+	err = v.validator.RegisterValidation("slug", func(fl go_validator.FieldLevel) bool {
+		value := fl.Field().String()
+		// Slug: lowercase, starts with letter, alphanumeric with hyphens, no consecutive hyphens
+		match, err := regexp.MatchString(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`, value)
+		if err != nil {
+			return false
+		}
+		return match
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// Register date_range validator
+	err = v.validator.RegisterValidation("date_range", func(fl go_validator.FieldLevel) bool {
+		// This is a placeholder - actual date range validation should be done at service layer
+		// where we have access to both start and end dates
+		return true
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// Register enum validator for specific values
+	err = v.validator.RegisterValidation("role_enum", func(fl go_validator.FieldLevel) bool {
+		value := fl.Field().String()
+		validRoles := map[string]bool{
+			"admin":  true,
+			"mentor": true,
+			"mentee": true,
+		}
+		return validRoles[value]
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// Register difficulty enum validator
+	err = v.validator.RegisterValidation("difficulty_enum", func(fl go_validator.FieldLevel) bool {
+		value := fl.Field().String()
+		validDifficulties := map[string]bool{
+			"easy":   true,
+			"medium": true,
+			"hard":   true,
+		}
+		return validDifficulties[value]
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// Register status enum validator
+	err = v.validator.RegisterValidation("status_enum", func(fl go_validator.FieldLevel) bool {
+		value := fl.Field().String()
+		validStatuses := map[string]bool{
+			"pending":   true,
+			"attempted": true,
+			"completed": true,
+		}
+		return validStatuses[value]
+	})
+	if err != nil {
+		panic(err)
+	}
 }
 
 // you can register your custom validation

@@ -40,3 +40,19 @@ func StringToInt(s string) (int, error) {
 	_, err := fmt.Sscanf(s, "%d", &result)
 	return result, err
 }
+
+// FormatTimestamp converts a pgtype.Timestamptz to ISO 8601 string
+func FormatTimestamp(ts pgtype.Timestamptz) string {
+	if ts.Valid {
+		return ts.Time.Format("2006-01-02T15:04:05Z07:00")
+	}
+	return ""
+}
+
+// FormatOptionalTimestamp converts an optional pgtype.Timestamptz to ISO 8601 string
+func FormatOptionalTimestamp(ts pgtype.Timestamptz) string {
+	if ts.Valid {
+		return ts.Time.Format("2006-01-02T15:04:05Z07:00")
+	}
+	return ""
+}

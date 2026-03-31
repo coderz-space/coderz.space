@@ -2,13 +2,15 @@ package main
 
 import (
 	"net/http"
+	"time"
 
-	"github.com/DSAwithGautam/Coderz.space/internal/common/logger"
-	"github.com/DSAwithGautam/Coderz.space/internal/common/middleware"
-	config "github.com/DSAwithGautam/Coderz.space/internal/config"
-	"github.com/DSAwithGautam/Coderz.space/internal/container"
-	"github.com/DSAwithGautam/Coderz.space/internal/routes"
-	_ "github.com/DSAwithGautam/Coderz.space/swagger" // Import generated docs
+	"github.com/coderz-space/coderz.space/internal/common/logger"
+	"github.com/coderz-space/coderz.space/internal/common/middleware"
+	"github.com/coderz-space/coderz.space/internal/common/middleware/timeout"
+	config "github.com/coderz-space/coderz.space/internal/config"
+	"github.com/coderz-space/coderz.space/internal/container"
+	"github.com/coderz-space/coderz.space/internal/routes"
+	_ "github.com/coderz-space/coderz.space/swagger" // Import generated docs
 	"github.com/labstack/echo/v5"
 	echoMiddleware "github.com/labstack/echo/v5/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
@@ -49,7 +51,9 @@ func main() {
 
 	cfg := config.LoadConfig()
 	logger.Initialize(cfg)
-	defer logger.Sync()
+	defer func() {
+		_ = logger.Sync() // Best effort sync on shutdown
+	}()
 
 	di, err := container.NewContainer(cfg, logger.Logger)
 	if err != nil {
@@ -69,6 +73,7 @@ func main() {
 	}))
 	e.Use(middleware.ZapLogger())
 	e.Use(middleware.Recovery())
+	e.Use(timeout.TimeoutMiddleware(30 * time.Second)) // 30 second timeout to prevent resource exhaustion
 
 	// swagger docs
 	e.GET("/swagger/*", echoSwagger.WrapHandler)

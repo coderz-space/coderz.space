@@ -3,9 +3,10 @@ package bootcamp
 import (
 	"net/http"
 
-	"github.com/DSAwithGautam/Coderz.space/internal/common/middleware/auth"
-	"github.com/DSAwithGautam/Coderz.space/internal/common/response"
-	"github.com/DSAwithGautam/Coderz.space/internal/common/utils"
+	"github.com/coderz-space/coderz.space/internal/common/middleware/auth"
+	"github.com/coderz-space/coderz.space/internal/common/response"
+	"github.com/coderz-space/coderz.space/internal/common/utils"
+	"github.com/coderz-space/coderz.space/internal/common/validator"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v5"
 )
@@ -38,10 +39,24 @@ func NewHandler(service *Service) *Handler {
 // @Failure 404 {object} map[string]any "Not found - organization does not exist"
 // @Failure 409 {object} map[string]any "Conflict - organization not approved"
 // @Router /v1/organizations/{orgId}/bootcamps [post]
-func (h *Handler) CreateBootcamp(c *echo.Context, body CreateBootcampRequest) error {
+func (h *Handler) CreateBootcamp(c *echo.Context) error {
+	var body CreateBootcampRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
 	if !ok {
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	// Prevent super_admin from creating bootcamps
+	if claims.Role == "super_admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "SUPER_ADMIN_CANNOT_CREATE_CONTENT", nil, nil)
 	}
 
 	orgID, err := utils.StringToUUID((*c).Param("orgId"))
@@ -261,7 +276,16 @@ func (h *Handler) ListBootcamps(c *echo.Context) error {
 // @Failure 403 {object} map[string]any "Forbidden - admin role required"
 // @Failure 404 {object} map[string]any "Not found - bootcamp does not exist"
 // @Router /v1/organizations/{orgId}/bootcamps/{bootcampId} [patch]
-func (h *Handler) UpdateBootcamp(c *echo.Context, body UpdateBootcampRequest) error {
+func (h *Handler) UpdateBootcamp(c *echo.Context) error {
+	var body UpdateBootcampRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
 	if !ok {
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
@@ -410,7 +434,16 @@ func (h *Handler) DeactivateBootcamp(c *echo.Context) error {
 // @Failure 404 {object} map[string]any "Not found - bootcamp does not exist"
 // @Failure 409 {object} map[string]any "Conflict - bootcamp inactive or cross-org violation"
 // @Router /v1/organizations/{orgId}/bootcamps/{bootcampId}/enrollments [post]
-func (h *Handler) EnrollMember(c *echo.Context, body EnrollMemberRequest) error {
+func (h *Handler) EnrollMember(c *echo.Context) error {
+	var body EnrollMemberRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
 	if !ok {
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
@@ -496,13 +529,24 @@ func (h *Handler) ListEnrollments(c *echo.Context) error {
 // @Tags Bootcamp Enrollments
 // @Accept json
 // @Produce json
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param bootcampId path string true "Bootcamp ID (UUID)"
 // @Param enrollmentId path string true "Enrollment ID (UUID)"
 // @Param body body UpdateEnrollmentRoleRequest true "New role"
 // @Success 200 {object} EnrollmentResponse "Enrollment role updated successfully"
 // @Failure 400 {object} map[string]any "Bad request - validation error"
-// @Router /v1/enrollments/{enrollmentId} [patch]
-func (h *Handler) UpdateEnrollmentRole(c *echo.Context, body UpdateEnrollmentRoleRequest) error {
-	enrollmentID, err := utils.StringToUUID((*c).Param("enrollmentId"))
+// @Router /v1/organizations/{orgId}/bootcamps/{bootcampId}/enrollments/{enrollmentId} [patch]
+func (h *Handler) UpdateEnrollmentRole(c *echo.Context) error {
+	var body UpdateEnrollmentRoleRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
+	enrollmentID, err := utils.StringToUUID(c.Param("enrollmentId"))
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ENROLLMENT_ID", nil, nil)
 	}
@@ -599,5 +643,64 @@ func (h *Handler) RemoveEnrollment(c *echo.Context) error {
 	return c.JSON(http.StatusOK, GenericResponse{
 		Success: true,
 		Data:    map[string]any{},
+	})
+}
+
+// Super Admin handlers
+
+// ListAllBootcamps godoc
+// @Summary List all bootcamps (super admin only)
+// @Description Retrieve all bootcamps across all organizations with pagination
+// @Tags Bootcamps
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 20, max: 100)"
+// @Success 200 {object} map[string]any "List of all bootcamps with pagination"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - super admin role required"
+// @Failure 500 {object} map[string]any "Internal server error"
+// @Router /v1/super-admin/bootcamps [get]
+func (h *Handler) ListAllBootcamps(c *echo.Context) error {
+	// Validate super_admin role
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	if claims.Role != "super_admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "SUPER_ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+
+	// Parse pagination parameters with defaults
+	page := 1
+	limit := 20
+
+	if pageStr := (*c).QueryParam("page"); pageStr != "" {
+		if p, err := utils.StringToInt(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	if limitStr := (*c).QueryParam("limit"); limitStr != "" {
+		if l, err := utils.StringToInt(limitStr); err == nil && l > 0 && l <= 100 {
+			limit = l
+		}
+	}
+
+	data, total, err := h.service.ListAllBootcamps(c.Request().Context(), page, limit)
+	if err != nil {
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error(), nil, nil)
+	}
+
+	return c.JSON(http.StatusOK, map[string]any{
+		"success": true,
+		"data":    data,
+		"meta": map[string]any{
+			"page":  page,
+			"limit": limit,
+			"total": total,
+		},
 	})
 }

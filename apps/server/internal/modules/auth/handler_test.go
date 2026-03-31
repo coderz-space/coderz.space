@@ -11,8 +11,8 @@ func TestSignupPasswordComplexity(t *testing.T) {
 	tests := []struct {
 		name           string
 		password       string
-		expectedStatus int
 		expectedError  string
+		expectedStatus int
 	}{
 		{
 			name:           "accepts password with letter and number",
@@ -77,8 +77,8 @@ func TestSignupEmailValidation(t *testing.T) {
 	tests := []struct {
 		name           string
 		email          string
-		expectedStatus int
 		expectedError  string
+		expectedStatus int
 	}{
 		{
 			name:           "accepts valid email",
@@ -124,8 +124,8 @@ func TestSignupNameValidation(t *testing.T) {
 	tests := []struct {
 		name           string
 		userName       string
-		expectedStatus int
 		expectedError  string
+		expectedStatus int
 	}{
 		{
 			name:           "accepts name with 2 characters",
@@ -170,8 +170,8 @@ func TestSignupDuplicateEmail(t *testing.T) {
 	tests := []struct {
 		name           string
 		scenario       string
-		expectedStatus int
 		expectedError  string
+		expectedStatus int
 	}{
 		{
 			name:           "first signup with email succeeds",
@@ -233,8 +233,8 @@ func TestLoginCredentialValidation(t *testing.T) {
 	tests := []struct {
 		name           string
 		scenario       string
-		expectedStatus int
 		expectedError  string
+		expectedStatus int
 	}{
 		{
 			name:           "valid credentials succeed",
@@ -393,8 +393,8 @@ func TestMeAuthentication(t *testing.T) {
 	tests := []struct {
 		name           string
 		scenario       string
-		expectedStatus int
 		expectedError  string
+		expectedStatus int
 	}{
 		{
 			name:           "authenticated user can get profile",
@@ -440,8 +440,8 @@ func TestMeUserNotFound(t *testing.T) {
 	tests := []struct {
 		name           string
 		scenario       string
-		expectedStatus int
 		expectedError  string
+		expectedStatus int
 	}{
 		{
 			name:           "existing user returns profile",
@@ -545,8 +545,8 @@ func TestResetPasswordTokenValidation(t *testing.T) {
 	tests := []struct {
 		name           string
 		scenario       string
-		expectedStatus int
 		expectedError  string
+		expectedStatus int
 	}{
 		{
 			name:           "valid token allows password reset",
@@ -592,8 +592,8 @@ func TestResetPasswordComplexity(t *testing.T) {
 	tests := []struct {
 		name           string
 		password       string
-		expectedStatus int
 		expectedError  string
+		expectedStatus int
 	}{
 		{
 			name:           "accepts password with letter and number",

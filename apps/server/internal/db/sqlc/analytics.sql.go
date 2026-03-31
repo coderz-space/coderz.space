@@ -40,6 +40,65 @@ func (q *Queries) CastPollVote(ctx context.Context, arg CastPollVoteParams) (Pol
 	return i, err
 }
 
+const checkVoteExists = `-- name: CheckVoteExists :one
+SELECT EXISTS(
+    SELECT 1 FROM poll_votes
+    WHERE poll_id = $1 AND voter_id = $2
+) as vote_exists
+`
+
+type CheckVoteExistsParams struct {
+	PollID  pgtype.UUID `db:"poll_id" json:"poll_id"`
+	VoterID pgtype.UUID `db:"voter_id" json:"voter_id"`
+}
+
+func (q *Queries) CheckVoteExists(ctx context.Context, arg CheckVoteExistsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkVoteExists, arg.PollID, arg.VoterID)
+	var vote_exists bool
+	err := row.Scan(&vote_exists)
+	return vote_exists, err
+}
+
+const countAllLeaderboards = `-- name: CountAllLeaderboards :one
+SELECT COUNT(*) FROM leaderboard_entries
+`
+
+func (q *Queries) CountAllLeaderboards(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countAllLeaderboards)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countAllPolls = `-- name: CountAllPolls :one
+SELECT COUNT(*) FROM polls
+`
+
+func (q *Queries) CountAllPolls(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countAllPolls)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countPollVotesByPoll = `-- name: CountPollVotesByPoll :one
+SELECT COUNT(*) FROM poll_votes
+WHERE poll_id = $1
+  AND ($2::text IS NULL OR vote = $2)
+`
+
+type CountPollVotesByPollParams struct {
+	PollID  pgtype.UUID `db:"poll_id" json:"poll_id"`
+	Column2 string      `db:"column_2" json:"column_2"`
+}
+
+func (q *Queries) CountPollVotesByPoll(ctx context.Context, arg CountPollVotesByPollParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countPollVotesByPoll, arg.PollID, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createPoll = `-- name: CreatePoll :one
 
 INSERT INTO polls (
@@ -75,6 +134,53 @@ func (q *Queries) CreatePoll(ctx context.Context, arg CreatePollParams) (Poll, e
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const getAllPollResults = `-- name: GetAllPollResults :many
+SELECT p.id as poll_id, p.question, b.name as bootcamp_name, o.name as organization_name,
+       pv.vote, COUNT(pv.id) as vote_count
+FROM polls p
+JOIN bootcamps b ON p.bootcamp_id = b.id
+JOIN organizations o ON b.organization_id = o.id
+LEFT JOIN poll_votes pv ON p.id = pv.poll_id
+GROUP BY p.id, p.question, b.name, o.name, pv.vote
+ORDER BY p.created_at DESC
+`
+
+type GetAllPollResultsRow struct {
+	PollID           pgtype.UUID       `db:"poll_id" json:"poll_id"`
+	Question         string            `db:"question" json:"question"`
+	BootcampName     string            `db:"bootcamp_name" json:"bootcamp_name"`
+	OrganizationName string            `db:"organization_name" json:"organization_name"`
+	Vote             NullPollVoteValue `db:"vote" json:"vote"`
+	VoteCount        int64             `db:"vote_count" json:"vote_count"`
+}
+
+func (q *Queries) GetAllPollResults(ctx context.Context) ([]GetAllPollResultsRow, error) {
+	rows, err := q.db.Query(ctx, getAllPollResults)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetAllPollResultsRow{}
+	for rows.Next() {
+		var i GetAllPollResultsRow
+		if err := rows.Scan(
+			&i.PollID,
+			&i.Question,
+			&i.BootcampName,
+			&i.OrganizationName,
+			&i.Vote,
+			&i.VoteCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getLeaderboardByBootcamp = `-- name: GetLeaderboardByBootcamp :many
@@ -176,6 +282,216 @@ func (q *Queries) GetPollResults(ctx context.Context, pollID pgtype.UUID) ([]Get
 	for rows.Next() {
 		var i GetPollResultsRow
 		if err := rows.Scan(&i.Vote, &i.VoteCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserVoteForPoll = `-- name: GetUserVoteForPoll :one
+SELECT id, poll_id, voter_id, vote, created_at FROM poll_votes
+WHERE poll_id = $1 AND voter_id = $2
+LIMIT 1
+`
+
+type GetUserVoteForPollParams struct {
+	PollID  pgtype.UUID `db:"poll_id" json:"poll_id"`
+	VoterID pgtype.UUID `db:"voter_id" json:"voter_id"`
+}
+
+func (q *Queries) GetUserVoteForPoll(ctx context.Context, arg GetUserVoteForPollParams) (PollVote, error) {
+	row := q.db.QueryRow(ctx, getUserVoteForPoll, arg.PollID, arg.VoterID)
+	var i PollVote
+	err := row.Scan(
+		&i.ID,
+		&i.PollID,
+		&i.VoterID,
+		&i.Vote,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const listAllLeaderboards = `-- name: ListAllLeaderboards :many
+
+SELECT le.id, le.bootcamp_id, le.bootcamp_enrollment_id, le.problems_completed, le.problems_attempted, le.completion_rate, le.streak_days, le.score, le.rank, le.calculated_at, b.name as bootcamp_name, o.name as organization_name, u.name as user_name
+FROM leaderboard_entries le
+JOIN bootcamp_enrollments be ON le.bootcamp_enrollment_id = be.id
+JOIN bootcamps b ON le.bootcamp_id = b.id
+JOIN organizations o ON b.organization_id = o.id
+JOIN organization_members om ON be.organization_member_id = om.id
+JOIN users u ON om.user_id = u.id
+ORDER BY le.calculated_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type ListAllLeaderboardsParams struct {
+	Limit  int32 `db:"limit" json:"limit"`
+	Offset int32 `db:"offset" json:"offset"`
+}
+
+type ListAllLeaderboardsRow struct {
+	ID                   pgtype.UUID        `db:"id" json:"id"`
+	BootcampID           pgtype.UUID        `db:"bootcamp_id" json:"bootcamp_id"`
+	BootcampEnrollmentID pgtype.UUID        `db:"bootcamp_enrollment_id" json:"bootcamp_enrollment_id"`
+	ProblemsCompleted    int32              `db:"problems_completed" json:"problems_completed"`
+	ProblemsAttempted    int32              `db:"problems_attempted" json:"problems_attempted"`
+	CompletionRate       float32            `db:"completion_rate" json:"completion_rate"`
+	StreakDays           int32              `db:"streak_days" json:"streak_days"`
+	Score                int32              `db:"score" json:"score"`
+	Rank                 int32              `db:"rank" json:"rank"`
+	CalculatedAt         pgtype.Timestamptz `db:"calculated_at" json:"calculated_at"`
+	BootcampName         string             `db:"bootcamp_name" json:"bootcamp_name"`
+	OrganizationName     string             `db:"organization_name" json:"organization_name"`
+	UserName             string             `db:"user_name" json:"user_name"`
+}
+
+// Super Admin Queries
+func (q *Queries) ListAllLeaderboards(ctx context.Context, arg ListAllLeaderboardsParams) ([]ListAllLeaderboardsRow, error) {
+	rows, err := q.db.Query(ctx, listAllLeaderboards, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAllLeaderboardsRow{}
+	for rows.Next() {
+		var i ListAllLeaderboardsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.BootcampID,
+			&i.BootcampEnrollmentID,
+			&i.ProblemsCompleted,
+			&i.ProblemsAttempted,
+			&i.CompletionRate,
+			&i.StreakDays,
+			&i.Score,
+			&i.Rank,
+			&i.CalculatedAt,
+			&i.BootcampName,
+			&i.OrganizationName,
+			&i.UserName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAllPolls = `-- name: ListAllPolls :many
+SELECT p.id, p.bootcamp_id, p.problem_id, p.question, p.created_by, p.created_at, b.name as bootcamp_name, o.name as organization_name, prob.title as problem_title
+FROM polls p
+JOIN bootcamps b ON p.bootcamp_id = b.id
+JOIN organizations o ON b.organization_id = o.id
+JOIN problems prob ON p.problem_id = prob.id
+ORDER BY p.created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type ListAllPollsParams struct {
+	Limit  int32 `db:"limit" json:"limit"`
+	Offset int32 `db:"offset" json:"offset"`
+}
+
+type ListAllPollsRow struct {
+	ID               pgtype.UUID        `db:"id" json:"id"`
+	BootcampID       pgtype.UUID        `db:"bootcamp_id" json:"bootcamp_id"`
+	ProblemID        pgtype.UUID        `db:"problem_id" json:"problem_id"`
+	Question         string             `db:"question" json:"question"`
+	CreatedBy        pgtype.UUID        `db:"created_by" json:"created_by"`
+	CreatedAt        pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	BootcampName     string             `db:"bootcamp_name" json:"bootcamp_name"`
+	OrganizationName string             `db:"organization_name" json:"organization_name"`
+	ProblemTitle     string             `db:"problem_title" json:"problem_title"`
+}
+
+func (q *Queries) ListAllPolls(ctx context.Context, arg ListAllPollsParams) ([]ListAllPollsRow, error) {
+	rows, err := q.db.Query(ctx, listAllPolls, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAllPollsRow{}
+	for rows.Next() {
+		var i ListAllPollsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.BootcampID,
+			&i.ProblemID,
+			&i.Question,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.BootcampName,
+			&i.OrganizationName,
+			&i.ProblemTitle,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPollVotesByPoll = `-- name: ListPollVotesByPoll :many
+SELECT pv.id, pv.poll_id, pv.voter_id, pv.vote, pv.created_at, u.name as voter_name
+FROM poll_votes pv
+JOIN bootcamp_enrollments be ON pv.voter_id = be.id
+JOIN organization_members om ON be.organization_member_id = om.id
+JOIN users u ON om.user_id = u.id
+WHERE pv.poll_id = $1
+  AND ($2::text IS NULL OR pv.vote = $2)
+ORDER BY pv.created_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type ListPollVotesByPollParams struct {
+	PollID  pgtype.UUID `db:"poll_id" json:"poll_id"`
+	Column2 string      `db:"column_2" json:"column_2"`
+	Limit   int32       `db:"limit" json:"limit"`
+	Offset  int32       `db:"offset" json:"offset"`
+}
+
+type ListPollVotesByPollRow struct {
+	ID        pgtype.UUID        `db:"id" json:"id"`
+	PollID    pgtype.UUID        `db:"poll_id" json:"poll_id"`
+	VoterID   pgtype.UUID        `db:"voter_id" json:"voter_id"`
+	Vote      PollVoteValue      `db:"vote" json:"vote"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	VoterName string             `db:"voter_name" json:"voter_name"`
+}
+
+func (q *Queries) ListPollVotesByPoll(ctx context.Context, arg ListPollVotesByPollParams) ([]ListPollVotesByPollRow, error) {
+	rows, err := q.db.Query(ctx, listPollVotesByPoll,
+		arg.PollID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPollVotesByPollRow{}
+	for rows.Next() {
+		var i ListPollVotesByPollRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PollID,
+			&i.VoterID,
+			&i.Vote,
+			&i.CreatedAt,
+			&i.VoterName,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

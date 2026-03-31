@@ -7,9 +7,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/DSAwithGautam/Coderz.space/internal/common/utils"
-	"github.com/DSAwithGautam/Coderz.space/internal/config"
-	db "github.com/DSAwithGautam/Coderz.space/internal/db/sqlc"
+	"github.com/coderz-space/coderz.space/internal/common/utils"
+	"github.com/coderz-space/coderz.space/internal/config"
+	db "github.com/coderz-space/coderz.space/internal/db/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -44,7 +44,7 @@ func (s *Service) Signup(ctx context.Context, req SignupRequest) (*AuthResponseD
 		return nil, err
 	}
 
-	return s.generateAuthData(ctx, user)
+	return s.generateAuthData(ctx, &user)
 }
 
 func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponseData, error) {
@@ -57,7 +57,7 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponseDat
 		return nil, errors.New("INVALID_CREDENTIALS")
 	}
 
-	return s.generateAuthData(ctx, user)
+	return s.generateAuthData(ctx, &user)
 }
 
 func (s *Service) Refresh(ctx context.Context, refreshToken string) (*AuthResponseData, error) {
@@ -68,7 +68,8 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*AuthRespon
 	}
 
 	if rt.ExpiresAt.Time.Before(time.Now()) {
-		s.queries.DeleteRefreshToken(ctx, tokenHash)
+		// Best effort cleanup - ignore error
+		_ = s.queries.DeleteRefreshToken(ctx, tokenHash)
 		return nil, errors.New("EXPIRED_REFRESH_TOKEN")
 	}
 
@@ -77,10 +78,10 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*AuthRespon
 		return nil, err
 	}
 
-	// Delete old refresh token (rotation)
-	s.queries.DeleteRefreshToken(ctx, tokenHash)
+	// Delete old refresh token (rotation) - best effort, ignore error
+	_ = s.queries.DeleteRefreshToken(ctx, tokenHash)
 
-	return s.generateAuthData(ctx, user)
+	return s.generateAuthData(ctx, &user)
 }
 
 func (s *Service) Logout(ctx context.Context, refreshToken string) error {
@@ -102,7 +103,7 @@ func (s *Service) GetUserByID(ctx context.Context, userID pgtype.UUID) (*AuthUse
 	}, nil
 }
 
-func (s *Service) generateAuthData(ctx context.Context, user db.User) (*AuthResponseData, error) {
+func (s *Service) generateAuthData(ctx context.Context, user *db.User) (*AuthResponseData, error) {
 	// Generate Access Token
 	payload := utils.TokenPayload{
 		UserID:   utils.UUIDToString(user.ID),
@@ -162,7 +163,7 @@ func (s *Service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 		return nil
 	}
 
-	// Delete any existing password reset tokens for this user
+	// Delete any existing password reset tokens for this user - best effort, ignore error
 	_ = s.queries.DeleteUserPasswordResetTokens(ctx, user.ID)
 
 	// Generate reset token
@@ -230,7 +231,7 @@ func (s *Service) ResetPassword(ctx context.Context, req ResetPasswordRequest) e
 		return err
 	}
 
-	// Delete all refresh tokens for this user (force re-login)
+	// Delete all refresh tokens for this user (force re-login) - best effort, ignore error
 	_ = s.queries.DeleteUserRefreshTokens(ctx, resetToken.UserID)
 
 	return nil

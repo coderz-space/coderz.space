@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/DSAwithGautam/Coderz.space/internal/common/utils"
-	"github.com/DSAwithGautam/Coderz.space/internal/config"
-	db "github.com/DSAwithGautam/Coderz.space/internal/db/sqlc"
+	"github.com/coderz-space/coderz.space/internal/common/utils"
+	"github.com/coderz-space/coderz.space/internal/config"
+	db "github.com/coderz-space/coderz.space/internal/db/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -44,7 +44,9 @@ func (s *Service) CreateOrganization(ctx context.Context, req CreateOrganization
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx) // Rollback is safe to call even after commit
+	}()
 
 	qtx := s.queries.WithTx(tx)
 
@@ -107,8 +109,8 @@ func (s *Service) ListUserOrganizations(ctx context.Context, userID pgtype.UUID,
 	}
 
 	result := make([]OrganizationData, len(orgs))
-	for i, org := range orgs {
-		result[i] = *s.mapOrganizationToData(org)
+	for i := range orgs {
+		result[i] = *s.mapOrganizationToData(orgs[i])
 	}
 
 	return result, int(count), nil
@@ -180,8 +182,8 @@ func (s *Service) GetPendingOrganizations(ctx context.Context) ([]OrganizationDa
 	}
 
 	result := make([]OrganizationData, len(orgs))
-	for i, org := range orgs {
-		result[i] = *s.mapOrganizationToData(org)
+	for i := range orgs {
+		result[i] = *s.mapOrganizationToData(orgs[i])
 	}
 
 	return result, nil
@@ -233,23 +235,24 @@ func (s *Service) ListMembers(ctx context.Context, orgID pgtype.UUID, page, limi
 	}
 
 	result := make([]MemberData, len(members))
-	for i, member := range members {
+	for i := range members {
+		m := members[i]
 		result[i] = MemberData{
-			ID:             member.ID,
-			OrganizationID: member.OrganizationID,
-			UserID:         member.UserID,
-			Role:           string(member.Role),
-			JoinedAt:       member.JoinedAt.Time.Format("2006-01-02T15:04:05Z07:00"),
-			Name:           member.Name,
-			Email:          member.Email.String,
-			AvatarUrl:      member.AvatarUrl.String,
+			Role:           string(m.Role),
+			JoinedAt:       m.JoinedAt.Time.Format("2006-01-02T15:04:05Z07:00"),
+			Name:           m.Name,
+			Email:          m.Email.String,
+			AvatarUrl:      m.AvatarUrl.String,
+			ID:             m.ID,
+			OrganizationID: m.OrganizationID,
+			UserID:         m.UserID,
 		}
 	}
 
 	return result, int(count), nil
 }
 
-func (s *Service) UpdateMemberRole(ctx context.Context, orgID pgtype.UUID, userID pgtype.UUID, req UpdateMemberRoleRequest) (*MemberData, error) {
+func (s *Service) UpdateMemberRole(ctx context.Context, orgID, userID pgtype.UUID, req UpdateMemberRoleRequest) (*MemberData, error) {
 	role, err := s.parseOrgMemberRole(req.Role)
 	if err != nil {
 		return nil, err
@@ -288,7 +291,7 @@ func (s *Service) UpdateMemberRole(ctx context.Context, orgID pgtype.UUID, userI
 	return s.mapMemberToData(member), nil
 }
 
-func (s *Service) RemoveMember(ctx context.Context, orgID pgtype.UUID, userID pgtype.UUID) error {
+func (s *Service) RemoveMember(ctx context.Context, orgID, userID pgtype.UUID) error {
 	// Get the member to check their role
 	member, err := s.queries.GetOrganizationMember(ctx, db.GetOrganizationMemberParams{
 		OrganizationID: orgID,
@@ -316,7 +319,7 @@ func (s *Service) RemoveMember(ctx context.Context, orgID pgtype.UUID, userID pg
 	})
 }
 
-func (s *Service) GetMember(ctx context.Context, orgID pgtype.UUID, userID pgtype.UUID) (*MemberData, error) {
+func (s *Service) GetMember(ctx context.Context, orgID, userID pgtype.UUID) (*MemberData, error) {
 	member, err := s.queries.GetOrganizationMember(ctx, db.GetOrganizationMemberParams{
 		OrganizationID: orgID,
 		UserID:         userID,
@@ -363,4 +366,33 @@ func (s *Service) parseOrgMemberRole(role string) (db.OrgMemberRole, error) {
 	default:
 		return "", errors.New("INVALID_ROLE")
 	}
+}
+
+// Super Admin operations
+
+func (s *Service) ListAllOrganizations(ctx context.Context, page, limit int) ([]OrganizationData, int, error) {
+	// Calculate offset from page and limit
+	offset := (page - 1) * limit
+
+	// Get total count
+	count, err := s.queries.CountAllOrganizations(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated organizations
+	orgs, err := s.queries.ListAllOrganizations(ctx, db.ListAllOrganizationsParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	result := make([]OrganizationData, len(orgs))
+	for i := range orgs {
+		result[i] = *s.mapOrganizationToData(orgs[i])
+	}
+
+	return result, int(count), nil
 }

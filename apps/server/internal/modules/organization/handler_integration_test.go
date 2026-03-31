@@ -189,9 +189,9 @@ func TestRemoveMemberLastAdminPrevention(t *testing.T) {
 	tests := []struct {
 		name           string
 		memberRole     string
-		adminCount     int
 		expectedStatus string
 		expectedError  string
+		adminCount     int
 	}{
 		{
 			name:           "cannot remove last admin",

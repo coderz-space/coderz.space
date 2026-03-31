@@ -1,11 +1,13 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 
-	"github.com/DSAwithGautam/Coderz.space/internal/common/middleware/auth"
-	"github.com/DSAwithGautam/Coderz.space/internal/common/response"
-	"github.com/DSAwithGautam/Coderz.space/internal/common/utils"
+	"github.com/coderz-space/coderz.space/internal/common/middleware/auth"
+	"github.com/coderz-space/coderz.space/internal/common/response"
+	"github.com/coderz-space/coderz.space/internal/common/utils"
+	"github.com/coderz-space/coderz.space/internal/common/validator"
 	"github.com/labstack/echo/v5"
 )
 
@@ -29,12 +31,25 @@ func NewHandler(service *Service) *Handler {
 // @Success 201 {object} AuthResponse "User registered successfully"
 // @Failure 400 {object} map[string]any "Bad request - validation error or email already exists"
 // @Router /v1/auth/signup [post]
+func (h *Handler) Signup(c *echo.Context) error {
+	var body SignupRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+	fmt.Println("hello world😅 1")
 
-func (h *Handler) Signup(c *echo.Context, body SignupRequest) error {
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		fmt.Println("hello world😅 2")
+
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+	fmt.Println("hello world😅 x")
+
 	data, err := h.service.Signup(c.Request().Context(), body)
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", err.Error(), nil, nil)
 	}
+	fmt.Println("hello world😅 3")
 
 	h.setAuthCookies(c, data.AccessToken, data.RefreshToken)
 
@@ -54,8 +69,16 @@ func (h *Handler) Signup(c *echo.Context, body SignupRequest) error {
 // @Success 200 {object} AuthResponse "Login successful"
 // @Failure 401 {object} map[string]any "Unauthorized - invalid credentials"
 // @Router /v1/auth/login [post]
+func (h *Handler) Login(c *echo.Context) error {
+	var body LoginRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
 
-func (h *Handler) Login(c *echo.Context, body LoginRequest) error {
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
 	data, err := h.service.Login(c.Request().Context(), body)
 	if err != nil {
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error(), nil, nil)
@@ -78,7 +101,6 @@ func (h *Handler) Login(c *echo.Context, body LoginRequest) error {
 // @Success 200 {object} RefreshResponse "Token refreshed successfully"
 // @Failure 401 {object} map[string]any "Unauthorized - missing or invalid refresh token"
 // @Router /v1/auth/refresh [post]
-
 func (h *Handler) Refresh(c *echo.Context) error {
 	cookie, err := c.Cookie("refresh_token")
 	if err != nil {
@@ -109,11 +131,11 @@ func (h *Handler) Refresh(c *echo.Context) error {
 // @Security BearerAuth
 // @Success 200 {object} GenericResponse "Logout successful"
 // @Router /v1/auth/logout [post]
-
 func (h *Handler) Logout(c *echo.Context) error {
 	cookie, err := c.Cookie("refresh_token")
 	if err == nil {
-		h.service.Logout(c.Request().Context(), cookie.Value)
+		// Best effort logout - ignore error as cookies will be cleared anyway
+		_ = h.service.Logout(c.Request().Context(), cookie.Value)
 	}
 
 	h.clearAuthCookies(c)
@@ -135,7 +157,6 @@ func (h *Handler) Logout(c *echo.Context) error {
 // @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
 // @Failure 404 {object} map[string]any "Not found - user does not exist"
 // @Router /v1/auth/me [get]
-
 func (h *Handler) Me(c *echo.Context) error {
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
 	if !ok {
@@ -168,8 +189,17 @@ func (h *Handler) Me(c *echo.Context) error {
 // @Success 200 {object} GenericResponse "Password reset email sent (if email exists)"
 // @Failure 400 {object} map[string]any "Bad request - validation error"
 // @Router /v1/auth/forgot-password [post]
-func (h *Handler) ForgotPassword(c *echo.Context, body ForgotPasswordRequest) error {
-	// Always return success to prevent email enumeration
+func (h *Handler) ForgotPassword(c *echo.Context) error {
+	var body ForgotPasswordRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
+	// Always return success to prevent email enumeration - ignore error intentionally
 	_ = h.service.ForgotPassword(c.Request().Context(), body)
 
 	return c.JSON(http.StatusOK, GenericResponse{
@@ -188,7 +218,16 @@ func (h *Handler) ForgotPassword(c *echo.Context, body ForgotPasswordRequest) er
 // @Success 200 {object} GenericResponse "Password reset successful"
 // @Failure 400 {object} map[string]any "Bad request - validation error or invalid/expired token"
 // @Router /v1/auth/reset-password [post]
-func (h *Handler) ResetPassword(c *echo.Context, body ResetPasswordRequest) error {
+func (h *Handler) ResetPassword(c *echo.Context) error {
+	var body ResetPasswordRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
 	err := h.service.ResetPassword(c.Request().Context(), body)
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", err.Error(), nil, nil)

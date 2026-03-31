@@ -12,10 +12,10 @@ func TestEnrollmentCrossOrgViolationDetection(t *testing.T) {
 		name           string
 		memberOrgID    string
 		bootcampOrgID  string
-		expectSuccess  bool
-		expectedStatus int
 		expectedCode   string
 		scenario       string
+		expectedStatus int
+		expectSuccess  bool
 	}{
 		{
 			name:           "same organization allows enrollment",
@@ -68,11 +68,11 @@ func TestEnrollmentDuplicatePrevention(t *testing.T) {
 		name            string
 		bootcampID      string
 		memberID        string
-		alreadyEnrolled bool
-		expectSuccess   bool
-		expectedStatus  int
 		expectedCode    string
 		scenario        string
+		expectedStatus  int
+		alreadyEnrolled bool
+		expectSuccess   bool
 	}{
 		{
 			name:            "first enrollment succeeds",
@@ -147,11 +147,11 @@ func TestEnrollmentDuplicatePrevention(t *testing.T) {
 func TestEnrollmentInactiveBootcampRejection(t *testing.T) {
 	tests := []struct {
 		name           string
-		bootcampActive bool
-		expectSuccess  bool
-		expectedStatus int
 		expectedCode   string
 		scenario       string
+		expectedStatus int
+		bootcampActive bool
+		expectSuccess  bool
 	}{
 		{
 			name:           "active bootcamp allows enrollment",
@@ -209,8 +209,8 @@ func TestEnrollmentValidationOrder(t *testing.T) {
 	tests := []struct {
 		name           string
 		validationStep string
-		expectedOrder  int
 		description    string
+		expectedOrder  int
 	}{
 		{
 			name:           "step 1: validate request parameters",
@@ -289,9 +289,9 @@ func TestEnrollmentValidationErrorMessages(t *testing.T) {
 	tests := []struct {
 		name           string
 		errorCode      string
-		expectedStatus int
 		errorMessage   string
 		scenario       string
+		expectedStatus int
 	}{
 		{
 			name:           "cross-org violation error",
@@ -353,12 +353,12 @@ func TestEnrollmentValidationIntegration(t *testing.T) {
 		name              string
 		memberOrgID       string
 		bootcampOrgID     string
+		expectedCode      string
+		scenario          string
+		validationsPassed []string
+		expectedStatus    int
 		bootcampActive    bool
 		alreadyEnrolled   bool
-		expectedStatus    int
-		expectedCode      string
-		validationsPassed []string
-		scenario          string
 	}{
 		{
 			name:            "all validations pass",

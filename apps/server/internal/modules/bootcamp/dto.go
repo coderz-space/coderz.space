@@ -5,43 +5,43 @@ import "github.com/jackc/pgx/v5/pgtype"
 // Bootcamp DTOs
 
 type CreateBootcampRequest struct {
+	IsActive    *bool  `json:"isActive" validate:"omitempty"`
 	Name        string `json:"name" validate:"required,min=3,max=120"`
 	Description string `json:"description" validate:"omitempty,max=500"`
 	StartDate   string `json:"startDate" validate:"omitempty,datetime=2006-01-02"`
 	EndDate     string `json:"endDate" validate:"omitempty,datetime=2006-01-02"`
-	IsActive    *bool  `json:"isActive" validate:"omitempty"`
 }
 
 type UpdateBootcampRequest struct {
+	IsActive    *bool  `json:"isActive" validate:"omitempty"`
 	Name        string `json:"name" validate:"omitempty,min=3,max=120"`
 	Description string `json:"description" validate:"omitempty,max=500"`
 	StartDate   string `json:"startDate" validate:"omitempty,datetime=2006-01-02"`
 	EndDate     string `json:"endDate" validate:"omitempty,datetime=2006-01-02"`
-	IsActive    *bool  `json:"isActive" validate:"omitempty"`
 }
 
 type BootcampData struct {
-	ID             pgtype.UUID `json:"id"`
-	OrganizationID pgtype.UUID `json:"organizationId"`
-	CreatedBy      pgtype.UUID `json:"createdBy"`
 	Name           string      `json:"name"`
 	Description    string      `json:"description"`
 	StartDate      string      `json:"startDate,omitempty"`
 	EndDate        string      `json:"endDate,omitempty"`
-	IsActive       bool        `json:"isActive"`
 	CreatedAt      string      `json:"createdAt"`
 	UpdatedAt      string      `json:"updatedAt"`
+	ID             pgtype.UUID `json:"id"`
+	OrganizationID pgtype.UUID `json:"organizationId"`
+	CreatedBy      pgtype.UUID `json:"createdBy"`
+	IsActive       bool        `json:"isActive"`
 }
 
 type BootcampResponse struct {
-	Success bool         `json:"success"`
 	Data    BootcampData `json:"data"`
+	Success bool         `json:"success"`
 }
 
 type BootcampListResponse struct {
-	Success bool           `json:"success"`
-	Data    []BootcampData `json:"data"`
 	Meta    *PaginationMeta `json:"meta,omitempty"`
+	Data    []BootcampData  `json:"data"`
+	Success bool            `json:"success"`
 }
 
 type PaginationMeta struct {
@@ -62,9 +62,6 @@ type UpdateEnrollmentRoleRequest struct {
 }
 
 type EnrollmentData struct {
-	ID                   pgtype.UUID `json:"id"`
-	BootcampID           pgtype.UUID `json:"bootcampId"`
-	OrganizationMemberID pgtype.UUID `json:"organizationMemberId"`
 	Role                 string      `json:"role"`
 	Status               string      `json:"status"`
 	EnrolledAt           string      `json:"enrolledAt"`
@@ -72,20 +69,23 @@ type EnrollmentData struct {
 	Email                string      `json:"email,omitempty"`
 	AvatarUrl            string      `json:"avatarUrl,omitempty"`
 	OrgRole              string      `json:"orgRole,omitempty"`
+	ID                   pgtype.UUID `json:"id"`
+	BootcampID           pgtype.UUID `json:"bootcampId"`
+	OrganizationMemberID pgtype.UUID `json:"organizationMemberId"`
 }
 
 type EnrollmentResponse struct {
-	Success bool           `json:"success"`
 	Data    EnrollmentData `json:"data"`
+	Success bool           `json:"success"`
 }
 
 type EnrollmentListResponse struct {
-	Success bool             `json:"success"`
-	Data    []EnrollmentData `json:"data"`
 	Meta    *PaginationMeta  `json:"meta,omitempty"`
+	Data    []EnrollmentData `json:"data"`
+	Success bool             `json:"success"`
 }
 
 type GenericResponse struct {
-	Success bool           `json:"success"`
 	Data    map[string]any `json:"data"`
+	Success bool           `json:"success"`
 }

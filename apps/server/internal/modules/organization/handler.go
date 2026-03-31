@@ -3,9 +3,9 @@ package organization
 import (
 	"net/http"
 
-	"github.com/DSAwithGautam/Coderz.space/internal/common/middleware/auth"
-	"github.com/DSAwithGautam/Coderz.space/internal/common/response"
-	"github.com/DSAwithGautam/Coderz.space/internal/common/utils"
+	"github.com/coderz-space/coderz.space/internal/common/middleware/auth"
+	"github.com/coderz-space/coderz.space/internal/common/response"
+	"github.com/coderz-space/coderz.space/internal/common/utils"
 	"github.com/labstack/echo/v5"
 )
 
@@ -171,6 +171,11 @@ func (h *Handler) UpdateOrganization(c *echo.Context, body UpdateOrganizationReq
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
 	if !ok {
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	// Prevent super_admin from modifying organization content
+	if claims.Role == "super_admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "SUPER_ADMIN_CANNOT_MODIFY_CONTENT", nil, nil)
 	}
 
 	userID, err := utils.StringToUUID(claims.UserID)
@@ -523,5 +528,64 @@ func (h *Handler) RemoveMember(c *echo.Context) error {
 	return c.JSON(http.StatusOK, GenericResponse{
 		Success: true,
 		Data:    map[string]any{},
+	})
+}
+
+// Super Admin handlers
+
+// ListAllOrganizations godoc
+// @Summary List all organizations (super admin only)
+// @Description Retrieve all organizations across the platform with pagination
+// @Tags Organizations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 20, max: 100)"
+// @Success 200 {object} OrganizationListResponse "List of all organizations with pagination"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - super admin role required"
+// @Failure 500 {object} map[string]any "Internal server error"
+// @Router /v1/super-admin/organizations [get]
+func (h *Handler) ListAllOrganizations(c *echo.Context) error {
+	// Validate super_admin role
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	if claims.Role != "super_admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "SUPER_ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+
+	// Parse pagination parameters with defaults
+	page := 1
+	limit := 20
+
+	if pageStr := (*c).QueryParam("page"); pageStr != "" {
+		if p, err := utils.StringToInt(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	if limitStr := (*c).QueryParam("limit"); limitStr != "" {
+		if l, err := utils.StringToInt(limitStr); err == nil && l > 0 && l <= 100 {
+			limit = l
+		}
+	}
+
+	data, total, err := h.service.ListAllOrganizations(c.Request().Context(), page, limit)
+	if err != nil {
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error(), nil, nil)
+	}
+
+	return c.JSON(http.StatusOK, OrganizationListResponse{
+		Success: true,
+		Data:    data,
+		Meta: &PaginationMeta{
+			Page:  page,
+			Limit: limit,
+			Total: total,
+		},
 	})
 }

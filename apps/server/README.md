@@ -1,6 +1,6 @@
 # Coderz.space Server
 
-[![CI](https://github.com/DSAwithGautam/Coderz.space/actions/workflows/ci.yaml/badge.svg)](https://github.com/DSAwithGautam/Coderz.space/actions/workflows/ci.yaml)
+[![CI](https://github.com/coderz-space/coderz.space/actions/workflows/ci.yaml/badge.svg)](https://github.com/coderz-space/coderz.space/actions/workflows/ci.yaml)
 
 Go-based backend server for the Coderz.space bootcamp management platform.
 
@@ -11,7 +11,7 @@ Go-based backend server for the Coderz.space bootcamp management platform.
 
 ## Tech Stack
 
-- Go 1.25+
+- Go 1.24+
 - Echo v5 (Web Framework)
 - PostgreSQL 18
 - SQLC (Type-safe SQL)
@@ -22,7 +22,7 @@ Go-based backend server for the Coderz.space bootcamp management platform.
 
 ### Prerequisites
 
-- Go 1.25+
+- Go 1.24+
 - PostgreSQL 18
 - Docker & Docker Compose (optional)
 - Make

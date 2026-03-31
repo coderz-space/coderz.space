@@ -327,11 +327,11 @@ func TestUpdateMemberRoleAuthorization(t *testing.T) {
 func TestUpdateMemberRoleLastAdminPrevention(t *testing.T) {
 	tests := []struct {
 		name           string
-		adminCount     int
 		currentRole    string
 		newRole        string
 		expectedStatus string
 		expectedError  string
+		adminCount     int
 	}{
 		{
 			name:           "cannot change last admin to mentor",

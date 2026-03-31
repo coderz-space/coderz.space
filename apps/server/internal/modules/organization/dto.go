@@ -17,24 +17,24 @@ type UpdateOrganizationRequest struct {
 }
 
 type OrganizationData struct {
-	ID          pgtype.UUID `json:"id"`
 	Name        string      `json:"name"`
 	Slug        string      `json:"slug"`
 	Description string      `json:"description"`
 	Status      string      `json:"status"`
 	CreatedAt   string      `json:"createdAt"`
 	UpdatedAt   string      `json:"updatedAt"`
+	ID          pgtype.UUID `json:"id"`
 }
 
 type OrganizationResponse struct {
-	Success bool             `json:"success"`
 	Data    OrganizationData `json:"data"`
+	Success bool             `json:"success"`
 }
 
 type OrganizationListResponse struct {
-	Success bool               `json:"success"`
-	Data    []OrganizationData `json:"data"`
 	Meta    *PaginationMeta    `json:"meta,omitempty"`
+	Data    []OrganizationData `json:"data"`
+	Success bool               `json:"success"`
 }
 
 type PaginationMeta struct {
@@ -55,28 +55,28 @@ type UpdateMemberRoleRequest struct {
 }
 
 type MemberData struct {
-	ID             pgtype.UUID `json:"id"`
-	OrganizationID pgtype.UUID `json:"organizationId"`
-	UserID         pgtype.UUID `json:"userId"`
 	Role           string      `json:"role"`
 	JoinedAt       string      `json:"joinedAt"`
 	Name           string      `json:"name,omitempty"`
 	Email          string      `json:"email,omitempty"`
 	AvatarUrl      string      `json:"avatarUrl,omitempty"`
+	ID             pgtype.UUID `json:"id"`
+	OrganizationID pgtype.UUID `json:"organizationId"`
+	UserID         pgtype.UUID `json:"userId"`
 }
 
 type MemberResponse struct {
-	Success bool       `json:"success"`
 	Data    MemberData `json:"data"`
+	Success bool       `json:"success"`
 }
 
 type MemberListResponse struct {
-	Success bool            `json:"success"`
-	Data    []MemberData    `json:"data"`
 	Meta    *PaginationMeta `json:"meta,omitempty"`
+	Data    []MemberData    `json:"data"`
+	Success bool            `json:"success"`
 }
 
 type GenericResponse struct {
-	Success bool           `json:"success"`
 	Data    map[string]any `json:"data"`
+	Success bool           `json:"success"`
 }
