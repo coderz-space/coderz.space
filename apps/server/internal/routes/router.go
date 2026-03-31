@@ -6,6 +6,7 @@ import (
 
 	"github.com/DSAwithGautam/Coderz.space/internal/container"
 	"github.com/DSAwithGautam/Coderz.space/internal/modules/auth"
+	"github.com/DSAwithGautam/Coderz.space/internal/modules/organization"
 	"github.com/labstack/echo/v5"
 )
 
@@ -13,12 +14,10 @@ func RegisterRoutes(e *echo.Group, di *container.Container) {
 	// health check api :
 	e.GET("/health", healthCheck)
 
-	// Public routes
 	auth.RegisterPublicRoutes(e, di.AuthHandler)
 	auth.RegisterProtectedRoutes(e, di.AuthHandler, di.Config)
 
-	// Protected routes
-
+	organization.RegisterProtectedRoutes(e, di.OrganizationHandler, di.Config)
 }
 
 // healthCheck godoc

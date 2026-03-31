@@ -34,15 +34,16 @@ func getEnvVariable(key string) string {
 const envFilePath = ".env"
 
 type Config struct {
-	AppName        string
-	Version        string
-	Environment    Environment
-	Port           string
-	JWT_SECRET     string
-	JWT_EXPIRES    string
-	LOG_LEVEL      zapcore.Level
-	FILE_LOG_LEVEL zapcore.Level
-	FrontendOrigin string
+	AppName               string
+	Version               string
+	Environment           Environment
+	Port                  string
+	JWT_SECRET            string
+	JWT_EXPIRES           string
+	REFRESH_TOKEN_EXPIRES time.Duration
+	LOG_LEVEL             zapcore.Level
+	FILE_LOG_LEVEL        zapcore.Level
+	FrontendOrigin        string
 	// DB config
 	DB_URL            string
 	MaxDBConns        int
@@ -94,23 +95,28 @@ func LoadConfig() *Config {
 	if err != nil {
 		panic(fmt.Errorf("failed to parse MAX_DB_CONN_IDLE_TIME: %v", err))
 	}
+	refreshTokenExpires, err := time.ParseDuration(getEnvVariable("REFRESH_TOKEN_EXPIRES"))
+	if err != nil {
+		panic(fmt.Errorf("failed to parse REFRESH_TOKEN_EXPIRES: %v", err))
+	}
 
 	config := &Config{
 
-		AppName:           getEnvVariable("APP_NAME"),
-		Version:           getEnvVariable("VERSION"),
-		Environment:       Environment(getEnvVariable("ENVIRONMENT")),
-		Port:              getEnvVariable("PORT"),
-		JWT_SECRET:        getEnvVariable("JWT_SECRET"),
-		JWT_EXPIRES:       getEnvVariable("JWT_EXPIRES"),
-		LOG_LEVEL:         parseLevel(getEnvVariable("LOG_LEVEL")),
-		FILE_LOG_LEVEL:    parseLevel(getEnvVariable("FILE_LOG_LEVEL")),
-		FrontendOrigin:    getEnvVariable("FRONTEND_ORIGIN"),
-		DB_URL:            getEnvVariable("DB_URL"),
-		MaxDBConns:        maxDBConns,
-		MinDBConns:        minDBConns,
-		MaxDBConnLifetime: maxDBConnLifetime,
-		MaxDBConnIdleTime: maxDBConnIdleTime,
+		AppName:               getEnvVariable("APP_NAME"),
+		Version:               getEnvVariable("VERSION"),
+		Environment:           Environment(getEnvVariable("ENVIRONMENT")),
+		Port:                  getEnvVariable("PORT"),
+		JWT_SECRET:            getEnvVariable("JWT_SECRET"),
+		JWT_EXPIRES:           getEnvVariable("JWT_EXPIRES"),
+		LOG_LEVEL:             parseLevel(getEnvVariable("LOG_LEVEL")),
+		FILE_LOG_LEVEL:        parseLevel(getEnvVariable("FILE_LOG_LEVEL")),
+		FrontendOrigin:        getEnvVariable("FRONTEND_ORIGIN"),
+		DB_URL:                getEnvVariable("DB_URL"),
+		MaxDBConns:            maxDBConns,
+		MinDBConns:            minDBConns,
+		MaxDBConnLifetime:     maxDBConnLifetime,
+		MaxDBConnIdleTime:     maxDBConnIdleTime,
+		REFRESH_TOKEN_EXPIRES: refreshTokenExpires,
 	}
 
 	if !config.Environment.isValid() {

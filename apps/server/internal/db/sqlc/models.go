@@ -5,12 +5,669 @@
 package db
 
 import (
+	"database/sql/driver"
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AssignmentProblemStatus string
+
+const (
+	AssignmentProblemStatusPending   AssignmentProblemStatus = "pending"
+	AssignmentProblemStatusAttempted AssignmentProblemStatus = "attempted"
+	AssignmentProblemStatusCompleted AssignmentProblemStatus = "completed"
+)
+
+func (e *AssignmentProblemStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AssignmentProblemStatus(s)
+	case string:
+		*e = AssignmentProblemStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AssignmentProblemStatus: %T", src)
+	}
+	return nil
+}
+
+type NullAssignmentProblemStatus struct {
+	AssignmentProblemStatus AssignmentProblemStatus `json:"assignment_problem_status"`
+	Valid                   bool                    `json:"valid"` // Valid is true if AssignmentProblemStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAssignmentProblemStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.AssignmentProblemStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AssignmentProblemStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAssignmentProblemStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AssignmentProblemStatus), nil
+}
+
+func (e AssignmentProblemStatus) Valid() bool {
+	switch e {
+	case AssignmentProblemStatusPending,
+		AssignmentProblemStatusAttempted,
+		AssignmentProblemStatusCompleted:
+		return true
+	}
+	return false
+}
+
+type AssignmentStatus string
+
+const (
+	AssignmentStatusActive    AssignmentStatus = "active"
+	AssignmentStatusCompleted AssignmentStatus = "completed"
+	AssignmentStatusExpired   AssignmentStatus = "expired"
+)
+
+func (e *AssignmentStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AssignmentStatus(s)
+	case string:
+		*e = AssignmentStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AssignmentStatus: %T", src)
+	}
+	return nil
+}
+
+type NullAssignmentStatus struct {
+	AssignmentStatus AssignmentStatus `json:"assignment_status"`
+	Valid            bool             `json:"valid"` // Valid is true if AssignmentStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAssignmentStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.AssignmentStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AssignmentStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAssignmentStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AssignmentStatus), nil
+}
+
+func (e AssignmentStatus) Valid() bool {
+	switch e {
+	case AssignmentStatusActive,
+		AssignmentStatusCompleted,
+		AssignmentStatusExpired:
+		return true
+	}
+	return false
+}
+
+type BootcampEnrollmentRole string
+
+const (
+	BootcampEnrollmentRoleMentor BootcampEnrollmentRole = "mentor"
+	BootcampEnrollmentRoleMentee BootcampEnrollmentRole = "mentee"
+)
+
+func (e *BootcampEnrollmentRole) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = BootcampEnrollmentRole(s)
+	case string:
+		*e = BootcampEnrollmentRole(s)
+	default:
+		return fmt.Errorf("unsupported scan type for BootcampEnrollmentRole: %T", src)
+	}
+	return nil
+}
+
+type NullBootcampEnrollmentRole struct {
+	BootcampEnrollmentRole BootcampEnrollmentRole `json:"bootcamp_enrollment_role"`
+	Valid                  bool                   `json:"valid"` // Valid is true if BootcampEnrollmentRole is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullBootcampEnrollmentRole) Scan(value interface{}) error {
+	if value == nil {
+		ns.BootcampEnrollmentRole, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.BootcampEnrollmentRole.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullBootcampEnrollmentRole) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.BootcampEnrollmentRole), nil
+}
+
+func (e BootcampEnrollmentRole) Valid() bool {
+	switch e {
+	case BootcampEnrollmentRoleMentor,
+		BootcampEnrollmentRoleMentee:
+		return true
+	}
+	return false
+}
+
+type DifficultyLevel string
+
+const (
+	DifficultyLevelEasy   DifficultyLevel = "easy"
+	DifficultyLevelMedium DifficultyLevel = "medium"
+	DifficultyLevelHard   DifficultyLevel = "hard"
+)
+
+func (e *DifficultyLevel) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = DifficultyLevel(s)
+	case string:
+		*e = DifficultyLevel(s)
+	default:
+		return fmt.Errorf("unsupported scan type for DifficultyLevel: %T", src)
+	}
+	return nil
+}
+
+type NullDifficultyLevel struct {
+	DifficultyLevel DifficultyLevel `json:"difficulty_level"`
+	Valid           bool            `json:"valid"` // Valid is true if DifficultyLevel is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullDifficultyLevel) Scan(value interface{}) error {
+	if value == nil {
+		ns.DifficultyLevel, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.DifficultyLevel.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullDifficultyLevel) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.DifficultyLevel), nil
+}
+
+func (e DifficultyLevel) Valid() bool {
+	switch e {
+	case DifficultyLevelEasy,
+		DifficultyLevelMedium,
+		DifficultyLevelHard:
+		return true
+	}
+	return false
+}
+
+type EnrollmentStatus string
+
+const (
+	EnrollmentStatusActive   EnrollmentStatus = "active"
+	EnrollmentStatusInactive EnrollmentStatus = "inactive"
+)
+
+func (e *EnrollmentStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = EnrollmentStatus(s)
+	case string:
+		*e = EnrollmentStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for EnrollmentStatus: %T", src)
+	}
+	return nil
+}
+
+type NullEnrollmentStatus struct {
+	EnrollmentStatus EnrollmentStatus `json:"enrollment_status"`
+	Valid            bool             `json:"valid"` // Valid is true if EnrollmentStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullEnrollmentStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.EnrollmentStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.EnrollmentStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullEnrollmentStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.EnrollmentStatus), nil
+}
+
+func (e EnrollmentStatus) Valid() bool {
+	switch e {
+	case EnrollmentStatusActive,
+		EnrollmentStatusInactive:
+		return true
+	}
+	return false
+}
+
+type OrgMemberRole string
+
+const (
+	OrgMemberRoleAdmin  OrgMemberRole = "admin"
+	OrgMemberRoleMentor OrgMemberRole = "mentor"
+	OrgMemberRoleMentee OrgMemberRole = "mentee"
+)
+
+func (e *OrgMemberRole) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = OrgMemberRole(s)
+	case string:
+		*e = OrgMemberRole(s)
+	default:
+		return fmt.Errorf("unsupported scan type for OrgMemberRole: %T", src)
+	}
+	return nil
+}
+
+type NullOrgMemberRole struct {
+	OrgMemberRole OrgMemberRole `json:"org_member_role"`
+	Valid         bool          `json:"valid"` // Valid is true if OrgMemberRole is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullOrgMemberRole) Scan(value interface{}) error {
+	if value == nil {
+		ns.OrgMemberRole, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.OrgMemberRole.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullOrgMemberRole) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.OrgMemberRole), nil
+}
+
+func (e OrgMemberRole) Valid() bool {
+	switch e {
+	case OrgMemberRoleAdmin,
+		OrgMemberRoleMentor,
+		OrgMemberRoleMentee:
+		return true
+	}
+	return false
+}
+
+type OrgStatus string
+
+const (
+	OrgStatusPendingApproval OrgStatus = "pending_approval"
+	OrgStatusApproved        OrgStatus = "approved"
+	OrgStatusSuspended       OrgStatus = "suspended"
+)
+
+func (e *OrgStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = OrgStatus(s)
+	case string:
+		*e = OrgStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for OrgStatus: %T", src)
+	}
+	return nil
+}
+
+type NullOrgStatus struct {
+	OrgStatus OrgStatus `json:"org_status"`
+	Valid     bool      `json:"valid"` // Valid is true if OrgStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullOrgStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.OrgStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.OrgStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullOrgStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.OrgStatus), nil
+}
+
+func (e OrgStatus) Valid() bool {
+	switch e {
+	case OrgStatusPendingApproval,
+		OrgStatusApproved,
+		OrgStatusSuspended:
+		return true
+	}
+	return false
+}
+
+type PollVoteValue string
+
+const (
+	PollVoteValueEasy   PollVoteValue = "easy"
+	PollVoteValueMedium PollVoteValue = "medium"
+	PollVoteValueHard   PollVoteValue = "hard"
+)
+
+func (e *PollVoteValue) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PollVoteValue(s)
+	case string:
+		*e = PollVoteValue(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PollVoteValue: %T", src)
+	}
+	return nil
+}
+
+type NullPollVoteValue struct {
+	PollVoteValue PollVoteValue `json:"poll_vote_value"`
+	Valid         bool          `json:"valid"` // Valid is true if PollVoteValue is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPollVoteValue) Scan(value interface{}) error {
+	if value == nil {
+		ns.PollVoteValue, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PollVoteValue.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPollVoteValue) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PollVoteValue), nil
+}
+
+func (e PollVoteValue) Valid() bool {
+	switch e {
+	case PollVoteValueEasy,
+		PollVoteValueMedium,
+		PollVoteValueHard:
+		return true
+	}
+	return false
+}
+
+type UserRole string
+
+const (
+	UserRoleUser       UserRole = "user"
+	UserRoleSuperAdmin UserRole = "super_admin"
+)
+
+func (e *UserRole) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = UserRole(s)
+	case string:
+		*e = UserRole(s)
+	default:
+		return fmt.Errorf("unsupported scan type for UserRole: %T", src)
+	}
+	return nil
+}
+
+type NullUserRole struct {
+	UserRole UserRole `json:"user_role"`
+	Valid    bool     `json:"valid"` // Valid is true if UserRole is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullUserRole) Scan(value interface{}) error {
+	if value == nil {
+		ns.UserRole, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.UserRole.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullUserRole) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.UserRole), nil
+}
+
+func (e UserRole) Valid() bool {
+	switch e {
+	case UserRoleUser,
+		UserRoleSuperAdmin:
+		return true
+	}
+	return false
+}
+
+type Assignment struct {
+	ID                   pgtype.UUID        `db:"id" json:"id"`
+	AssignmentGroupID    pgtype.UUID        `db:"assignment_group_id" json:"assignment_group_id"`
+	BootcampEnrollmentID pgtype.UUID        `db:"bootcamp_enrollment_id" json:"bootcamp_enrollment_id"`
+	AssignedBy           pgtype.UUID        `db:"assigned_by" json:"assigned_by"`
+	AssignedAt           pgtype.Timestamptz `db:"assigned_at" json:"assigned_at"`
+	DeadlineAt           pgtype.Timestamptz `db:"deadline_at" json:"deadline_at"`
+	Status               AssignmentStatus   `db:"status" json:"status"`
+	ArchivedAt           pgtype.Timestamptz `db:"archived_at" json:"archived_at"`
+	CreatedAt            pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt            pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+}
+
+type AssignmentGroup struct {
+	ID           pgtype.UUID        `db:"id" json:"id"`
+	BootcampID   pgtype.UUID        `db:"bootcamp_id" json:"bootcamp_id"`
+	CreatedBy    pgtype.UUID        `db:"created_by" json:"created_by"`
+	Title        string             `db:"title" json:"title"`
+	Description  pgtype.Text        `db:"description" json:"description"`
+	DeadlineDays pgtype.Int4        `db:"deadline_days" json:"deadline_days"`
+	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+}
+
+type AssignmentGroupProblem struct {
+	AssignmentGroupID pgtype.UUID        `db:"assignment_group_id" json:"assignment_group_id"`
+	ProblemID         pgtype.UUID        `db:"problem_id" json:"problem_id"`
+	Position          pgtype.Int4        `db:"position" json:"position"`
+	CreatedAt         pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
+type AssignmentProblem struct {
+	ID           pgtype.UUID             `db:"id" json:"id"`
+	AssignmentID pgtype.UUID             `db:"assignment_id" json:"assignment_id"`
+	ProblemID    pgtype.UUID             `db:"problem_id" json:"problem_id"`
+	Status       AssignmentProblemStatus `db:"status" json:"status"`
+	SolutionLink pgtype.Text             `db:"solution_link" json:"solution_link"`
+	Notes        pgtype.Text             `db:"notes" json:"notes"`
+	CompletedAt  pgtype.Timestamptz      `db:"completed_at" json:"completed_at"`
+	CreatedAt    pgtype.Timestamptz      `db:"created_at" json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz      `db:"updated_at" json:"updated_at"`
+}
+
+type Bootcamp struct {
+	ID             pgtype.UUID        `db:"id" json:"id"`
+	OrganizationID pgtype.UUID        `db:"organization_id" json:"organization_id"`
+	CreatedBy      pgtype.UUID        `db:"created_by" json:"created_by"`
+	Name           string             `db:"name" json:"name"`
+	Description    pgtype.Text        `db:"description" json:"description"`
+	StartDate      pgtype.Date        `db:"start_date" json:"start_date"`
+	EndDate        pgtype.Date        `db:"end_date" json:"end_date"`
+	IsActive       bool               `db:"is_active" json:"is_active"`
+	ArchivedAt     pgtype.Timestamptz `db:"archived_at" json:"archived_at"`
+	CreatedAt      pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+}
+
+type BootcampEnrollment struct {
+	ID                   pgtype.UUID            `db:"id" json:"id"`
+	BootcampID           pgtype.UUID            `db:"bootcamp_id" json:"bootcamp_id"`
+	OrganizationMemberID pgtype.UUID            `db:"organization_member_id" json:"organization_member_id"`
+	Role                 BootcampEnrollmentRole `db:"role" json:"role"`
+	Status               EnrollmentStatus       `db:"status" json:"status"`
+	EnrolledAt           pgtype.Timestamptz     `db:"enrolled_at" json:"enrolled_at"`
+}
+
+type Doubt struct {
+	ID                  pgtype.UUID        `db:"id" json:"id"`
+	AssignmentProblemID pgtype.UUID        `db:"assignment_problem_id" json:"assignment_problem_id"`
+	RaisedBy            pgtype.UUID        `db:"raised_by" json:"raised_by"`
+	Message             string             `db:"message" json:"message"`
+	Resolved            bool               `db:"resolved" json:"resolved"`
+	ResolvedBy          pgtype.UUID        `db:"resolved_by" json:"resolved_by"`
+	ResolvedAt          pgtype.Timestamptz `db:"resolved_at" json:"resolved_at"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
+type LeaderboardEntry struct {
+	ID                   pgtype.UUID        `db:"id" json:"id"`
+	BootcampID           pgtype.UUID        `db:"bootcamp_id" json:"bootcamp_id"`
+	BootcampEnrollmentID pgtype.UUID        `db:"bootcamp_enrollment_id" json:"bootcamp_enrollment_id"`
+	ProblemsCompleted    int32              `db:"problems_completed" json:"problems_completed"`
+	ProblemsAttempted    int32              `db:"problems_attempted" json:"problems_attempted"`
+	CompletionRate       float32            `db:"completion_rate" json:"completion_rate"`
+	StreakDays           int32              `db:"streak_days" json:"streak_days"`
+	Score                int32              `db:"score" json:"score"`
+	Rank                 int32              `db:"rank" json:"rank"`
+	CalculatedAt         pgtype.Timestamptz `db:"calculated_at" json:"calculated_at"`
+}
+
+type Organization struct {
+	ID          pgtype.UUID        `db:"id" json:"id"`
+	Name        string             `db:"name" json:"name"`
+	Slug        string             `db:"slug" json:"slug"`
+	Description pgtype.Text        `db:"description" json:"description"`
+	Status      OrgStatus          `db:"status" json:"status"`
+	CreatedAt   pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+}
+
+type OrganizationMember struct {
+	ID             pgtype.UUID        `db:"id" json:"id"`
+	OrganizationID pgtype.UUID        `db:"organization_id" json:"organization_id"`
+	UserID         pgtype.UUID        `db:"user_id" json:"user_id"`
+	Role           OrgMemberRole      `db:"role" json:"role"`
+	JoinedAt       pgtype.Timestamptz `db:"joined_at" json:"joined_at"`
+}
+
+type PasswordResetToken struct {
+	ID        pgtype.UUID        `db:"id" json:"id"`
+	UserID    pgtype.UUID        `db:"user_id" json:"user_id"`
+	TokenHash string             `db:"token_hash" json:"token_hash"`
+	ExpiresAt pgtype.Timestamptz `db:"expires_at" json:"expires_at"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
+type Poll struct {
+	ID         pgtype.UUID        `db:"id" json:"id"`
+	BootcampID pgtype.UUID        `db:"bootcamp_id" json:"bootcamp_id"`
+	ProblemID  pgtype.UUID        `db:"problem_id" json:"problem_id"`
+	Question   string             `db:"question" json:"question"`
+	CreatedBy  pgtype.UUID        `db:"created_by" json:"created_by"`
+	CreatedAt  pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
+type PollVote struct {
+	ID        pgtype.UUID        `db:"id" json:"id"`
+	PollID    pgtype.UUID        `db:"poll_id" json:"poll_id"`
+	VoterID   pgtype.UUID        `db:"voter_id" json:"voter_id"`
+	Vote      PollVoteValue      `db:"vote" json:"vote"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
+type Problem struct {
+	ID             pgtype.UUID        `db:"id" json:"id"`
+	OrganizationID pgtype.UUID        `db:"organization_id" json:"organization_id"`
+	CreatedBy      pgtype.UUID        `db:"created_by" json:"created_by"`
+	Title          string             `db:"title" json:"title"`
+	Description    pgtype.Text        `db:"description" json:"description"`
+	Difficulty     DifficultyLevel    `db:"difficulty" json:"difficulty"`
+	ExternalLink   pgtype.Text        `db:"external_link" json:"external_link"`
+	ArchivedAt     pgtype.Timestamptz `db:"archived_at" json:"archived_at"`
+	CreatedAt      pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+}
+
+type ProblemResource struct {
+	ID        pgtype.UUID        `db:"id" json:"id"`
+	ProblemID pgtype.UUID        `db:"problem_id" json:"problem_id"`
+	Title     pgtype.Text        `db:"title" json:"title"`
+	Url       pgtype.Text        `db:"url" json:"url"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
+type ProblemTag struct {
+	ProblemID pgtype.UUID        `db:"problem_id" json:"problem_id"`
+	TagID     pgtype.UUID        `db:"tag_id" json:"tag_id"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
+type RefreshToken struct {
+	ID        pgtype.UUID        `db:"id" json:"id"`
+	UserID    pgtype.UUID        `db:"user_id" json:"user_id"`
+	TokenHash string             `db:"token_hash" json:"token_hash"`
+	ExpiresAt pgtype.Timestamptz `db:"expires_at" json:"expires_at"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+}
+
+type Tag struct {
+	ID             pgtype.UUID        `db:"id" json:"id"`
+	OrganizationID pgtype.UUID        `db:"organization_id" json:"organization_id"`
+	CreatedBy      pgtype.UUID        `db:"created_by" json:"created_by"`
+	Name           string             `db:"name" json:"name"`
+	CreatedAt      pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
 type User struct {
-	ID        int32            `db:"id" json:"id"`
-	Name      string           `db:"name" json:"name"`
-	Email     string           `db:"email" json:"email"`
-	CreatedAt pgtype.Timestamp `db:"created_at" json:"created_at"`
+	ID            pgtype.UUID        `db:"id" json:"id"`
+	Name          string             `db:"name" json:"name"`
+	Email         pgtype.Text        `db:"email" json:"email"`
+	EmailVerified bool               `db:"email_verified" json:"email_verified"`
+	PasswordHash  pgtype.Text        `db:"password_hash" json:"password_hash"`
+	Role          UserRole           `db:"role" json:"role"`
+	GoogleID      pgtype.Text        `db:"google_id" json:"google_id"`
+	AvatarUrl     pgtype.Text        `db:"avatar_url" json:"avatar_url"`
+	CreatedAt     pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt     pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }

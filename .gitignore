@@ -9,11 +9,15 @@ Thumbs.db
 *.tmp
 *.log
 private.md
-
+.kiro
 #######################################
 # Environment / Secrets
 #######################################
 
+/temp
+
+main
+*SUMMARY.md
 .env
 .env.*
 !.env.example

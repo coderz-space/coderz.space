@@ -6,13 +6,105 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
+	// Member management
+	AddOrganizationMember(ctx context.Context, arg AddOrganizationMemberParams) (OrganizationMember, error)
+	// Resources
+	AddProblemResource(ctx context.Context, arg AddProblemResourceParams) (ProblemResource, error)
+	AddProblemToAssignmentGroup(ctx context.Context, arg AddProblemToAssignmentGroupParams) error
+	AddTagToProblem(ctx context.Context, arg AddTagToProblemParams) error
+	ArchiveAssignment(ctx context.Context, id pgtype.UUID) error
+	ArchiveBootcamp(ctx context.Context, id pgtype.UUID) error
+	ArchiveProblem(ctx context.Context, id pgtype.UUID) error
+	// Assignment Instances
+	AssignGroupToMentee(ctx context.Context, arg AssignGroupToMenteeParams) (Assignment, error)
+	CastPollVote(ctx context.Context, arg CastPollVoteParams) (PollVote, error)
+	ClearExpiredRefreshTokens(ctx context.Context) error
+	CountBootcampsByEnrollment(ctx context.Context, arg CountBootcampsByEnrollmentParams) (int64, error)
+	CountBootcampsByOrg(ctx context.Context, arg CountBootcampsByOrgParams) (int64, error)
+	CountOrganizationAdmins(ctx context.Context, organizationID pgtype.UUID) (int64, error)
+	CountOrganizationMembers(ctx context.Context, organizationID pgtype.UUID) (int64, error)
+	CountUserOrganizations(ctx context.Context, userID pgtype.UUID) (int64, error)
+	CreateAssignmentGroup(ctx context.Context, arg CreateAssignmentGroupParams) (AssignmentGroup, error)
+	CreateBootcamp(ctx context.Context, arg CreateBootcampParams) (Bootcamp, error)
+	CreateDoubt(ctx context.Context, arg CreateDoubtParams) (Doubt, error)
+	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
+	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetToken, error)
+	// Polls
+	CreatePoll(ctx context.Context, arg CreatePollParams) (Poll, error)
+	CreateProblem(ctx context.Context, arg CreateProblemParams) (Problem, error)
+	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (RefreshToken, error)
+	// Tags
+	CreateTag(ctx context.Context, arg CreateTagParams) (Tag, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
-	DeleteUser(ctx context.Context, id int32) error
-	GetUser(ctx context.Context, id int32) (User, error)
-	ListUsers(ctx context.Context) ([]User, error)
+	DeleteExpiredPasswordResetTokens(ctx context.Context) error
+	DeletePasswordResetToken(ctx context.Context, tokenHash string) error
+	DeleteProblemResource(ctx context.Context, id pgtype.UUID) error
+	DeleteRefreshToken(ctx context.Context, tokenHash string) error
+	DeleteUser(ctx context.Context, id pgtype.UUID) error
+	DeleteUserPasswordResetTokens(ctx context.Context, userID pgtype.UUID) error
+	DeleteUserRefreshTokens(ctx context.Context, userID pgtype.UUID) error
+	// Enrollment
+	EnrollInBootcamp(ctx context.Context, arg EnrollInBootcampParams) (BootcampEnrollment, error)
+	GetAssignment(ctx context.Context, id pgtype.UUID) (Assignment, error)
+	GetAssignmentGroup(ctx context.Context, id pgtype.UUID) (AssignmentGroup, error)
+	GetBootcamp(ctx context.Context, id pgtype.UUID) (Bootcamp, error)
+	GetDoubt(ctx context.Context, id pgtype.UUID) (Doubt, error)
+	GetEnrollment(ctx context.Context, id pgtype.UUID) (BootcampEnrollment, error)
+	GetEnrollmentByMember(ctx context.Context, arg GetEnrollmentByMemberParams) (BootcampEnrollment, error)
+	GetLeaderboardByBootcamp(ctx context.Context, bootcampID pgtype.UUID) ([]GetLeaderboardByBootcampRow, error)
+	GetOrganizationById(ctx context.Context, id pgtype.UUID) (Organization, error)
+	GetOrganizationBySlug(ctx context.Context, slug string) (Organization, error)
+	GetOrganizationMember(ctx context.Context, arg GetOrganizationMemberParams) (OrganizationMember, error)
+	GetOrganizationMemberById(ctx context.Context, id pgtype.UUID) (OrganizationMember, error)
+	GetPasswordResetToken(ctx context.Context, tokenHash string) (PasswordResetToken, error)
+	GetPendingOrganizations(ctx context.Context) ([]Organization, error)
+	GetPoll(ctx context.Context, id pgtype.UUID) (Poll, error)
+	GetPollResults(ctx context.Context, pollID pgtype.UUID) ([]GetPollResultsRow, error)
+	GetProblem(ctx context.Context, id pgtype.UUID) (Problem, error)
+	GetRefreshToken(ctx context.Context, tokenHash string) (RefreshToken, error)
+	GetUserByEmail(ctx context.Context, email pgtype.Text) (User, error)
+	GetUserByGoogleId(ctx context.Context, googleID pgtype.Text) (User, error)
+	GetUserById(ctx context.Context, id pgtype.UUID) (User, error)
+	// Assignment Problems Progress
+	InitializeAssignmentProblem(ctx context.Context, arg InitializeAssignmentProblemParams) (AssignmentProblem, error)
+	ListAssignmentGroupProblems(ctx context.Context, assignmentGroupID pgtype.UUID) ([]ListAssignmentGroupProblemsRow, error)
+	ListAssignmentGroupsByBootcamp(ctx context.Context, bootcampID pgtype.UUID) ([]AssignmentGroup, error)
+	ListAssignmentProblemsStatus(ctx context.Context, assignmentID pgtype.UUID) ([]ListAssignmentProblemsStatusRow, error)
+	ListAssignmentsByMentee(ctx context.Context, bootcampEnrollmentID pgtype.UUID) ([]ListAssignmentsByMenteeRow, error)
+	ListBootcampEnrollments(ctx context.Context, bootcampID pgtype.UUID) ([]ListBootcampEnrollmentsRow, error)
+	ListBootcampsByEnrollment(ctx context.Context, arg ListBootcampsByEnrollmentParams) ([]Bootcamp, error)
+	ListBootcampsByOrg(ctx context.Context, organizationID pgtype.UUID) ([]Bootcamp, error)
+	ListBootcampsByOrgWithPagination(ctx context.Context, arg ListBootcampsByOrgWithPaginationParams) ([]Bootcamp, error)
+	ListDoubtsByAssignmentProblem(ctx context.Context, assignmentProblemID pgtype.UUID) ([]ListDoubtsByAssignmentProblemRow, error)
+	ListOrganizationMembers(ctx context.Context, arg ListOrganizationMembersParams) ([]ListOrganizationMembersRow, error)
+	ListOrganizations(ctx context.Context, arg ListOrganizationsParams) ([]Organization, error)
+	ListPendingDoubtsByBootcamp(ctx context.Context, bootcampID pgtype.UUID) ([]ListPendingDoubtsByBootcampRow, error)
+	ListPollsByBootcamp(ctx context.Context, bootcampID pgtype.UUID) ([]ListPollsByBootcampRow, error)
+	ListProblemResources(ctx context.Context, problemID pgtype.UUID) ([]ProblemResource, error)
+	ListProblemTags(ctx context.Context, problemID pgtype.UUID) ([]Tag, error)
+	ListProblemsByOrg(ctx context.Context, organizationID pgtype.UUID) ([]Problem, error)
+	ListTagsByOrg(ctx context.Context, organizationID pgtype.UUID) ([]Tag, error)
+	RemoveEnrollment(ctx context.Context, id pgtype.UUID) error
+	RemoveOrganizationMember(ctx context.Context, arg RemoveOrganizationMemberParams) error
+	RemoveProblemFromAssignmentGroup(ctx context.Context, arg RemoveProblemFromAssignmentGroupParams) error
+	RemoveTagFromProblem(ctx context.Context, arg RemoveTagFromProblemParams) error
+	ResolveDoubt(ctx context.Context, arg ResolveDoubtParams) (Doubt, error)
+	UpdateAssignmentProblemProgress(ctx context.Context, arg UpdateAssignmentProblemProgressParams) (AssignmentProblem, error)
+	UpdateAssignmentStatus(ctx context.Context, arg UpdateAssignmentStatusParams) (Assignment, error)
+	UpdateBootcamp(ctx context.Context, arg UpdateBootcampParams) (Bootcamp, error)
+	UpdateEnrollmentRole(ctx context.Context, arg UpdateEnrollmentRoleParams) (BootcampEnrollment, error)
+	UpdateEnrollmentStatus(ctx context.Context, arg UpdateEnrollmentStatusParams) (BootcampEnrollment, error)
+	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Organization, error)
+	UpdateOrganizationMemberRole(ctx context.Context, arg UpdateOrganizationMemberRoleParams) (OrganizationMember, error)
+	UpdateProblem(ctx context.Context, arg UpdateProblemParams) (Problem, error)
+	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
+	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
+	UpsertLeaderboardEntry(ctx context.Context, arg UpsertLeaderboardEntryParams) (LeaderboardEntry, error)
 }
 
 var _ Querier = (*Queries)(nil)
