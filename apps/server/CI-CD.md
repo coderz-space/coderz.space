@@ -24,7 +24,7 @@ The CI pipeline runs on:
 **Steps:**
 
 1. Checkout code
-2. Setup Go 1.25.x with dependency caching
+2. Setup Go 1.24.x with dependency caching
 3. Install and verify dependencies
 4. Run `go vet` for static analysis
 5. Run `staticcheck` for additional linting
@@ -72,7 +72,7 @@ The CI pipeline runs on:
 
 **Build Strategy:** Multi-stage build
 
-- **Stage 1 (builder):** Go 1.25-alpine with build tools
+- **Stage 1 (builder):** Go 1.24-alpine with build tools
 - **Stage 2 (runtime):** Minimal Alpine with only the binary
 
 **Features:**
