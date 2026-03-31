@@ -9,7 +9,7 @@ Thumbs.db
 *.tmp
 *.log
 private.md
-
+.kiro
 #######################################
 # Environment / Secrets
 #######################################

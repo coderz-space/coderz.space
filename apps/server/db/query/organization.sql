@@ -18,7 +18,13 @@ WHERE slug = $1 LIMIT 1;
 SELECT o.* FROM organizations o
 JOIN organization_members om ON o.id = om.organization_id
 WHERE om.user_id = $1
-ORDER BY o.created_at DESC;
+ORDER BY o.created_at DESC
+LIMIT $2 OFFSET $3;
+
+-- name: CountUserOrganizations :one
+SELECT COUNT(*) FROM organizations o
+JOIN organization_members om ON o.id = om.organization_id
+WHERE om.user_id = $1;
 
 -- name: UpdateOrganization :one
 UPDATE organizations

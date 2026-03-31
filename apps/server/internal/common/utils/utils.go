@@ -3,6 +3,7 @@ package utils
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -31,4 +32,11 @@ func StringToUUID(s string) (pgtype.UUID, error) {
 	var u pgtype.UUID
 	err := u.Scan(s)
 	return u, err
+}
+
+// StringToInt converts a string to an integer
+func StringToInt(s string) (int, error) {
+	var result int
+	_, err := fmt.Sscanf(s, "%d", &result)
+	return result, err
 }

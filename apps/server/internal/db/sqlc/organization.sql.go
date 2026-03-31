@@ -41,6 +41,19 @@ func (q *Queries) AddOrganizationMember(ctx context.Context, arg AddOrganization
 	return i, err
 }
 
+const countUserOrganizations = `-- name: CountUserOrganizations :one
+SELECT COUNT(*) FROM organizations o
+JOIN organization_members om ON o.id = om.organization_id
+WHERE om.user_id = $1
+`
+
+func (q *Queries) CountUserOrganizations(ctx context.Context, userID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countUserOrganizations, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createOrganization = `-- name: CreateOrganization :one
 INSERT INTO organizations (
     name, slug, description, status
@@ -227,10 +240,17 @@ SELECT o.id, o.name, o.slug, o.description, o.status, o.created_at, o.updated_at
 JOIN organization_members om ON o.id = om.organization_id
 WHERE om.user_id = $1
 ORDER BY o.created_at DESC
+LIMIT $2 OFFSET $3
 `
 
-func (q *Queries) ListOrganizations(ctx context.Context, userID pgtype.UUID) ([]Organization, error) {
-	rows, err := q.db.Query(ctx, listOrganizations, userID)
+type ListOrganizationsParams struct {
+	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+	Limit  int32       `db:"limit" json:"limit"`
+	Offset int32       `db:"offset" json:"offset"`
+}
+
+func (q *Queries) ListOrganizations(ctx context.Context, arg ListOrganizationsParams) ([]Organization, error) {
+	rows, err := q.db.Query(ctx, listOrganizations, arg.UserID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

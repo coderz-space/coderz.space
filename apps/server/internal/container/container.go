@@ -5,6 +5,7 @@ import (
 	"github.com/DSAwithGautam/Coderz.space/internal/db"
 	db_sqlc "github.com/DSAwithGautam/Coderz.space/internal/db/sqlc"
 	"github.com/DSAwithGautam/Coderz.space/internal/modules/auth"
+	"github.com/DSAwithGautam/Coderz.space/internal/modules/organization"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )
@@ -19,6 +20,10 @@ type Container struct {
 	AuthHandler *auth.Handler
 	AuthService *auth.Service
 
+	// organization
+	OrganizationHandler *organization.Handler
+	OrganizationService *organization.Service
+
 	// DB
 	DB *pgxpool.Pool
 }
@@ -31,15 +36,23 @@ func NewContainer(config *config.Config, logger *zap.Logger) (*Container, error)
 	}
 
 	queries := db_sqlc.New(pool)
+
+	// Initialize auth module
 	authService := auth.NewService(queries, config)
 	authHandler := auth.NewHandler(authService)
 
+	// Initialize organization module
+	organizationService := organization.NewService(queries, config, pool)
+	organizationHandler := organization.NewHandler(organizationService)
+
 	container := &Container{
-		Config:      config,
-		Logger:      logger,
-		AuthHandler: authHandler,
-		AuthService: authService,
-		DB:          pool,
+		Config:              config,
+		Logger:              logger,
+		AuthHandler:         authHandler,
+		AuthService:         authService,
+		OrganizationHandler: organizationHandler,
+		OrganizationService: organizationService,
+		DB:                  pool,
 	}
 	return container, nil
 }
