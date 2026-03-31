@@ -101,7 +101,6 @@ func (h *Handler) Login(c *echo.Context) error {
 // @Success 200 {object} RefreshResponse "Token refreshed successfully"
 // @Failure 401 {object} map[string]any "Unauthorized - missing or invalid refresh token"
 // @Router /v1/auth/refresh [post]
-
 func (h *Handler) Refresh(c *echo.Context) error {
 	cookie, err := c.Cookie("refresh_token")
 	if err != nil {
@@ -132,7 +131,6 @@ func (h *Handler) Refresh(c *echo.Context) error {
 // @Security BearerAuth
 // @Success 200 {object} GenericResponse "Logout successful"
 // @Router /v1/auth/logout [post]
-
 func (h *Handler) Logout(c *echo.Context) error {
 	cookie, err := c.Cookie("refresh_token")
 	if err == nil {
@@ -159,7 +157,6 @@ func (h *Handler) Logout(c *echo.Context) error {
 // @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
 // @Failure 404 {object} map[string]any "Not found - user does not exist"
 // @Router /v1/auth/me [get]
-
 func (h *Handler) Me(c *echo.Context) error {
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
 	if !ok {

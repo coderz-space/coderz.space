@@ -42,4 +42,9 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 	resourceRouter.GET("", handler.ListResources)
 	resourceRouter.PATCH("/:resourceId", core.WithBody(handler.UpdateResource))
 	resourceRouter.DELETE("/:resourceId", handler.DeleteResource)
+
+	// Super admin cross-organization routes
+	superAdminRouter := e.Group("/v1/super-admin")
+	superAdminRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	superAdminRouter.GET("/problems", handler.ListAllProblems)
 }

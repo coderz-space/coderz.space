@@ -735,6 +735,20 @@ definitions:
     - email
     - password
     type: object
+  internal_modules_auth.RefreshResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_auth.RefreshResponseData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_auth.RefreshResponseData:
+    properties:
+      accessToken:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
   internal_modules_auth.ResetPasswordRequest:
     properties:
       newPassword:
@@ -768,6 +782,14 @@ definitions:
     - email
     - name
     - password
+    type: object
+  internal_modules_auth.UserProfileResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_auth.AuthUser'
+      success:
+        example: true
+        type: boolean
     type: object
   internal_modules_bootcamp.BootcampData:
     properties:
@@ -1522,6 +1544,70 @@ paths:
             additionalProperties: true
             type: object
       summary: Authenticate user
+      tags:
+      - Auth
+  /v1/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout user and revoke refresh token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logout successful
+          schema:
+            $ref: '#/definitions/internal_modules_auth.GenericResponse'
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - Auth
+  /v1/auth/me:
+    get:
+      consumes:
+      - application/json
+      description: Get the profile of the currently authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile retrieved successfully
+          schema:
+            $ref: '#/definitions/internal_modules_auth.UserProfileResponse'
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - user does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user profile
+      tags:
+      - Auth
+  /v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Generate a new access token using refresh token from cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token refreshed successfully
+          schema:
+            $ref: '#/definitions/internal_modules_auth.RefreshResponse'
+        "401":
+          description: Unauthorized - missing or invalid refresh token
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Refresh access token
       tags:
       - Auth
   /v1/auth/reset-password:
