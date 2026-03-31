@@ -212,10 +212,24 @@ func (s *Service) AddMember(ctx context.Context, orgID pgtype.UUID, req AddMembe
 	return s.mapMemberToData(member), nil
 }
 
-func (s *Service) ListMembers(ctx context.Context, orgID pgtype.UUID) ([]MemberData, error) {
-	members, err := s.queries.ListOrganizationMembers(ctx, orgID)
+func (s *Service) ListMembers(ctx context.Context, orgID pgtype.UUID, page, limit int) ([]MemberData, int, error) {
+	// Calculate offset from page and limit
+	offset := (page - 1) * limit
+
+	// Get total count
+	count, err := s.queries.CountOrganizationMembers(ctx, orgID)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	// Get paginated members
+	members, err := s.queries.ListOrganizationMembers(ctx, db.ListOrganizationMembersParams{
+		OrganizationID: orgID,
+		Limit:          int32(limit),
+		Offset:         int32(offset),
+	})
+	if err != nil {
+		return nil, 0, err
 	}
 
 	result := make([]MemberData, len(members))
@@ -232,7 +246,7 @@ func (s *Service) ListMembers(ctx context.Context, orgID pgtype.UUID) ([]MemberD
 		}
 	}
 
-	return result, nil
+	return result, int(count), nil
 }
 
 func (s *Service) UpdateMemberRole(ctx context.Context, orgID pgtype.UUID, userID pgtype.UUID, req UpdateMemberRoleRequest) (*MemberData, error) {

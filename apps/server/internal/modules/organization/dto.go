@@ -71,8 +71,9 @@ type MemberResponse struct {
 }
 
 type MemberListResponse struct {
-	Success bool         `json:"success"`
-	Data    []MemberData `json:"data"`
+	Success bool            `json:"success"`
+	Data    []MemberData    `json:"data"`
+	Meta    *PaginationMeta `json:"meta,omitempty"`
 }
 
 type GenericResponse struct {

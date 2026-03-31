@@ -61,7 +61,12 @@ SELECT om.*, u.name, u.email, u.avatar_url
 FROM organization_members om
 JOIN users u ON om.user_id = u.id
 WHERE om.organization_id = $1
-ORDER BY om.joined_at ASC;
+ORDER BY om.joined_at ASC
+LIMIT $2 OFFSET $3;
+
+-- name: CountOrganizationMembers :one
+SELECT COUNT(*) FROM organization_members
+WHERE organization_id = $1;
 
 -- name: UpdateOrganizationMemberRole :one
 UPDATE organization_members

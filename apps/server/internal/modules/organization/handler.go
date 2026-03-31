@@ -257,7 +257,23 @@ func (h *Handler) ListMembers(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ORGANIZATION_ID", nil, nil)
 	}
 
-	data, err := h.service.ListMembers(c.Request().Context(), orgID)
+	// Parse pagination parameters with defaults
+	page := 1
+	limit := 20
+
+	if pageStr := (*c).QueryParam("page"); pageStr != "" {
+		if p, err := utils.StringToInt(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	if limitStr := (*c).QueryParam("limit"); limitStr != "" {
+		if l, err := utils.StringToInt(limitStr); err == nil && l > 0 && l <= 100 {
+			limit = l
+		}
+	}
+
+	data, total, err := h.service.ListMembers(c.Request().Context(), orgID, page, limit)
 	if err != nil {
 		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error(), nil, nil)
 	}
@@ -265,6 +281,11 @@ func (h *Handler) ListMembers(c *echo.Context) error {
 	return c.JSON(http.StatusOK, MemberListResponse{
 		Success: true,
 		Data:    data,
+		Meta: &PaginationMeta{
+			Page:  page,
+			Limit: limit,
+			Total: total,
+		},
 	})
 }
 
