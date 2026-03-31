@@ -5,7 +5,7 @@
  * - Centralized API configuration
  * - Request/response interceptors
  * - Error handling
- * - Authentication token management
+ * - Cookie-based authentication (HttpOnly cookies set by backend)
  * - Security best practices (CSRF, XSS prevention)
  */
 
@@ -33,41 +33,38 @@ async function getAxiosInstance(): Promise<AxiosInstance> {
   axiosInstance = axios.create({
     baseURL,
     timeout: 10000,
-    withCredentials: true, // Enable CORS cookies
+    withCredentials: true, // Send HttpOnly cookies automatically
     headers: {
       'Content-Type': 'application/json',
       'X-Requested-With': 'XMLHttpRequest', // CSRF protection
     },
   });
 
-  // Request interceptor — add auth token
+  // Request interceptor — no manual token injection needed;
+  // HttpOnly cookies are sent automatically via withCredentials: true
   axiosInstance.interceptors.request.use(
-    (config) => {
-      if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-      }
-      return config;
-    },
-    (error) => {
-      return Promise.reject(error);
-    }
+    (config) => config,
+    (error) => Promise.reject(error)
   );
 
   // Response interceptor — handle errors & token refresh
   axiosInstance.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
-      if (error.response?.status === 401) {
-        // Token expired or unauthorized — clear auth state
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('refresh_token');
+      const originalRequest = error.config;
 
-        // Redirect to login if available
-        if (typeof window !== 'undefined') {
-          window.location.href = '/';
+      if (error.response?.status === 401 && originalRequest) {
+        // Attempt to refresh the token via cookie-based refresh
+        try {
+          const axios = await import('axios').then(m => m.default);
+          await axios.post(`${baseURL}/v1/auth/refresh`, {}, { withCredentials: true });
+          // Retry original request with new cookie
+          return axiosInstance!(originalRequest);
+        } catch {
+          // Refresh failed — redirect to login
+          if (typeof window !== 'undefined') {
+            window.location.href = '/';
+          }
         }
       }
 

@@ -1,6 +1,47 @@
 // ─── Role ────────────────────────────────────────────────────────────────────
 export type Role = "mentor" | "mentee";
 
+// ─── Backend Auth DTOs (matches /api/v1/auth/*) ──────────────────────────────
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+}
+
+export interface AuthResponseData {
+  accessToken: string;
+  refreshToken: string;
+  user: AuthUser;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  data: AuthResponseData;
+}
+
+// ─── Backend Organization DTOs (matches /api/v1/organizations/*) ─────────────
+export interface OrganizationData {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MemberData {
+  id: string;
+  organizationId: string;
+  userId: string;
+  role: string;
+  joinedAt: string;
+  name?: string;
+  email?: string;
+  avatarUrl?: string;
+}
+
 // ─── App UI State ─────────────────────────────────────────────────────────────
 export interface AppState {
   showRoleCard: boolean;
@@ -17,8 +58,7 @@ export interface RoleCardProps {
   onClose: () => void;
 }
 
-// ─── Mentee Request (mirrors future DB schema) ────────────────────────────────
-// When backend is ready, replace localStorage calls with POST /api/mentee-requests
+// ─── Mentee Request (UI type — TODO: needs backend endpoints) ─────────────────
 export type SheetId = "gfg-dsa-360" | "strivers-dsa-sheet";
 
 export interface MenteeRequest {
@@ -48,8 +88,7 @@ export interface MentorProfile {
   joinedAt: string;
 }
 
-// ─── Question (mirrors future DB schema) ─────────────────────────────────────
-// When backend is ready, replace dummy data with GET /api/mentees/:username/questions
+// ─── Question (UI type — TODO: needs backend endpoints) ──────────────────────
 export type QuestionProgressStatus = "not_started" | "discussion_needed" | "revision_needed" | "completed";
 
 export interface Question {

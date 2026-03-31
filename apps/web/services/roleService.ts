@@ -1,64 +1,37 @@
 import type { Role } from "@/types";
-import { api, APIError } from "./api";
 
 /**
- * roleService.ts — Role management with API integration
+ * roleService.ts — Role management (local-only)
  *
- * Provides secure role selection and retrieval following these practices:
- * - Server-side validation of role selection
- * - Secure session token storage
- * - Graceful error handling with fallback to localStorage
+ * The backend does not have role selection endpoints.
+ * Role is stored in localStorage and used locally for routing.
+ * TODO: Add backend endpoint for role persistence when available.
  */
 
 let _selectedRole: Role | null = null;
 
 /**
- * Select a role and persist to backend + localStorage
- * @throws {APIError} If API request fails
+ * Select a role and persist to localStorage
+ * (No backend endpoint exists — local storage only)
  */
 export async function selectRole(role: Role): Promise<void> {
-  try {
-    // Validate role locally first (defense in depth)
-    if (role !== "mentor" && role !== "mentee") {
-      throw new Error("Invalid role");
-    }
+  // Validate role locally
+  if (role !== "mentor" && role !== "mentee") {
+    throw new Error("Invalid role");
+  }
 
-    // Send role selection to backend for persistent storage
-    await api.post("/auth/select-role", { role });
-
-    // Store locally as cache
-    _selectedRole = role;
-    if (typeof window !== "undefined") {
-      localStorage.setItem("coderz_selected_role", role);
-    }
-  } catch (error) {
-    if (error instanceof APIError) {
-      console.error("Failed to select role:", error.message);
-    }
-    throw error;
+  _selectedRole = role;
+  if (typeof window !== "undefined") {
+    localStorage.setItem("coderz_selected_role", role);
   }
 }
 
 /**
- * Retrieve the user's selected role from backend or cache
+ * Retrieve the user's selected role from cache or localStorage
  * @returns The selected role or null if not set
  */
 export async function getSelectedRole(): Promise<Role | null> {
-  try {
-    // Try to fetch from backend first
-    if (typeof window !== "undefined") {
-      const response = await api.get<{ role: Role }>("/auth/get-role");
-      if (response?.role) {
-        _selectedRole = response.role;
-        localStorage.setItem("coderz_selected_role", response.role);
-        return response.role;
-      }
-    }
-  } catch (error) {
-    if (error instanceof APIError && error.status !== 401) {
-      console.warn("Failed to fetch role from backend, using cache:", error.message);
-    }
-  }
+  if (_selectedRole) return _selectedRole;
 
   // Fallback to localStorage cache
   if (typeof window !== "undefined") {
@@ -69,7 +42,7 @@ export async function getSelectedRole(): Promise<Role | null> {
     }
   }
 
-  return _selectedRole;
+  return null;
 }
 
 /**
@@ -81,4 +54,3 @@ export function clearSelectedRole(): void {
     localStorage.removeItem("coderz_selected_role");
   }
 }
-

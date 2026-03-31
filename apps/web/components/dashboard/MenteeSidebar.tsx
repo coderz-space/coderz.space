@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useParams } from "next/navigation";
+import { logout } from "@/services/authService";
+import { clearSelectedRole } from "@/services/roleService";
+import { clearCaches } from "@/services/menteeService";
 
 const navItems = (username: string) => [
   { label: "Pending Questions", href: `/mentee-dashboard/${username}/pending` },
@@ -15,6 +18,13 @@ export default function MenteeSidebar() {
   const router = useRouter();
   const params = useParams();
   const username = params?.username as string;
+
+  const handleLogout = async () => {
+    await logout();
+    clearSelectedRole();
+    clearCaches();
+    router.push("/");
+  };
 
   return (
     <aside className="flex flex-col w-64 h-screen sticky top-0 bg-gray-100 dark:bg-gray-950 border-r border-purple-200 dark:border-purple-900 px-4 py-6 transition-colors">
@@ -40,7 +50,7 @@ export default function MenteeSidebar() {
       </nav>
 
       <button
-        onClick={() => router.push("/")}
+        onClick={handleLogout}
         className="mt-auto px-4 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-900/30 hover:text-red-300 transition-colors text-left"
       >
         Logout
