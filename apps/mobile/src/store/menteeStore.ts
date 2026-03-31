@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Assignment, AssignmentProblem, MenteeStatus, LeaderboardEntry } from '../types';
+import { Assignment, AssignmentProblem, MenteeStatus, LeaderboardEntry, LeaderboardPeriod } from '../types';
 import { menteeMock as service } from '../services/api/mock/menteeMock';
 // When backend is ready, swap ↑ with:
 // import { menteeLive as service } from '../services/api/live/menteeLive';
@@ -8,6 +8,11 @@ interface MenteeStore {
   activeAssignments: Assignment[];
   completedAssignments: Assignment[];
   leaderboard: LeaderboardEntry[];
+
+  // ✅ NEW
+  leaderboardPeriod: LeaderboardPeriod;
+  setLeaderboardPeriod: (period: LeaderboardPeriod) => void;
+
   isLoadingAssignments: boolean;
   isLoadingCompleted: boolean;
   isLoadingLeaderboard: boolean;
@@ -25,9 +30,11 @@ interface MenteeStore {
     enrollmentId: string;
   }) => Promise<void>;
 
+  // ✅ UPDATED
   fetchLeaderboard: (params: {
     orgId: string;
     bootcampId: string;
+    period?: LeaderboardPeriod;
   }) => Promise<void>;
 
   updateProblemProgress: (params: {
@@ -55,10 +62,21 @@ export const useMenteeStore = create<MenteeStore>((set, get) => ({
   activeAssignments: [],
   completedAssignments: [],
   leaderboard: [],
+
+  // ✅ NEW
+  leaderboardPeriod: 'allTime',
+
   isLoadingAssignments: false,
   isLoadingCompleted: false,
   isLoadingLeaderboard: false,
   error: null,
+
+  // ✅ NEW
+  setLeaderboardPeriod: (period: LeaderboardPeriod) => {
+    set({ leaderboardPeriod: period });
+    // Optionally auto-refetch leaderboard with new period
+    const state = get();
+  },
 
   fetchMyAssignments: async (params) => {
     set({ isLoadingAssignments: true, error: null });
@@ -84,10 +102,12 @@ export const useMenteeStore = create<MenteeStore>((set, get) => ({
     }
   },
 
+  // ✅ UPDATED
   fetchLeaderboard: async (params) => {
     set({ isLoadingLeaderboard: true, error: null });
     try {
-      const data = await service.getLeaderboard(params);
+      const period = params.period || get().leaderboardPeriod;
+      const data = await service.getLeaderboard(params, period);
       set({ leaderboard: data });
     } catch (e: any) {
       set({ error: e.message });
@@ -108,7 +128,8 @@ export const useMenteeStore = create<MenteeStore>((set, get) => ({
                 p.id === params.assignmentProblemId ? updated : p,
               ),
               completedProblems: a.problems.filter(
-                (p) => (p.id === params.assignmentProblemId ? updated : p).status === 'completed',
+                (p) =>
+                  (p.id === params.assignmentProblemId ? updated : p).status === 'completed',
               ).length,
             }
           : a,
