@@ -2,9 +2,11 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/coderz-space/coderz.space/internal/common/logger"
 	"github.com/coderz-space/coderz.space/internal/common/middleware"
+	"github.com/coderz-space/coderz.space/internal/common/middleware/timeout"
 	config "github.com/coderz-space/coderz.space/internal/config"
 	"github.com/coderz-space/coderz.space/internal/container"
 	"github.com/coderz-space/coderz.space/internal/routes"
@@ -71,6 +73,7 @@ func main() {
 	}))
 	e.Use(middleware.ZapLogger())
 	e.Use(middleware.Recovery())
+	e.Use(timeout.TimeoutMiddleware(30 * time.Second)) // 30 second timeout to prevent resource exhaustion
 
 	// swagger docs
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
