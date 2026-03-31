@@ -3,8 +3,7 @@
 -- Full schema for Coderz Space Bootcamp platform
 -- ============================================================
 
--- Enable UUID generation
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- UUID v7 is natively supported in PostgreSQL 18+, no extension needed
 
 -- ============================================================
 -- ENUM TYPES
@@ -45,7 +44,7 @@ $$ LANGUAGE plpgsql;
 -- ============================================================
 
 CREATE TABLE users (
-    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id            UUID PRIMARY KEY DEFAULT uuidv7(),
     name          VARCHAR(100)  NOT NULL,
     email         VARCHAR(255)  UNIQUE,
     email_verified BOOLEAN       NOT NULL DEFAULT FALSE,
@@ -68,7 +67,7 @@ CREATE TRIGGER trg_users_updated_at
 
 -- Refresh tokens for sessions
 CREATE TABLE refresh_tokens (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id          UUID PRIMARY KEY DEFAULT uuidv7(),
     user_id     UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token_hash  TEXT        NOT NULL,
     expires_at  TIMESTAMPTZ NOT NULL,
@@ -88,7 +87,7 @@ CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 
 -- 2a. organizations
 CREATE TABLE organizations (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id          UUID PRIMARY KEY DEFAULT uuidv7(),
     name        VARCHAR(255)  NOT NULL,
     slug        VARCHAR(255)  NOT NULL UNIQUE,
     description TEXT,
@@ -103,7 +102,7 @@ CREATE TRIGGER trg_organizations_updated_at
 
 -- 2b. organization_members
 CREATE TABLE organization_members (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id              UUID PRIMARY KEY DEFAULT uuidv7(),
     organization_id UUID            NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     user_id         UUID            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     role            org_member_role NOT NULL,
@@ -121,7 +120,7 @@ CREATE INDEX idx_org_members_user_id ON organization_members(user_id);
 
 -- 3a. bootcamps
 CREATE TABLE bootcamps (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id              UUID PRIMARY KEY DEFAULT uuidv7(),
     organization_id UUID         NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     created_by      UUID         NOT NULL REFERENCES organization_members(id) ON DELETE RESTRICT,
     name            VARCHAR(255) NOT NULL,
@@ -146,7 +145,7 @@ CREATE INDEX idx_bootcamps_org_id ON bootcamps(organization_id);
 
 -- 3b. bootcamp_enrollments
 CREATE TABLE bootcamp_enrollments (
-    id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id                     UUID PRIMARY KEY DEFAULT uuidv7(),
     bootcamp_id            UUID                    NOT NULL REFERENCES bootcamps(id) ON DELETE CASCADE,
     organization_member_id UUID                    NOT NULL REFERENCES organization_members(id) ON DELETE CASCADE,
     role                   bootcamp_enrollment_role NOT NULL,
@@ -165,7 +164,7 @@ CREATE INDEX idx_bootcamp_enrollments_member   ON bootcamp_enrollments(organizat
 
 -- 4a. problems
 CREATE TABLE problems (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id              UUID PRIMARY KEY DEFAULT uuidv7(),
     organization_id UUID             NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     created_by      UUID             NOT NULL REFERENCES organization_members(id) ON DELETE RESTRICT,
     title           VARCHAR(255)     NOT NULL,
@@ -185,7 +184,7 @@ CREATE INDEX idx_problems_org_id ON problems(organization_id);
 
 -- 4b. tags
 CREATE TABLE tags (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id              UUID PRIMARY KEY DEFAULT uuidv7(),
     organization_id UUID         NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     created_by      UUID         NOT NULL REFERENCES organization_members(id) ON DELETE RESTRICT,
     name            VARCHAR(100) NOT NULL,
@@ -207,7 +206,7 @@ CREATE TABLE problem_tags (
 
 -- 4d. problem_resources
 CREATE TABLE problem_resources (
-    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id         UUID PRIMARY KEY DEFAULT uuidv7(),
     problem_id UUID         NOT NULL REFERENCES problems(id) ON DELETE CASCADE,
     title      VARCHAR(255),
     url        TEXT,
@@ -222,7 +221,7 @@ CREATE INDEX idx_problem_resources_problem ON problem_resources(problem_id);
 
 -- 5a. assignment_groups (templates)
 CREATE TABLE assignment_groups (
-    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id            UUID PRIMARY KEY DEFAULT uuidv7(),
     bootcamp_id   UUID         NOT NULL REFERENCES bootcamps(id) ON DELETE CASCADE,
     created_by    UUID         NOT NULL REFERENCES organization_members(id) ON DELETE RESTRICT,
     title         VARCHAR(255) NOT NULL,
@@ -250,7 +249,7 @@ CREATE TABLE assignment_group_problems (
 
 -- 5c. assignments (per-mentee instances)
 CREATE TABLE assignments (
-    id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id                     UUID PRIMARY KEY DEFAULT uuidv7(),
     assignment_group_id    UUID              NOT NULL REFERENCES assignment_groups(id) ON DELETE CASCADE,
     bootcamp_enrollment_id UUID              NOT NULL REFERENCES bootcamp_enrollments(id) ON DELETE CASCADE,
     assigned_by            UUID              NOT NULL REFERENCES organization_members(id) ON DELETE RESTRICT,
@@ -271,7 +270,7 @@ CREATE INDEX idx_assignments_enrollment ON assignments(bootcamp_enrollment_id);
 
 -- 5d. assignment_problems (per-problem progress tracking)
 CREATE TABLE assignment_problems (
-    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id            UUID PRIMARY KEY DEFAULT uuidv7(),
     assignment_id UUID                      NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
     problem_id    UUID                      NOT NULL REFERENCES problems(id) ON DELETE CASCADE,
     status        assignment_problem_status NOT NULL DEFAULT 'pending',
@@ -293,7 +292,7 @@ CREATE TRIGGER trg_assignment_problems_updated_at
 -- ============================================================
 
 CREATE TABLE doubts (
-    id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id                    UUID PRIMARY KEY DEFAULT uuidv7(),
     assignment_problem_id UUID        NOT NULL REFERENCES assignment_problems(id) ON DELETE CASCADE,
     raised_by             UUID        NOT NULL REFERENCES organization_members(id) ON DELETE CASCADE,
     message               TEXT        NOT NULL,
@@ -312,7 +311,7 @@ CREATE INDEX idx_doubts_raised_by          ON doubts(raised_by);
 
 -- 7a. leaderboard_entries (snapshot table)
 CREATE TABLE leaderboard_entries (
-    id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id                     UUID PRIMARY KEY DEFAULT uuidv7(),
     bootcamp_id            UUID        NOT NULL REFERENCES bootcamps(id) ON DELETE CASCADE,
     bootcamp_enrollment_id UUID        NOT NULL REFERENCES bootcamp_enrollments(id) ON DELETE CASCADE,
     problems_completed     INTEGER     NOT NULL DEFAULT 0,
@@ -330,7 +329,7 @@ CREATE INDEX idx_leaderboard_bootcamp ON leaderboard_entries(bootcamp_id);
 
 -- 7b. polls
 CREATE TABLE polls (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id          UUID PRIMARY KEY DEFAULT uuidv7(),
     bootcamp_id UUID         NOT NULL REFERENCES bootcamps(id) ON DELETE CASCADE,
     problem_id  UUID         NOT NULL REFERENCES problems(id) ON DELETE CASCADE,
     question    VARCHAR(500) NOT NULL,
@@ -342,7 +341,7 @@ CREATE INDEX idx_polls_bootcamp ON polls(bootcamp_id);
 
 -- 7c. poll_votes
 CREATE TABLE poll_votes (
-    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id         UUID PRIMARY KEY DEFAULT uuidv7(),
     poll_id    UUID            NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
     voter_id   UUID            NOT NULL REFERENCES bootcamp_enrollments(id) ON DELETE CASCADE,
     vote       poll_vote_value NOT NULL,
