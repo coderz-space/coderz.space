@@ -8,6 +8,7 @@ services:
             POSTGRES_USER: coderz-space
             POSTGRES_PASSWORD: coderz-space
             POSTGRES_DB: coderz
+            PGDATA: /var/lib/postgresql/data/pgdata
         ports:
             - "5432:5432"
         volumes:

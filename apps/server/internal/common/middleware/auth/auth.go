@@ -21,7 +21,7 @@ func AuthMiddleware(jwtSecret string, jwtExpiryTime string) echo.MiddlewareFunc 
 		NewClaimsFunc: func(c *echo.Context) jwt.Claims {
 			return &utils.TokenPayload{}
 		},
-		TokenLookup: "header:Authorization:Bearer ,cookie:auth_token",
+		TokenLookup: "header:Authorization:Bearer ,cookie:access_token",
 		ErrorHandler: func(c *echo.Context, err error) error {
 			return c.JSON(http.StatusUnauthorized, map[string]any{
 				"message": "INVALID_TOKEN",

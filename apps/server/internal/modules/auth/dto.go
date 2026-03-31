@@ -5,13 +5,13 @@ import "github.com/jackc/pgx/v5/pgtype"
 // LoginRequest represents the login credentials
 type LoginRequest struct {
 	Email    string `json:"email" validate:"required,email" example:"user@example.com"`
-	Password string `json:"password" validate:"required,min=8,max=50,password_complexity" example:"Password123"`
+	Password string `json:"password" validate:"required,min=8,max=50" example:"Password123"`
 }
 
 // SignupRequest represents the user registration data
 type SignupRequest struct {
 	Email    string `json:"email" validate:"required,email" example:"user@example.com"`
-	Password string `json:"password" validate:"required,min=8,max=50,password_complexity" example:"Password123"`
+	Password string `json:"password" validate:"required,min=8,max=50" example:"Password123"`
 	Name     string `json:"name" validate:"required,min=2,max=100" example:"John Doe"`
 }
 
@@ -61,7 +61,7 @@ type ForgotPasswordRequest struct {
 // ResetPasswordRequest represents the password reset request
 type ResetPasswordRequest struct {
 	Token       string `json:"token" validate:"required" example:"a1b2c3d4e5f6g7h8i9j0"`
-	NewPassword string `json:"newPassword" validate:"required,min=8,max=50,password_complexity" example:"NewPassword123"`
+	NewPassword string `json:"newPassword" validate:"required,min=8,max=50" example:"NewPassword123"`
 }
 
 // GenericResponse is a generic success response
