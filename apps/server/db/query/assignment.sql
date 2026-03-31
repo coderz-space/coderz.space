@@ -10,10 +10,28 @@ RETURNING *;
 SELECT * FROM assignment_groups
 WHERE id = $1 LIMIT 1;
 
+-- name: UpdateAssignmentGroup :one
+UPDATE assignment_groups
+SET 
+    title = COALESCE(sqlc.narg('title'), title),
+    description = COALESCE(sqlc.narg('description'), description),
+    deadline_days = COALESCE(sqlc.narg('deadline_days'), deadline_days),
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = sqlc.arg('id')
+RETURNING *;
+
 -- name: ListAssignmentGroupsByBootcamp :many
 SELECT * FROM assignment_groups
 WHERE bootcamp_id = $1
-ORDER BY created_at DESC;
+  AND (sqlc.narg('created_by')::uuid IS NULL OR created_by = sqlc.narg('created_by')::uuid)
+ORDER BY created_at DESC
+LIMIT sqlc.arg('limit')
+OFFSET sqlc.arg('offset');
+
+-- name: CountAssignmentGroupsByBootcamp :one
+SELECT COUNT(*) FROM assignment_groups
+WHERE bootcamp_id = $1
+  AND (sqlc.narg('created_by')::uuid IS NULL OR created_by = sqlc.narg('created_by')::uuid);
 
 -- name: AddProblemToAssignmentGroup :exec
 INSERT INTO assignment_group_problems (

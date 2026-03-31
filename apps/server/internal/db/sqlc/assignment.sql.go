@@ -85,6 +85,24 @@ func (q *Queries) AssignGroupToMentee(ctx context.Context, arg AssignGroupToMent
 	return i, err
 }
 
+const countAssignmentGroupsByBootcamp = `-- name: CountAssignmentGroupsByBootcamp :one
+SELECT COUNT(*) FROM assignment_groups
+WHERE bootcamp_id = $1
+  AND ($2::uuid IS NULL OR created_by = $2::uuid)
+`
+
+type CountAssignmentGroupsByBootcampParams struct {
+	BootcampID pgtype.UUID `db:"bootcamp_id" json:"bootcamp_id"`
+	CreatedBy  pgtype.UUID `db:"created_by" json:"created_by"`
+}
+
+func (q *Queries) CountAssignmentGroupsByBootcamp(ctx context.Context, arg CountAssignmentGroupsByBootcampParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countAssignmentGroupsByBootcamp, arg.BootcampID, arg.CreatedBy)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createAssignmentGroup = `-- name: CreateAssignmentGroup :one
 INSERT INTO assignment_groups (
     bootcamp_id, created_by, title, description, deadline_days
@@ -258,11 +276,26 @@ func (q *Queries) ListAssignmentGroupProblems(ctx context.Context, assignmentGro
 const listAssignmentGroupsByBootcamp = `-- name: ListAssignmentGroupsByBootcamp :many
 SELECT id, bootcamp_id, created_by, title, description, deadline_days, created_at, updated_at FROM assignment_groups
 WHERE bootcamp_id = $1
+  AND ($2::uuid IS NULL OR created_by = $2::uuid)
 ORDER BY created_at DESC
+LIMIT $4
+OFFSET $3
 `
 
-func (q *Queries) ListAssignmentGroupsByBootcamp(ctx context.Context, bootcampID pgtype.UUID) ([]AssignmentGroup, error) {
-	rows, err := q.db.Query(ctx, listAssignmentGroupsByBootcamp, bootcampID)
+type ListAssignmentGroupsByBootcampParams struct {
+	BootcampID pgtype.UUID `db:"bootcamp_id" json:"bootcamp_id"`
+	CreatedBy  pgtype.UUID `db:"created_by" json:"created_by"`
+	Offset     int32       `db:"offset" json:"offset"`
+	Limit      int32       `db:"limit" json:"limit"`
+}
+
+func (q *Queries) ListAssignmentGroupsByBootcamp(ctx context.Context, arg ListAssignmentGroupsByBootcampParams) ([]AssignmentGroup, error) {
+	rows, err := q.db.Query(ctx, listAssignmentGroupsByBootcamp,
+		arg.BootcampID,
+		arg.CreatedBy,
+		arg.Offset,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -411,6 +444,45 @@ type RemoveProblemFromAssignmentGroupParams struct {
 func (q *Queries) RemoveProblemFromAssignmentGroup(ctx context.Context, arg RemoveProblemFromAssignmentGroupParams) error {
 	_, err := q.db.Exec(ctx, removeProblemFromAssignmentGroup, arg.AssignmentGroupID, arg.ProblemID)
 	return err
+}
+
+const updateAssignmentGroup = `-- name: UpdateAssignmentGroup :one
+UPDATE assignment_groups
+SET 
+    title = COALESCE($1, title),
+    description = COALESCE($2, description),
+    deadline_days = COALESCE($3, deadline_days),
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $4
+RETURNING id, bootcamp_id, created_by, title, description, deadline_days, created_at, updated_at
+`
+
+type UpdateAssignmentGroupParams struct {
+	Title        pgtype.Text `db:"title" json:"title"`
+	Description  pgtype.Text `db:"description" json:"description"`
+	DeadlineDays pgtype.Int4 `db:"deadline_days" json:"deadline_days"`
+	ID           pgtype.UUID `db:"id" json:"id"`
+}
+
+func (q *Queries) UpdateAssignmentGroup(ctx context.Context, arg UpdateAssignmentGroupParams) (AssignmentGroup, error) {
+	row := q.db.QueryRow(ctx, updateAssignmentGroup,
+		arg.Title,
+		arg.Description,
+		arg.DeadlineDays,
+		arg.ID,
+	)
+	var i AssignmentGroup
+	err := row.Scan(
+		&i.ID,
+		&i.BootcampID,
+		&i.CreatedBy,
+		&i.Title,
+		&i.Description,
+		&i.DeadlineDays,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const updateAssignmentProblemProgress = `-- name: UpdateAssignmentProblemProgress :one

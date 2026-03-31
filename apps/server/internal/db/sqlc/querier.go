@@ -24,6 +24,7 @@ type Querier interface {
 	AssignGroupToMentee(ctx context.Context, arg AssignGroupToMenteeParams) (Assignment, error)
 	CastPollVote(ctx context.Context, arg CastPollVoteParams) (PollVote, error)
 	ClearExpiredRefreshTokens(ctx context.Context) error
+	CountAssignmentGroupsByBootcamp(ctx context.Context, arg CountAssignmentGroupsByBootcampParams) (int64, error)
 	CountBootcampsByEnrollment(ctx context.Context, arg CountBootcampsByEnrollmentParams) (int64, error)
 	CountBootcampsByOrg(ctx context.Context, arg CountBootcampsByOrgParams) (int64, error)
 	CountOrganizationAdmins(ctx context.Context, organizationID pgtype.UUID) (int64, error)
@@ -79,7 +80,7 @@ type Querier interface {
 	// Assignment Problems Progress
 	InitializeAssignmentProblem(ctx context.Context, arg InitializeAssignmentProblemParams) (AssignmentProblem, error)
 	ListAssignmentGroupProblems(ctx context.Context, assignmentGroupID pgtype.UUID) ([]ListAssignmentGroupProblemsRow, error)
-	ListAssignmentGroupsByBootcamp(ctx context.Context, bootcampID pgtype.UUID) ([]AssignmentGroup, error)
+	ListAssignmentGroupsByBootcamp(ctx context.Context, arg ListAssignmentGroupsByBootcampParams) ([]AssignmentGroup, error)
 	ListAssignmentProblemsStatus(ctx context.Context, assignmentID pgtype.UUID) ([]ListAssignmentProblemsStatusRow, error)
 	ListAssignmentsByMentee(ctx context.Context, bootcampEnrollmentID pgtype.UUID) ([]ListAssignmentsByMenteeRow, error)
 	ListBootcampEnrollments(ctx context.Context, bootcampID pgtype.UUID) ([]ListBootcampEnrollmentsRow, error)
@@ -101,6 +102,7 @@ type Querier interface {
 	RemoveTagFromProblem(ctx context.Context, arg RemoveTagFromProblemParams) error
 	ResolveDoubt(ctx context.Context, arg ResolveDoubtParams) (Doubt, error)
 	SearchTagsByName(ctx context.Context, arg SearchTagsByNameParams) ([]Tag, error)
+	UpdateAssignmentGroup(ctx context.Context, arg UpdateAssignmentGroupParams) (AssignmentGroup, error)
 	UpdateAssignmentProblemProgress(ctx context.Context, arg UpdateAssignmentProblemProgressParams) (AssignmentProblem, error)
 	UpdateAssignmentStatus(ctx context.Context, arg UpdateAssignmentStatusParams) (Assignment, error)
 	UpdateBootcamp(ctx context.Context, arg UpdateBootcampParams) (Bootcamp, error)
