@@ -24,6 +24,8 @@ type Querier interface {
 	AssignGroupToMentee(ctx context.Context, arg AssignGroupToMenteeParams) (Assignment, error)
 	CastPollVote(ctx context.Context, arg CastPollVoteParams) (PollVote, error)
 	ClearExpiredRefreshTokens(ctx context.Context) error
+	CountBootcampsByEnrollment(ctx context.Context, arg CountBootcampsByEnrollmentParams) (int64, error)
+	CountBootcampsByOrg(ctx context.Context, arg CountBootcampsByOrgParams) (int64, error)
 	CountOrganizationAdmins(ctx context.Context, organizationID pgtype.UUID) (int64, error)
 	CountOrganizationMembers(ctx context.Context, organizationID pgtype.UUID) (int64, error)
 	CountUserOrganizations(ctx context.Context, userID pgtype.UUID) (int64, error)
@@ -31,6 +33,7 @@ type Querier interface {
 	CreateBootcamp(ctx context.Context, arg CreateBootcampParams) (Bootcamp, error)
 	CreateDoubt(ctx context.Context, arg CreateDoubtParams) (Doubt, error)
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
+	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetToken, error)
 	// Polls
 	CreatePoll(ctx context.Context, arg CreatePollParams) (Poll, error)
 	CreateProblem(ctx context.Context, arg CreateProblemParams) (Problem, error)
@@ -38,9 +41,12 @@ type Querier interface {
 	// Tags
 	CreateTag(ctx context.Context, arg CreateTagParams) (Tag, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteExpiredPasswordResetTokens(ctx context.Context) error
+	DeletePasswordResetToken(ctx context.Context, tokenHash string) error
 	DeleteProblemResource(ctx context.Context, id pgtype.UUID) error
 	DeleteRefreshToken(ctx context.Context, tokenHash string) error
 	DeleteUser(ctx context.Context, id pgtype.UUID) error
+	DeleteUserPasswordResetTokens(ctx context.Context, userID pgtype.UUID) error
 	DeleteUserRefreshTokens(ctx context.Context, userID pgtype.UUID) error
 	// Enrollment
 	EnrollInBootcamp(ctx context.Context, arg EnrollInBootcampParams) (BootcampEnrollment, error)
@@ -54,6 +60,8 @@ type Querier interface {
 	GetOrganizationById(ctx context.Context, id pgtype.UUID) (Organization, error)
 	GetOrganizationBySlug(ctx context.Context, slug string) (Organization, error)
 	GetOrganizationMember(ctx context.Context, arg GetOrganizationMemberParams) (OrganizationMember, error)
+	GetOrganizationMemberById(ctx context.Context, id pgtype.UUID) (OrganizationMember, error)
+	GetPasswordResetToken(ctx context.Context, tokenHash string) (PasswordResetToken, error)
 	GetPendingOrganizations(ctx context.Context) ([]Organization, error)
 	GetPoll(ctx context.Context, id pgtype.UUID) (Poll, error)
 	GetPollResults(ctx context.Context, pollID pgtype.UUID) ([]GetPollResultsRow, error)
@@ -69,7 +77,9 @@ type Querier interface {
 	ListAssignmentProblemsStatus(ctx context.Context, assignmentID pgtype.UUID) ([]ListAssignmentProblemsStatusRow, error)
 	ListAssignmentsByMentee(ctx context.Context, bootcampEnrollmentID pgtype.UUID) ([]ListAssignmentsByMenteeRow, error)
 	ListBootcampEnrollments(ctx context.Context, bootcampID pgtype.UUID) ([]ListBootcampEnrollmentsRow, error)
+	ListBootcampsByEnrollment(ctx context.Context, arg ListBootcampsByEnrollmentParams) ([]Bootcamp, error)
 	ListBootcampsByOrg(ctx context.Context, organizationID pgtype.UUID) ([]Bootcamp, error)
+	ListBootcampsByOrgWithPagination(ctx context.Context, arg ListBootcampsByOrgWithPaginationParams) ([]Bootcamp, error)
 	ListDoubtsByAssignmentProblem(ctx context.Context, assignmentProblemID pgtype.UUID) ([]ListDoubtsByAssignmentProblemRow, error)
 	ListOrganizationMembers(ctx context.Context, arg ListOrganizationMembersParams) ([]ListOrganizationMembersRow, error)
 	ListOrganizations(ctx context.Context, arg ListOrganizationsParams) ([]Organization, error)
@@ -93,6 +103,7 @@ type Querier interface {
 	UpdateOrganizationMemberRole(ctx context.Context, arg UpdateOrganizationMemberRoleParams) (OrganizationMember, error)
 	UpdateProblem(ctx context.Context, arg UpdateProblemParams) (Problem, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
+	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpsertLeaderboardEntry(ctx context.Context, arg UpsertLeaderboardEntryParams) (LeaderboardEntry, error)
 }
 

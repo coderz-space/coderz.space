@@ -24,6 +24,11 @@ func NewService(queries *db.Queries, config *config.Config) *Service {
 }
 
 func (s *Service) Signup(ctx context.Context, req SignupRequest) (*AuthResponseData, error) {
+	// Validate password complexity
+	if !s.validatePasswordComplexity(req.Password) {
+		return nil, errors.New("PASSWORD_MUST_CONTAIN_LETTER_AND_NUMBER")
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
@@ -147,4 +152,105 @@ func (s *Service) generateRandomString(n int) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(b), nil
+}
+
+func (s *Service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest) error {
+	// Get user by email
+	user, err := s.queries.GetUserByEmail(ctx, pgtype.Text{String: req.Email, Valid: true})
+	if err != nil {
+		// Silently fail to prevent email enumeration
+		return nil
+	}
+
+	// Delete any existing password reset tokens for this user
+	_ = s.queries.DeleteUserPasswordResetTokens(ctx, user.ID)
+
+	// Generate reset token
+	resetToken, err := s.generateRandomString(32)
+	if err != nil {
+		return err
+	}
+
+	// Hash the token before storing
+	tokenHash := utils.HashString(resetToken)
+
+	// Token expires in 1 hour
+	expiresAt := time.Now().Add(1 * time.Hour)
+
+	// Store the token
+	_, err = s.queries.CreatePasswordResetToken(ctx, db.CreatePasswordResetTokenParams{
+		UserID:    user.ID,
+		TokenHash: tokenHash,
+		ExpiresAt: pgtype.Timestamptz{Time: expiresAt, Valid: true},
+	})
+	if err != nil {
+		return err
+	}
+
+	// TODO: Send email with reset token
+	// For now, we just log it (in production, send via email service)
+	// Email would contain a link like: https://app.com/reset-password?token={resetToken}
+
+	return nil
+}
+
+func (s *Service) ResetPassword(ctx context.Context, req ResetPasswordRequest) error {
+	// Validate password complexity (at least 1 letter and 1 number)
+	if !s.validatePasswordComplexity(req.NewPassword) {
+		return errors.New("PASSWORD_MUST_CONTAIN_LETTER_AND_NUMBER")
+	}
+
+	// Hash the token to look it up
+	tokenHash := utils.HashString(req.Token)
+
+	// Get the reset token (only if not expired)
+	resetToken, err := s.queries.GetPasswordResetToken(ctx, tokenHash)
+	if err != nil {
+		return errors.New("INVALID_OR_EXPIRED_TOKEN")
+	}
+
+	// Hash the new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	// Update user password
+	err = s.queries.UpdateUserPassword(ctx, db.UpdateUserPasswordParams{
+		ID:           resetToken.UserID,
+		PasswordHash: pgtype.Text{String: string(hashedPassword), Valid: true},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Delete the used reset token
+	err = s.queries.DeletePasswordResetToken(ctx, tokenHash)
+	if err != nil {
+		return err
+	}
+
+	// Delete all refresh tokens for this user (force re-login)
+	_ = s.queries.DeleteUserRefreshTokens(ctx, resetToken.UserID)
+
+	return nil
+}
+
+func (s *Service) validatePasswordComplexity(password string) bool {
+	hasLetter := false
+	hasNumber := false
+
+	for _, char := range password {
+		if (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') {
+			hasLetter = true
+		}
+		if char >= '0' && char <= '9' {
+			hasNumber = true
+		}
+		if hasLetter && hasNumber {
+			return true
+		}
+	}
+
+	return hasLetter && hasNumber
 }

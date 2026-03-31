@@ -590,6 +590,14 @@ type OrganizationMember struct {
 	JoinedAt       pgtype.Timestamptz `db:"joined_at" json:"joined_at"`
 }
 
+type PasswordResetToken struct {
+	ID        pgtype.UUID        `db:"id" json:"id"`
+	UserID    pgtype.UUID        `db:"user_id" json:"user_id"`
+	TokenHash string             `db:"token_hash" json:"token_hash"`
+	ExpiresAt pgtype.Timestamptz `db:"expires_at" json:"expires_at"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
 type Poll struct {
 	ID         pgtype.UUID        `db:"id" json:"id"`
 	BootcampID pgtype.UUID        `db:"bootcamp_id" json:"bootcamp_id"`

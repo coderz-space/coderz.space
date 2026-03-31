@@ -30,6 +30,13 @@ SET
 WHERE id = $1
 RETURNING *;
 
+-- name: UpdateUserPassword :exec
+UPDATE users
+SET 
+    password_hash = $2,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1;
+
 -- name: DeleteUser :exec
 DELETE FROM users
 WHERE id = $1;
@@ -57,3 +64,28 @@ WHERE user_id = $1;
 -- name: ClearExpiredRefreshTokens :exec
 DELETE FROM refresh_tokens
 WHERE expires_at < CURRENT_TIMESTAMP;
+
+-- name: CreatePasswordResetToken :one
+INSERT INTO password_reset_tokens (
+    user_id, token_hash, expires_at
+) VALUES (
+    $1, $2, $3
+)
+RETURNING *;
+
+-- name: GetPasswordResetToken :one
+SELECT * FROM password_reset_tokens
+WHERE token_hash = $1 AND expires_at > CURRENT_TIMESTAMP
+LIMIT 1;
+
+-- name: DeletePasswordResetToken :exec
+DELETE FROM password_reset_tokens
+WHERE token_hash = $1;
+
+-- name: DeleteExpiredPasswordResetTokens :exec
+DELETE FROM password_reset_tokens
+WHERE expires_at <= CURRENT_TIMESTAMP;
+
+-- name: DeleteUserPasswordResetTokens :exec
+DELETE FROM password_reset_tokens
+WHERE user_id = $1;

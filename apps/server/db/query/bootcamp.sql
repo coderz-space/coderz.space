@@ -15,6 +15,36 @@ SELECT * FROM bootcamps
 WHERE organization_id = $1 AND archived_at IS NULL
 ORDER BY created_at DESC;
 
+-- name: ListBootcampsByOrgWithPagination :many
+SELECT * FROM bootcamps
+WHERE organization_id = $1 
+  AND archived_at IS NULL
+  AND (sqlc.narg('is_active')::boolean IS NULL OR is_active = sqlc.narg('is_active')::boolean)
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3;
+
+-- name: CountBootcampsByOrg :one
+SELECT COUNT(*) FROM bootcamps
+WHERE organization_id = $1 
+  AND archived_at IS NULL
+  AND (sqlc.narg('is_active')::boolean IS NULL OR is_active = sqlc.narg('is_active')::boolean);
+
+-- name: ListBootcampsByEnrollment :many
+SELECT DISTINCT b.* FROM bootcamps b
+JOIN bootcamp_enrollments be ON b.id = be.bootcamp_id
+WHERE be.organization_member_id = $1
+  AND b.archived_at IS NULL
+  AND (sqlc.narg('is_active')::boolean IS NULL OR b.is_active = sqlc.narg('is_active')::boolean)
+ORDER BY b.created_at DESC
+LIMIT $2 OFFSET $3;
+
+-- name: CountBootcampsByEnrollment :one
+SELECT COUNT(DISTINCT b.id) FROM bootcamps b
+JOIN bootcamp_enrollments be ON b.id = be.bootcamp_id
+WHERE be.organization_member_id = $1
+  AND b.archived_at IS NULL
+  AND (sqlc.narg('is_active')::boolean IS NULL OR b.is_active = sqlc.narg('is_active')::boolean);
+
 -- name: UpdateBootcamp :one
 UPDATE bootcamps
 SET 

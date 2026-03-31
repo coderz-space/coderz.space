@@ -56,6 +56,10 @@ RETURNING *;
 SELECT * FROM organization_members
 WHERE organization_id = $1 AND user_id = $2 LIMIT 1;
 
+-- name: GetOrganizationMemberById :one
+SELECT * FROM organization_members
+WHERE id = $1 LIMIT 1;
+
 -- name: ListOrganizationMembers :many
 SELECT om.*, u.name, u.email, u.avatar_url 
 FROM organization_members om

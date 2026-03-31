@@ -1,46 +1,57 @@
-# Build stage
+# Multi-stage build for Go server
+# Stage 1: Build stage
 FROM golang:1.25-alpine AS builder
 
-WORKDIR /app
-
 # Install build dependencies
-RUN apk add --no-cache git ca-certificates
+RUN apk add --no-cache git make
+
+# Set working directory
+WORKDIR /app
 
 # Copy go mod files
 COPY go.mod go.sum ./
 
 # Tidy dependencies (ensures go.sum is up to date)
 RUN go mod tidy
+# Download dependencies
+RUN go mod download
 
 # Copy source code
 COPY . .
 
-# Build the application (go mod download happens automatically during build)
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/main.go
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go
 
-# Runtime stage
+# Stage 2: Runtime stage
 FROM alpine:latest
 
-# Install CA certificates for HTTPS
-RUN apk --no-cache add ca-certificates
+# Install ca-certificates for HTTPS
+RUN apk --no-cache add ca-certificates tzdata
+
+# Create non-root user
+RUN addgroup -g 1000 appuser && \
+    adduser -D -u 1000 -G appuser appuser
 
 WORKDIR /app
 
-# Copy the binary from builder
-COPY --from=builder /app/server .
+# Copy binary from builder
+COPY --from=builder /app/main .
 
-# Copy environment file (optional - can be provided via docker-compose)
-COPY .env .env
+# Copy swagger docs if they exist
+COPY --from=builder /app/swagger ./swagger
 
-# Copy database migrations
-COPY ./db/migrations ./db/migrations
+# Change ownership
+RUN chown -R appuser:appuser /app
 
-# Expose the port
+# Switch to non-root user
+USER appuser
+
+# Expose port
 EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/swagger/index.html || exit 1
 
-# Run the server
-CMD ["./server"]
+# Run the application
+CMD ["./main"]

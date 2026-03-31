@@ -21,6 +21,34 @@ func (q *Queries) ClearExpiredRefreshTokens(ctx context.Context) error {
 	return err
 }
 
+const createPasswordResetToken = `-- name: CreatePasswordResetToken :one
+INSERT INTO password_reset_tokens (
+    user_id, token_hash, expires_at
+) VALUES (
+    $1, $2, $3
+)
+RETURNING id, user_id, token_hash, expires_at, created_at
+`
+
+type CreatePasswordResetTokenParams struct {
+	UserID    pgtype.UUID        `db:"user_id" json:"user_id"`
+	TokenHash string             `db:"token_hash" json:"token_hash"`
+	ExpiresAt pgtype.Timestamptz `db:"expires_at" json:"expires_at"`
+}
+
+func (q *Queries) CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetToken, error) {
+	row := q.db.QueryRow(ctx, createPasswordResetToken, arg.UserID, arg.TokenHash, arg.ExpiresAt)
+	var i PasswordResetToken
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TokenHash,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createRefreshToken = `-- name: CreateRefreshToken :one
 INSERT INTO refresh_tokens (
     user_id, token_hash, expires_at
@@ -93,6 +121,26 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const deleteExpiredPasswordResetTokens = `-- name: DeleteExpiredPasswordResetTokens :exec
+DELETE FROM password_reset_tokens
+WHERE expires_at <= CURRENT_TIMESTAMP
+`
+
+func (q *Queries) DeleteExpiredPasswordResetTokens(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteExpiredPasswordResetTokens)
+	return err
+}
+
+const deletePasswordResetToken = `-- name: DeletePasswordResetToken :exec
+DELETE FROM password_reset_tokens
+WHERE token_hash = $1
+`
+
+func (q *Queries) DeletePasswordResetToken(ctx context.Context, tokenHash string) error {
+	_, err := q.db.Exec(ctx, deletePasswordResetToken, tokenHash)
+	return err
+}
+
 const deleteRefreshToken = `-- name: DeleteRefreshToken :exec
 DELETE FROM refresh_tokens
 WHERE token_hash = $1
@@ -113,6 +161,16 @@ func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const deleteUserPasswordResetTokens = `-- name: DeleteUserPasswordResetTokens :exec
+DELETE FROM password_reset_tokens
+WHERE user_id = $1
+`
+
+func (q *Queries) DeleteUserPasswordResetTokens(ctx context.Context, userID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteUserPasswordResetTokens, userID)
+	return err
+}
+
 const deleteUserRefreshTokens = `-- name: DeleteUserRefreshTokens :exec
 DELETE FROM refresh_tokens
 WHERE user_id = $1
@@ -121,6 +179,25 @@ WHERE user_id = $1
 func (q *Queries) DeleteUserRefreshTokens(ctx context.Context, userID pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, deleteUserRefreshTokens, userID)
 	return err
+}
+
+const getPasswordResetToken = `-- name: GetPasswordResetToken :one
+SELECT id, user_id, token_hash, expires_at, created_at FROM password_reset_tokens
+WHERE token_hash = $1 AND expires_at > CURRENT_TIMESTAMP
+LIMIT 1
+`
+
+func (q *Queries) GetPasswordResetToken(ctx context.Context, tokenHash string) (PasswordResetToken, error) {
+	row := q.db.QueryRow(ctx, getPasswordResetToken, tokenHash)
+	var i PasswordResetToken
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TokenHash,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const getRefreshToken = `-- name: GetRefreshToken :one
@@ -256,4 +333,22 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const updateUserPassword = `-- name: UpdateUserPassword :exec
+UPDATE users
+SET 
+    password_hash = $2,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+`
+
+type UpdateUserPasswordParams struct {
+	ID           pgtype.UUID `db:"id" json:"id"`
+	PasswordHash pgtype.Text `db:"password_hash" json:"password_hash"`
+}
+
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
+	_, err := q.db.Exec(ctx, updateUserPassword, arg.ID, arg.PasswordHash)
+	return err
 }

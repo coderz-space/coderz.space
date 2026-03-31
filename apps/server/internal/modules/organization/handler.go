@@ -21,6 +21,19 @@ func NewHandler(service *Service) *Handler {
 
 // Organization handlers
 
+// CreateOrganization godoc
+// @Summary Create a new organization
+// @Description Create a new organization with PENDING_APPROVAL status and auto-assign creator as admin
+// @Tags Organizations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param body body CreateOrganizationRequest true "Organization details"
+// @Success 201 {object} OrganizationResponse "Organization created successfully"
+// @Failure 400 {object} map[string]any "Bad request - validation error or invalid slug format"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 409 {object} map[string]any "Conflict - slug already exists"
+// @Router /v1/organizations [post]
 func (h *Handler) CreateOrganization(c *echo.Context, body CreateOrganizationRequest) error {
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
 	if !ok {
@@ -49,6 +62,17 @@ func (h *Handler) CreateOrganization(c *echo.Context, body CreateOrganizationReq
 	})
 }
 
+// GetOrganization godoc
+// @Summary Get organization by ID
+// @Description Retrieve organization details by organization ID
+// @Tags Organizations
+// @Accept json
+// @Produce json
+// @Param orgId path string true "Organization ID (UUID)"
+// @Success 200 {object} OrganizationResponse "Organization details"
+// @Failure 400 {object} map[string]any "Bad request - invalid organization ID"
+// @Failure 404 {object} map[string]any "Not found - organization does not exist"
+// @Router /v1/organizations/{orgId} [get]
 func (h *Handler) GetOrganization(c *echo.Context) error {
 	orgID, err := utils.StringToUUID((*c).Param("orgId"))
 	if err != nil {
@@ -66,6 +90,19 @@ func (h *Handler) GetOrganization(c *echo.Context) error {
 	})
 }
 
+// ListOrganizations godoc
+// @Summary List user's organizations
+// @Description Get all organizations where the authenticated user is a member
+// @Tags Organizations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 20, max: 100)"
+// @Success 200 {object} OrganizationListResponse "List of organizations with pagination"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 500 {object} map[string]any "Internal server error"
+// @Router /v1/organizations [get]
 func (h *Handler) ListOrganizations(c *echo.Context) error {
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
 	if !ok {
@@ -109,6 +146,21 @@ func (h *Handler) ListOrganizations(c *echo.Context) error {
 	})
 }
 
+// UpdateOrganization godoc
+// @Summary Update organization details
+// @Description Update organization information (admin only)
+// @Tags Organizations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param body body UpdateOrganizationRequest true "Updated organization details"
+// @Success 200 {object} OrganizationResponse "Organization updated successfully"
+// @Failure 400 {object} map[string]any "Bad request - validation error or no fields provided"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - admin role required"
+// @Failure 409 {object} map[string]any "Conflict - slug already exists"
+// @Router /v1/organizations/{orgId} [patch]
 func (h *Handler) UpdateOrganization(c *echo.Context, body UpdateOrganizationRequest) error {
 	orgID, err := utils.StringToUUID((*c).Param("orgId"))
 	if err != nil {
@@ -156,6 +208,21 @@ func (h *Handler) UpdateOrganization(c *echo.Context, body UpdateOrganizationReq
 	})
 }
 
+// ApproveOrganization godoc
+// @Summary Approve organization (super admin only)
+// @Description Change organization status from PENDING_APPROVAL to APPROVED
+// @Tags Organizations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param orgId path string true "Organization ID (UUID)"
+// @Success 200 {object} OrganizationResponse "Organization approved successfully"
+// @Failure 400 {object} map[string]any "Bad request - invalid organization ID"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - super admin role required"
+// @Failure 404 {object} map[string]any "Not found - organization does not exist"
+// @Failure 409 {object} map[string]any "Conflict - organization not in pending status"
+// @Router /v1/organizations/{orgId}/approve [post]
 func (h *Handler) ApproveOrganization(c *echo.Context) error {
 	// Validate super_admin role
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
@@ -189,6 +256,18 @@ func (h *Handler) ApproveOrganization(c *echo.Context) error {
 	})
 }
 
+// GetPendingOrganizations godoc
+// @Summary Get pending organizations (super admin only)
+// @Description Retrieve all organizations with PENDING_APPROVAL status
+// @Tags Organizations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} OrganizationListResponse "List of pending organizations"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - super admin role required"
+// @Failure 500 {object} map[string]any "Internal server error"
+// @Router /v1/organizations/pending [get]
 func (h *Handler) GetPendingOrganizations(c *echo.Context) error {
 	// Validate super_admin role
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
@@ -213,6 +292,20 @@ func (h *Handler) GetPendingOrganizations(c *echo.Context) error {
 
 // Member handlers
 
+// AddMember godoc
+// @Summary Add member to organization
+// @Description Add a new member to the organization with specified role (admin only)
+// @Tags Organization Members
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param body body AddMemberRequest true "Member details"
+// @Success 201 {object} MemberResponse "Member added successfully"
+// @Failure 400 {object} map[string]any "Bad request - validation error"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - admin role required"
+// @Router /v1/organizations/{orgId}/members [post]
 func (h *Handler) AddMember(c *echo.Context, body AddMemberRequest) error {
 	orgID, err := utils.StringToUUID((*c).Param("orgId"))
 	if err != nil {
@@ -251,6 +344,19 @@ func (h *Handler) AddMember(c *echo.Context, body AddMemberRequest) error {
 	})
 }
 
+// ListMembers godoc
+// @Summary List organization members
+// @Description Get all members of an organization with pagination
+// @Tags Organization Members
+// @Accept json
+// @Produce json
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 20, max: 100)"
+// @Success 200 {object} MemberListResponse "List of members with pagination"
+// @Failure 400 {object} map[string]any "Bad request - invalid organization ID"
+// @Failure 500 {object} map[string]any "Internal server error"
+// @Router /v1/organizations/{orgId}/members [get]
 func (h *Handler) ListMembers(c *echo.Context) error {
 	orgID, err := utils.StringToUUID((*c).Param("orgId"))
 	if err != nil {
@@ -289,6 +395,23 @@ func (h *Handler) ListMembers(c *echo.Context) error {
 	})
 }
 
+// UpdateMemberRole godoc
+// @Summary Update member role
+// @Description Update the role of an organization member (admin only)
+// @Tags Organization Members
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param userId path string true "User ID (UUID)"
+// @Param body body UpdateMemberRoleRequest true "New role"
+// @Success 200 {object} MemberResponse "Member role updated successfully"
+// @Failure 400 {object} map[string]any "Bad request - validation error"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - admin role required"
+// @Failure 404 {object} map[string]any "Not found - member does not exist"
+// @Failure 409 {object} map[string]any "Conflict - cannot remove last admin"
+// @Router /v1/organizations/{orgId}/members/{userId} [patch]
 func (h *Handler) UpdateMemberRole(c *echo.Context, body UpdateMemberRoleRequest) error {
 	orgID, err := utils.StringToUUID((*c).Param("orgId"))
 	if err != nil {
@@ -338,6 +461,22 @@ func (h *Handler) UpdateMemberRole(c *echo.Context, body UpdateMemberRoleRequest
 	})
 }
 
+// RemoveMember godoc
+// @Summary Remove member from organization
+// @Description Remove a member from the organization (admin only)
+// @Tags Organization Members
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param userId path string true "User ID (UUID)"
+// @Success 200 {object} GenericResponse "Member removed successfully"
+// @Failure 400 {object} map[string]any "Bad request - invalid ID"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - admin role required"
+// @Failure 404 {object} map[string]any "Not found - member does not exist"
+// @Failure 409 {object} map[string]any "Conflict - cannot remove last admin"
+// @Router /v1/organizations/{orgId}/members/{userId} [delete]
 func (h *Handler) RemoveMember(c *echo.Context) error {
 	orgID, err := utils.StringToUUID((*c).Param("orgId"))
 	if err != nil {
