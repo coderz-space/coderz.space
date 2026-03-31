@@ -40,6 +40,43 @@ func (q *Queries) CastPollVote(ctx context.Context, arg CastPollVoteParams) (Pol
 	return i, err
 }
 
+const checkVoteExists = `-- name: CheckVoteExists :one
+SELECT EXISTS(
+    SELECT 1 FROM poll_votes
+    WHERE poll_id = $1 AND voter_id = $2
+) as vote_exists
+`
+
+type CheckVoteExistsParams struct {
+	PollID  pgtype.UUID `db:"poll_id" json:"poll_id"`
+	VoterID pgtype.UUID `db:"voter_id" json:"voter_id"`
+}
+
+func (q *Queries) CheckVoteExists(ctx context.Context, arg CheckVoteExistsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkVoteExists, arg.PollID, arg.VoterID)
+	var vote_exists bool
+	err := row.Scan(&vote_exists)
+	return vote_exists, err
+}
+
+const countPollVotesByPoll = `-- name: CountPollVotesByPoll :one
+SELECT COUNT(*) FROM poll_votes
+WHERE poll_id = $1
+  AND ($2::text IS NULL OR vote = $2)
+`
+
+type CountPollVotesByPollParams struct {
+	PollID  pgtype.UUID `db:"poll_id" json:"poll_id"`
+	Column2 string      `db:"column_2" json:"column_2"`
+}
+
+func (q *Queries) CountPollVotesByPoll(ctx context.Context, arg CountPollVotesByPollParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countPollVotesByPoll, arg.PollID, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createPoll = `-- name: CreatePoll :one
 
 INSERT INTO polls (
@@ -176,6 +213,90 @@ func (q *Queries) GetPollResults(ctx context.Context, pollID pgtype.UUID) ([]Get
 	for rows.Next() {
 		var i GetPollResultsRow
 		if err := rows.Scan(&i.Vote, &i.VoteCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserVoteForPoll = `-- name: GetUserVoteForPoll :one
+SELECT id, poll_id, voter_id, vote, created_at FROM poll_votes
+WHERE poll_id = $1 AND voter_id = $2
+LIMIT 1
+`
+
+type GetUserVoteForPollParams struct {
+	PollID  pgtype.UUID `db:"poll_id" json:"poll_id"`
+	VoterID pgtype.UUID `db:"voter_id" json:"voter_id"`
+}
+
+func (q *Queries) GetUserVoteForPoll(ctx context.Context, arg GetUserVoteForPollParams) (PollVote, error) {
+	row := q.db.QueryRow(ctx, getUserVoteForPoll, arg.PollID, arg.VoterID)
+	var i PollVote
+	err := row.Scan(
+		&i.ID,
+		&i.PollID,
+		&i.VoterID,
+		&i.Vote,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const listPollVotesByPoll = `-- name: ListPollVotesByPoll :many
+SELECT pv.id, pv.poll_id, pv.voter_id, pv.vote, pv.created_at, u.name as voter_name
+FROM poll_votes pv
+JOIN bootcamp_enrollments be ON pv.voter_id = be.id
+JOIN organization_members om ON be.organization_member_id = om.id
+JOIN users u ON om.user_id = u.id
+WHERE pv.poll_id = $1
+  AND ($2::text IS NULL OR pv.vote = $2)
+ORDER BY pv.created_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type ListPollVotesByPollParams struct {
+	PollID  pgtype.UUID `db:"poll_id" json:"poll_id"`
+	Column2 string      `db:"column_2" json:"column_2"`
+	Limit   int32       `db:"limit" json:"limit"`
+	Offset  int32       `db:"offset" json:"offset"`
+}
+
+type ListPollVotesByPollRow struct {
+	ID        pgtype.UUID        `db:"id" json:"id"`
+	PollID    pgtype.UUID        `db:"poll_id" json:"poll_id"`
+	VoterID   pgtype.UUID        `db:"voter_id" json:"voter_id"`
+	Vote      PollVoteValue      `db:"vote" json:"vote"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	VoterName string             `db:"voter_name" json:"voter_name"`
+}
+
+func (q *Queries) ListPollVotesByPoll(ctx context.Context, arg ListPollVotesByPollParams) ([]ListPollVotesByPollRow, error) {
+	rows, err := q.db.Query(ctx, listPollVotesByPoll,
+		arg.PollID,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPollVotesByPollRow{}
+	for rows.Next() {
+		var i ListPollVotesByPollRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PollID,
+			&i.VoterID,
+			&i.Vote,
+			&i.CreatedAt,
+			&i.VoterName,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

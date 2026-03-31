@@ -59,3 +59,30 @@ SELECT vote, COUNT(*) as vote_count
 FROM poll_votes
 WHERE poll_id = $1
 GROUP BY vote;
+
+-- name: GetUserVoteForPoll :one
+SELECT * FROM poll_votes
+WHERE poll_id = $1 AND voter_id = $2
+LIMIT 1;
+
+-- name: ListPollVotesByPoll :many
+SELECT pv.*, u.name as voter_name
+FROM poll_votes pv
+JOIN bootcamp_enrollments be ON pv.voter_id = be.id
+JOIN organization_members om ON be.organization_member_id = om.id
+JOIN users u ON om.user_id = u.id
+WHERE pv.poll_id = $1
+  AND ($2::text IS NULL OR pv.vote = $2)
+ORDER BY pv.created_at DESC
+LIMIT $3 OFFSET $4;
+
+-- name: CountPollVotesByPoll :one
+SELECT COUNT(*) FROM poll_votes
+WHERE poll_id = $1
+  AND ($2::text IS NULL OR vote = $2);
+
+-- name: CheckVoteExists :one
+SELECT EXISTS(
+    SELECT 1 FROM poll_votes
+    WHERE poll_id = $1 AND voter_id = $2
+) as vote_exists;

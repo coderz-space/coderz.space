@@ -255,14 +255,14 @@ func (h *Handler) ListPolls(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_USER_ID", nil, nil)
 	}
 
-	// Verify user is enrolled in bootcamp
-	memberID, err := h.service.GetMemberIDByUserAndBootcamp(c.Request().Context(), userID, bootcampID)
+	// Verify user is enrolled in bootcamp and get enrollment ID
+	enrollmentID, err := h.service.GetEnrollmentIDByUserAndBootcamp(c.Request().Context(), userID, bootcampID)
 	if err != nil {
 		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ENROLLED_IN_BOOTCAMP", nil, nil)
 	}
 
 	// List polls
-	polls, total, err := h.service.ListPolls(c.Request().Context(), bootcampID, problemIDStr, memberID, page, limit)
+	polls, total, err := h.service.ListPolls(c.Request().Context(), bootcampID, problemIDStr, enrollmentID, page, limit)
 	if err != nil {
 		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error(), nil, nil)
 	}
@@ -315,14 +315,14 @@ func (h *Handler) GetPoll(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_USER_ID", nil, nil)
 	}
 
-	// Verify user is enrolled in bootcamp
-	memberID, err := h.service.GetMemberIDByUserAndBootcamp(c.Request().Context(), userID, bootcampID)
+	// Verify user is enrolled in bootcamp and get enrollment ID
+	enrollmentID, err := h.service.GetEnrollmentIDByUserAndBootcamp(c.Request().Context(), userID, bootcampID)
 	if err != nil {
 		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ENROLLED_IN_BOOTCAMP", nil, nil)
 	}
 
 	// Get poll
-	poll, err := h.service.GetPoll(c.Request().Context(), bootcampID, pollID, memberID)
+	poll, err := h.service.GetPoll(c.Request().Context(), bootcampID, pollID, enrollmentID)
 	if err != nil {
 		switch err.Error() {
 		case "POLL_NOT_FOUND":

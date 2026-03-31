@@ -24,6 +24,7 @@ type Querier interface {
 	AssignGroupToMentee(ctx context.Context, arg AssignGroupToMenteeParams) (Assignment, error)
 	CastPollVote(ctx context.Context, arg CastPollVoteParams) (PollVote, error)
 	CheckDuplicateActiveAssignment(ctx context.Context, arg CheckDuplicateActiveAssignmentParams) (int64, error)
+	CheckVoteExists(ctx context.Context, arg CheckVoteExistsParams) (bool, error)
 	ClearAssignmentGroupProblems(ctx context.Context, assignmentGroupID pgtype.UUID) error
 	ClearExpiredRefreshTokens(ctx context.Context) error
 	CountAssignmentGroupsByBootcamp(ctx context.Context, arg CountAssignmentGroupsByBootcampParams) (int64, error)
@@ -35,6 +36,7 @@ type Querier interface {
 	CountDoubtsByMentee(ctx context.Context, arg CountDoubtsByMenteeParams) (int64, error)
 	CountOrganizationAdmins(ctx context.Context, organizationID pgtype.UUID) (int64, error)
 	CountOrganizationMembers(ctx context.Context, organizationID pgtype.UUID) (int64, error)
+	CountPollVotesByPoll(ctx context.Context, arg CountPollVotesByPollParams) (int64, error)
 	CountTagUsage(ctx context.Context, tagID pgtype.UUID) (int64, error)
 	CountUserOrganizations(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CreateAssignmentGroup(ctx context.Context, arg CreateAssignmentGroupParams) (AssignmentGroup, error)
@@ -94,6 +96,7 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email pgtype.Text) (User, error)
 	GetUserByGoogleId(ctx context.Context, googleID pgtype.Text) (User, error)
 	GetUserById(ctx context.Context, id pgtype.UUID) (User, error)
+	GetUserVoteForPoll(ctx context.Context, arg GetUserVoteForPollParams) (PollVote, error)
 	// Assignment Problems Progress
 	InitializeAssignmentProblem(ctx context.Context, arg InitializeAssignmentProblemParams) (AssignmentProblem, error)
 	ListAssignmentGroupProblems(ctx context.Context, assignmentGroupID pgtype.UUID) ([]ListAssignmentGroupProblemsRow, error)
@@ -113,6 +116,7 @@ type Querier interface {
 	ListOrganizationMembers(ctx context.Context, arg ListOrganizationMembersParams) ([]ListOrganizationMembersRow, error)
 	ListOrganizations(ctx context.Context, arg ListOrganizationsParams) ([]Organization, error)
 	ListPendingDoubtsByBootcamp(ctx context.Context, bootcampID pgtype.UUID) ([]ListPendingDoubtsByBootcampRow, error)
+	ListPollVotesByPoll(ctx context.Context, arg ListPollVotesByPollParams) ([]ListPollVotesByPollRow, error)
 	ListPollsByBootcamp(ctx context.Context, bootcampID pgtype.UUID) ([]ListPollsByBootcampRow, error)
 	ListProblemResources(ctx context.Context, problemID pgtype.UUID) ([]ProblemResource, error)
 	ListProblemTags(ctx context.Context, problemID pgtype.UUID) ([]Tag, error)

@@ -78,9 +78,19 @@ func (s *Service) GetLeaderboardEntry(ctx context.Context, bootcampID, enrollmen
 
 	// Access control: mentees can only view their own entry
 	if userRole == "mentee" {
-		// Get enrollment for this member
-		// TODO: Implement proper check - for now, we'll allow if they're enrolled
-		// This would require a query to check if memberID matches the enrollment's member
+		// Get enrollment for this member to verify ownership
+		memberEnrollment, err := s.queries.GetEnrollmentByMemberID(ctx, db.GetEnrollmentByMemberIDParams{
+			OrganizationMemberID: memberID,
+			BootcampID:           bootcampID,
+		})
+		if err != nil {
+			return nil, errors.New("ACCESS_DENIED")
+		}
+
+		// Check if the requested enrollment belongs to this member
+		if memberEnrollment.ID != enrollmentID {
+			return nil, errors.New("ACCESS_DENIED")
+		}
 	}
 
 	return &LeaderboardEntryResponse{
@@ -134,8 +144,9 @@ func (s *Service) CreatePoll(ctx context.Context, bootcampID pgtype.UUID, req Cr
 		return nil, errors.New("INVALID_PROBLEM_ID")
 	}
 
-	// TODO: Validate problem exists and is accessible
-	// For now, we'll let the database foreign key constraint handle it
+	// Validate problem exists
+	// The database foreign key constraint will handle validation
+	// If problem doesn't exist, the insert will fail
 
 	poll, err := s.queries.CreatePoll(ctx, db.CreatePollParams{
 		BootcampID: bootcampID,
@@ -144,6 +155,10 @@ func (s *Service) CreatePoll(ctx context.Context, bootcampID pgtype.UUID, req Cr
 		CreatedBy:  createdBy,
 	})
 	if err != nil {
+		// Check if it's a foreign key violation (problem not found)
+		if err.Error() == "ERROR: insert or update on table \"polls\" violates foreign key constraint (SQLSTATE 23503)" {
+			return nil, errors.New("PROBLEM_NOT_FOUND")
+		}
 		return nil, err
 	}
 
@@ -200,8 +215,14 @@ func (s *Service) ListPolls(ctx context.Context, bootcampID pgtype.UUID, problem
 	for i := offset; i < end; i++ {
 		pollData := mapPollToData(&polls[i])
 
-		// TODO: Get user's vote for this poll if they voted
-		// This would require a query to check poll_votes for this voter_id and poll_id
+		// Get user's vote for this poll if they voted
+		vote, err := s.queries.GetUserVoteForPoll(ctx, db.GetUserVoteForPollParams{
+			PollID:  polls[i].ID,
+			VoterID: voterID,
+		})
+		if err == nil {
+			pollData.MyVote = vote.Vote
+		}
 
 		data = append(data, pollData)
 	}
@@ -230,8 +251,14 @@ func (s *Service) GetPoll(ctx context.Context, bootcampID, pollID, voterID pgtyp
 		CreatedAt:  utils.FormatTimestamp(poll.CreatedAt),
 	}
 
-	// TODO: Get user's vote for this poll if they voted
-	// This would require a query to check poll_votes for this voter_id and poll_id
+	// Get user's vote for this poll if they voted
+	vote, err := s.queries.GetUserVoteForPoll(ctx, db.GetUserVoteForPollParams{
+		PollID:  pollID,
+		VoterID: voterID,
+	})
+	if err == nil {
+		pollData.MyVote = vote.Vote
+	}
 
 	return &PollResponse{
 		Success: true,
@@ -248,8 +275,15 @@ func (s *Service) VotePoll(ctx context.Context, pollID, voterID pgtype.UUID, vot
 	}
 
 	// Check if vote already exists (for determining status code)
-	// TODO: Query to check if vote exists
-	isNew := true // For now, assume it's new
+	voteExists, err := s.queries.CheckVoteExists(ctx, db.CheckVoteExistsParams{
+		PollID:  pollID,
+		VoterID: voterID,
+	})
+	if err != nil {
+		return nil, false, err
+	}
+
+	isNew := !voteExists
 
 	// Cast vote (upsert)
 	voteRecord, err := s.queries.CastPollVote(ctx, db.CastPollVoteParams{
@@ -329,9 +363,53 @@ func (s *Service) GetPollVotes(ctx context.Context, pollID pgtype.UUID, voteFilt
 		return nil, 0, errors.New("POLL_NOT_FOUND")
 	}
 
-	// TODO: Implement query to get individual votes
-	// For now, return empty list
-	return []VoteData{}, 0, nil
+	// Count total votes
+	var voteFilterPtr *string
+	if voteFilter != "" {
+		voteFilterPtr = &voteFilter
+	}
+
+	total, err := s.queries.CountPollVotesByPoll(ctx, db.CountPollVotesByPollParams{
+		PollID: pollID,
+		Column2: pgtype.Text{
+			String: voteFilter,
+			Valid:  voteFilter != "",
+		},
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Calculate offset
+	offset := (page - 1) * limit
+
+	// Fetch votes with pagination
+	votes, err := s.queries.ListPollVotesByPoll(ctx, db.ListPollVotesByPollParams{
+		PollID: pollID,
+		Column2: pgtype.Text{
+			String: voteFilter,
+			Valid:  voteFilter != "",
+		},
+		Limit:  int32(limit),  // #nosec G115 - limit is bounded by max 100
+		Offset: int32(offset), // #nosec G115 - offset is calculated from bounded values
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Map to response data
+	data := make([]VoteData, len(votes))
+	for i := range votes {
+		data[i] = VoteData{
+			ID:        votes[i].ID,
+			PollID:    votes[i].PollID,
+			VoterID:   votes[i].VoterID,
+			Vote:      votes[i].Vote,
+			CreatedAt: utils.FormatTimestamp(votes[i].CreatedAt),
+		}
+	}
+
+	return data, int(total), nil // #nosec G115 - total is from database count
 }
 
 // Helper Methods
