@@ -22,6 +22,18 @@ func (q *Queries) ArchiveBootcamp(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const countAllBootcamps = `-- name: CountAllBootcamps :one
+SELECT COUNT(*) FROM bootcamps
+WHERE archived_at IS NULL
+`
+
+func (q *Queries) CountAllBootcamps(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countAllBootcamps)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countBootcampsByEnrollment = `-- name: CountBootcampsByEnrollment :one
 SELECT COUNT(DISTINCT b.id) FROM bootcamps b
 JOIN bootcamp_enrollments be ON b.id = be.bootcamp_id
@@ -228,6 +240,72 @@ func (q *Queries) GetEnrollmentIDByUserID(ctx context.Context, arg GetEnrollment
 	var id pgtype.UUID
 	err := row.Scan(&id)
 	return id, err
+}
+
+const listAllBootcamps = `-- name: ListAllBootcamps :many
+
+SELECT b.id, b.organization_id, b.created_by, b.name, b.description, b.start_date, b.end_date, b.is_active, b.archived_at, b.created_at, b.updated_at, o.name as organization_name, o.slug as organization_slug
+FROM bootcamps b
+JOIN organizations o ON b.organization_id = o.id
+WHERE b.archived_at IS NULL
+ORDER BY b.created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type ListAllBootcampsParams struct {
+	Limit  int32 `db:"limit" json:"limit"`
+	Offset int32 `db:"offset" json:"offset"`
+}
+
+type ListAllBootcampsRow struct {
+	ID               pgtype.UUID        `db:"id" json:"id"`
+	OrganizationID   pgtype.UUID        `db:"organization_id" json:"organization_id"`
+	CreatedBy        pgtype.UUID        `db:"created_by" json:"created_by"`
+	Name             string             `db:"name" json:"name"`
+	Description      pgtype.Text        `db:"description" json:"description"`
+	StartDate        pgtype.Date        `db:"start_date" json:"start_date"`
+	EndDate          pgtype.Date        `db:"end_date" json:"end_date"`
+	IsActive         bool               `db:"is_active" json:"is_active"`
+	ArchivedAt       pgtype.Timestamptz `db:"archived_at" json:"archived_at"`
+	CreatedAt        pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	OrganizationName string             `db:"organization_name" json:"organization_name"`
+	OrganizationSlug string             `db:"organization_slug" json:"organization_slug"`
+}
+
+// Super Admin Queries
+func (q *Queries) ListAllBootcamps(ctx context.Context, arg ListAllBootcampsParams) ([]ListAllBootcampsRow, error) {
+	rows, err := q.db.Query(ctx, listAllBootcamps, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAllBootcampsRow{}
+	for rows.Next() {
+		var i ListAllBootcampsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.CreatedBy,
+			&i.Name,
+			&i.Description,
+			&i.StartDate,
+			&i.EndDate,
+			&i.IsActive,
+			&i.ArchivedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.OrganizationName,
+			&i.OrganizationSlug,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listBootcampEnrollments = `-- name: ListBootcampEnrollments :many

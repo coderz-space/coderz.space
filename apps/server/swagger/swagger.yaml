@@ -197,6 +197,107 @@ definitions:
         example: true
         type: boolean
     type: object
+  internal_modules_analytics.SuperAdminLeaderboardData:
+    description: Leaderboard entry with organization and bootcamp context for super
+      admin
+    properties:
+      bootcampEnrollmentId:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+      bootcampId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      bootcampName:
+        example: Full Stack Bootcamp 2024
+        type: string
+      calculatedAt:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      completionRate:
+        example: "83.33"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      organizationName:
+        example: Tech Academy
+        type: string
+      problemsAttempted:
+        example: 30
+        type: integer
+      problemsCompleted:
+        example: 25
+        type: integer
+      rank:
+        example: 1
+        type: integer
+      score:
+        example: 850
+        type: integer
+      streakDays:
+        example: 7
+        type: integer
+      userName:
+        example: John Doe
+        type: string
+    type: object
+  internal_modules_analytics.SuperAdminLeaderboardResponse:
+    description: Response containing leaderboard entries across all organizations
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_analytics.SuperAdminLeaderboardData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_analytics.OffsetPagination'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.SuperAdminPollData:
+    description: Poll details with organization and bootcamp context for super admin
+    properties:
+      bootcampId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      bootcampName:
+        example: Full Stack Bootcamp 2024
+        type: string
+      createdAt:
+        example: "2024-01-15T09:00:00Z"
+        type: string
+      createdBy:
+        example: 880e8400-e29b-41d4-a716-446655440000
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      organizationName:
+        example: Tech Academy
+        type: string
+      problemId:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+      problemTitle:
+        example: Two Sum
+        type: string
+      question:
+        example: How difficult did you find this problem?
+        type: string
+    type: object
+  internal_modules_analytics.SuperAdminPollResultsResponse:
+    description: Response containing polls across all organizations
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_analytics.SuperAdminPollData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_analytics.OffsetPagination'
+      success:
+        example: true
+        type: boolean
+    type: object
   internal_modules_analytics.VoteData:
     description: Poll vote details
     properties:
@@ -4957,6 +5058,215 @@ paths:
       summary: Get pending organizations (super admin only)
       tags:
       - Organizations
+  /v1/super-admin/bootcamps:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all bootcamps across all organizations with pagination
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all bootcamps with pagination
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - super admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all bootcamps (super admin only)
+      tags:
+      - Bootcamps
+  /v1/super-admin/leaderboards:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve leaderboard entries across all organizations and bootcamps.
+        Super admin read-only access.
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Leaderboard entries with organization and bootcamp context
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.SuperAdminLeaderboardResponse'
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - super_admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: View all leaderboards (super admin only)
+      tags:
+      - Leaderboards
+  /v1/super-admin/organizations:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all organizations across the platform with pagination
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all organizations with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_organization.OrganizationListResponse'
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - super admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all organizations (super admin only)
+      tags:
+      - Organizations
+  /v1/super-admin/polls:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve aggregated poll results across all organizations and bootcamps.
+        Super admin read-only access.
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Poll results with organization and bootcamp context
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.SuperAdminPollResultsResponse'
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - super_admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: View all poll results (super admin only)
+      tags:
+      - Polls
+  /v1/super-admin/problems:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all problems across all organizations with pagination
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all problems with pagination
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - super admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all problems (super admin only)
+      tags:
+      - Problems
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

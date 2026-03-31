@@ -404,3 +404,52 @@ func formatTimestamp(ts pgtype.Timestamptz) string {
 	}
 	return ""
 }
+
+// Super Admin operations
+
+type ProblemWithOrgData struct {
+	ProblemData
+	OrganizationName string `json:"organization_name"`
+	OrganizationSlug string `json:"organization_slug"`
+}
+
+func (s *Service) ListAllProblems(ctx context.Context, page, limit int) ([]ProblemWithOrgData, int, error) {
+	// Calculate offset from page and limit
+	offset := (page - 1) * limit
+
+	// Get total count
+	count, err := s.queries.CountAllProblems(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated problems
+	problems, err := s.queries.ListAllProblems(ctx, db.ListAllProblemsParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	result := make([]ProblemWithOrgData, len(problems))
+	for i, p := range problems {
+		result[i] = ProblemWithOrgData{
+			ProblemData: ProblemData{
+				ID:             p.ID,
+				OrganizationID: p.OrganizationID,
+				Title:          p.Title,
+				Description:    p.Description.String,
+				Difficulty:     string(p.Difficulty),
+				ExternalLink:   p.ExternalLink.String,
+				CreatedBy:      p.CreatedBy,
+				CreatedAt:      formatTimestamp(p.CreatedAt),
+				UpdatedAt:      formatTimestamp(p.UpdatedAt),
+			},
+			OrganizationName: p.OrganizationName,
+			OrganizationSlug: p.OrganizationSlug,
+		}
+	}
+
+	return result, int(count), nil
+}

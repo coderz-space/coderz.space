@@ -367,3 +367,32 @@ func (s *Service) parseOrgMemberRole(role string) (db.OrgMemberRole, error) {
 		return "", errors.New("INVALID_ROLE")
 	}
 }
+
+// Super Admin operations
+
+func (s *Service) ListAllOrganizations(ctx context.Context, page, limit int) ([]OrganizationData, int, error) {
+	// Calculate offset from page and limit
+	offset := (page - 1) * limit
+
+	// Get total count
+	count, err := s.queries.CountAllOrganizations(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated organizations
+	orgs, err := s.queries.ListAllOrganizations(ctx, db.ListAllOrganizationsParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	result := make([]OrganizationData, len(orgs))
+	for i := range orgs {
+		result[i] = *s.mapOrganizationToData(orgs[i])
+	}
+
+	return result, int(count), nil
+}

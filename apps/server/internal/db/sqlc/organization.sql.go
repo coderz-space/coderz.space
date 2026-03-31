@@ -41,6 +41,17 @@ func (q *Queries) AddOrganizationMember(ctx context.Context, arg AddOrganization
 	return i, err
 }
 
+const countAllOrganizations = `-- name: CountAllOrganizations :one
+SELECT COUNT(*) FROM organizations
+`
+
+func (q *Queries) CountAllOrganizations(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countAllOrganizations)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countOrganizationAdmins = `-- name: CountOrganizationAdmins :one
 SELECT COUNT(*) FROM organization_members
 WHERE organization_id = $1 AND role = 'admin'
@@ -203,6 +214,47 @@ ORDER BY created_at ASC
 
 func (q *Queries) GetPendingOrganizations(ctx context.Context) ([]Organization, error) {
 	rows, err := q.db.Query(ctx, getPendingOrganizations)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Organization{}
+	for rows.Next() {
+		var i Organization
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Slug,
+			&i.Description,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAllOrganizations = `-- name: ListAllOrganizations :many
+
+SELECT id, name, slug, description, status, created_at, updated_at FROM organizations
+ORDER BY created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type ListAllOrganizationsParams struct {
+	Limit  int32 `db:"limit" json:"limit"`
+	Offset int32 `db:"offset" json:"offset"`
+}
+
+// Super Admin Queries
+func (q *Queries) ListAllOrganizations(ctx context.Context, arg ListAllOrganizationsParams) ([]Organization, error) {
+	rows, err := q.db.Query(ctx, listAllOrganizations, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

@@ -388,3 +388,53 @@ func (s *Service) parseBootcampEnrollmentRole(role string) (db.BootcampEnrollmen
 		return "", errors.New("INVALID_ROLE")
 	}
 }
+
+// Super Admin operations
+
+type BootcampWithOrgData struct {
+	BootcampData
+	OrganizationName string `json:"organization_name"`
+	OrganizationSlug string `json:"organization_slug"`
+}
+
+func (s *Service) ListAllBootcamps(ctx context.Context, page, limit int) ([]BootcampWithOrgData, int, error) {
+	// Calculate offset from page and limit
+	offset := (page - 1) * limit
+
+	// Get total count
+	count, err := s.queries.CountAllBootcamps(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated bootcamps
+	bootcamps, err := s.queries.ListAllBootcamps(ctx, db.ListAllBootcampsParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	result := make([]BootcampWithOrgData, len(bootcamps))
+	for i, b := range bootcamps {
+		result[i] = BootcampWithOrgData{
+			BootcampData: BootcampData{
+				ID:             b.ID,
+				OrganizationID: b.OrganizationID,
+				Name:           b.Name,
+				Description:    b.Description.String,
+				StartDate:      b.StartDate.Time.Format("2006-01-02"),
+				EndDate:        b.EndDate.Time.Format("2006-01-02"),
+				IsActive:       b.IsActive,
+				CreatedBy:      b.CreatedBy,
+				CreatedAt:      b.CreatedAt.Time.Format("2006-01-02T15:04:05Z07:00"),
+				UpdatedAt:      b.UpdatedAt.Time.Format("2006-01-02T15:04:05Z07:00"),
+			},
+			OrganizationName: b.OrganizationName,
+			OrganizationSlug: b.OrganizationSlug,
+		}
+	}
+
+	return result, int(count), nil
+}

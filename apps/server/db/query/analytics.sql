@@ -86,3 +86,41 @@ SELECT EXISTS(
     SELECT 1 FROM poll_votes
     WHERE poll_id = $1 AND voter_id = $2
 ) as vote_exists;
+
+-- Super Admin Queries
+
+-- name: ListAllLeaderboards :many
+SELECT le.*, b.name as bootcamp_name, o.name as organization_name, u.name as user_name
+FROM leaderboard_entries le
+JOIN bootcamp_enrollments be ON le.bootcamp_enrollment_id = be.id
+JOIN bootcamps b ON le.bootcamp_id = b.id
+JOIN organizations o ON b.organization_id = o.id
+JOIN organization_members om ON be.organization_member_id = om.id
+JOIN users u ON om.user_id = u.id
+ORDER BY le.calculated_at DESC
+LIMIT $1 OFFSET $2;
+
+-- name: CountAllLeaderboards :one
+SELECT COUNT(*) FROM leaderboard_entries;
+
+-- name: ListAllPolls :many
+SELECT p.*, b.name as bootcamp_name, o.name as organization_name, prob.title as problem_title
+FROM polls p
+JOIN bootcamps b ON p.bootcamp_id = b.id
+JOIN organizations o ON b.organization_id = o.id
+JOIN problems prob ON p.problem_id = prob.id
+ORDER BY p.created_at DESC
+LIMIT $1 OFFSET $2;
+
+-- name: CountAllPolls :one
+SELECT COUNT(*) FROM polls;
+
+-- name: GetAllPollResults :many
+SELECT p.id as poll_id, p.question, b.name as bootcamp_name, o.name as organization_name,
+       pv.vote, COUNT(pv.id) as vote_count
+FROM polls p
+JOIN bootcamps b ON p.bootcamp_id = b.id
+JOIN organizations o ON b.organization_id = o.id
+LEFT JOIN poll_votes pv ON p.id = pv.poll_id
+GROUP BY p.id, p.question, b.name, o.name, pv.vote
+ORDER BY p.created_at DESC;

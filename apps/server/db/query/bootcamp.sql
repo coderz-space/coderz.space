@@ -109,3 +109,17 @@ SELECT be.id FROM bootcamp_enrollments be
 JOIN organization_members om ON be.organization_member_id = om.id
 WHERE om.user_id = $1 AND be.bootcamp_id = $2
 LIMIT 1;
+
+-- Super Admin Queries
+
+-- name: ListAllBootcamps :many
+SELECT b.*, o.name as organization_name, o.slug as organization_slug
+FROM bootcamps b
+JOIN organizations o ON b.organization_id = o.id
+WHERE b.archived_at IS NULL
+ORDER BY b.created_at DESC
+LIMIT $1 OFFSET $2;
+
+-- name: CountAllBootcamps :one
+SELECT COUNT(*) FROM bootcamps
+WHERE archived_at IS NULL;

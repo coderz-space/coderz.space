@@ -22,4 +22,9 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 	bootcampRouter.GET("/:bootcampId/enrollments", handler.ListEnrollments)
 	bootcampRouter.PATCH("/:bootcampId/enrollments/:enrollmentId", handler.UpdateEnrollmentRole)
 	bootcampRouter.DELETE("/:bootcampId/enrollments/:enrollmentId", handler.RemoveEnrollment)
+
+	// Super admin cross-organization routes
+	superAdminRouter := e.Group("/v1/super-admin")
+	superAdminRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	superAdminRouter.GET("/bootcamps", handler.ListAllBootcamps)
 }

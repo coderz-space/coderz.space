@@ -121,3 +121,17 @@ RETURNING *;
 -- name: DeleteProblemResource :exec
 DELETE FROM problem_resources
 WHERE id = $1;
+
+-- Super Admin Queries
+
+-- name: ListAllProblems :many
+SELECT p.*, o.name as organization_name, o.slug as organization_slug
+FROM problems p
+JOIN organizations o ON p.organization_id = o.id
+WHERE p.archived_at IS NULL
+ORDER BY p.created_at DESC
+LIMIT $1 OFFSET $2;
+
+-- name: CountAllProblems :one
+SELECT COUNT(*) FROM problems
+WHERE archived_at IS NULL;

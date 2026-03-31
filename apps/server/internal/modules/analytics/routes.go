@@ -25,4 +25,10 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 	pollRouter.PUT("/:pollId/vote", handler.VotePoll)          // Vote on poll (mentee only)
 	pollRouter.GET("/:pollId/results", handler.GetPollResults) // Get poll results (mentor/admin only)
 	pollRouter.GET("/:pollId/votes", handler.GetPollVotes)     // Get individual votes (mentor/admin only)
+
+	// Super admin cross-organization routes
+	superAdminRouter := e.Group("/v1/super-admin")
+	superAdminRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	superAdminRouter.GET("/leaderboards", handler.ViewAllLeaderboards) // View all leaderboards (super_admin only)
+	superAdminRouter.GET("/polls", handler.ViewAllPollResults)         // View all polls (super_admin only)
 }

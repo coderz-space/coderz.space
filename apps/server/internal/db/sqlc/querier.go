@@ -27,6 +27,11 @@ type Querier interface {
 	CheckVoteExists(ctx context.Context, arg CheckVoteExistsParams) (bool, error)
 	ClearAssignmentGroupProblems(ctx context.Context, assignmentGroupID pgtype.UUID) error
 	ClearExpiredRefreshTokens(ctx context.Context) error
+	CountAllBootcamps(ctx context.Context) (int64, error)
+	CountAllLeaderboards(ctx context.Context) (int64, error)
+	CountAllOrganizations(ctx context.Context) (int64, error)
+	CountAllPolls(ctx context.Context) (int64, error)
+	CountAllProblems(ctx context.Context) (int64, error)
 	CountAssignmentGroupsByBootcamp(ctx context.Context, arg CountAssignmentGroupsByBootcampParams) (int64, error)
 	CountAssignments(ctx context.Context, arg CountAssignmentsParams) (int64, error)
 	CountAssignmentsByGroup(ctx context.Context, assignmentGroupID pgtype.UUID) (int64, error)
@@ -63,6 +68,7 @@ type Querier interface {
 	DeleteUserRefreshTokens(ctx context.Context, userID pgtype.UUID) error
 	// Enrollment
 	EnrollInBootcamp(ctx context.Context, arg EnrollInBootcampParams) (BootcampEnrollment, error)
+	GetAllPollResults(ctx context.Context) ([]GetAllPollResultsRow, error)
 	GetAssignment(ctx context.Context, id pgtype.UUID) (Assignment, error)
 	GetAssignmentGroup(ctx context.Context, id pgtype.UUID) (AssignmentGroup, error)
 	GetAssignmentProblem(ctx context.Context, arg GetAssignmentProblemParams) (GetAssignmentProblemRow, error)
@@ -99,6 +105,15 @@ type Querier interface {
 	GetUserVoteForPoll(ctx context.Context, arg GetUserVoteForPollParams) (PollVote, error)
 	// Assignment Problems Progress
 	InitializeAssignmentProblem(ctx context.Context, arg InitializeAssignmentProblemParams) (AssignmentProblem, error)
+	// Super Admin Queries
+	ListAllBootcamps(ctx context.Context, arg ListAllBootcampsParams) ([]ListAllBootcampsRow, error)
+	// Super Admin Queries
+	ListAllLeaderboards(ctx context.Context, arg ListAllLeaderboardsParams) ([]ListAllLeaderboardsRow, error)
+	// Super Admin Queries
+	ListAllOrganizations(ctx context.Context, arg ListAllOrganizationsParams) ([]Organization, error)
+	ListAllPolls(ctx context.Context, arg ListAllPollsParams) ([]ListAllPollsRow, error)
+	// Super Admin Queries
+	ListAllProblems(ctx context.Context, arg ListAllProblemsParams) ([]ListAllProblemsRow, error)
 	ListAssignmentGroupProblems(ctx context.Context, assignmentGroupID pgtype.UUID) ([]ListAssignmentGroupProblemsRow, error)
 	ListAssignmentGroupsByBootcamp(ctx context.Context, arg ListAssignmentGroupsByBootcampParams) ([]AssignmentGroup, error)
 	ListAssignmentProblemsStatus(ctx context.Context, assignmentID pgtype.UUID) ([]ListAssignmentProblemsStatusRow, error)

@@ -464,3 +464,87 @@ func formatNullableText(t pgtype.Text) string {
 	}
 	return ""
 }
+
+// Super Admin Service Methods
+
+// ListAllLeaderboards retrieves leaderboard entries across all organizations
+func (s *Service) ListAllLeaderboards(ctx context.Context, page, limit int) ([]SuperAdminLeaderboardData, int, error) {
+	// Count total entries
+	total, err := s.queries.CountAllLeaderboards(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Calculate offset
+	offset := (page - 1) * limit
+
+	// Fetch leaderboards with pagination
+	entries, err := s.queries.ListAllLeaderboards(ctx, db.ListAllLeaderboardsParams{
+		Limit:  int32(limit),  // #nosec G115 - limit is bounded by max 100
+		Offset: int32(offset), // #nosec G115 - offset is calculated from bounded values
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Map to response data
+	data := make([]SuperAdminLeaderboardData, len(entries))
+	for i := range entries {
+		data[i] = SuperAdminLeaderboardData{
+			ID:                   entries[i].ID,
+			BootcampID:           entries[i].BootcampID,
+			BootcampName:         entries[i].BootcampName,
+			OrganizationName:     entries[i].OrganizationName,
+			BootcampEnrollmentID: entries[i].BootcampEnrollmentID,
+			UserName:             entries[i].UserName,
+			Rank:                 entries[i].Rank,
+			ProblemsCompleted:    entries[i].ProblemsCompleted,
+			ProblemsAttempted:    entries[i].ProblemsAttempted,
+			CompletionRate:       fmt.Sprintf("%.2f", entries[i].CompletionRate),
+			StreakDays:           entries[i].StreakDays,
+			Score:                entries[i].Score,
+			CalculatedAt:         utils.FormatTimestamp(entries[i].CalculatedAt),
+		}
+	}
+
+	return data, int(total), nil // #nosec G115 - total is from database count
+}
+
+// ListAllPolls retrieves polls across all organizations
+func (s *Service) ListAllPolls(ctx context.Context, page, limit int) ([]SuperAdminPollData, int, error) {
+	// Count total polls
+	total, err := s.queries.CountAllPolls(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Calculate offset
+	offset := (page - 1) * limit
+
+	// Fetch polls with pagination
+	polls, err := s.queries.ListAllPolls(ctx, db.ListAllPollsParams{
+		Limit:  int32(limit),  // #nosec G115 - limit is bounded by max 100
+		Offset: int32(offset), // #nosec G115 - offset is calculated from bounded values
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Map to response data
+	data := make([]SuperAdminPollData, len(polls))
+	for i := range polls {
+		data[i] = SuperAdminPollData{
+			ID:               polls[i].ID,
+			BootcampID:       polls[i].BootcampID,
+			BootcampName:     polls[i].BootcampName,
+			OrganizationName: polls[i].OrganizationName,
+			ProblemID:        polls[i].ProblemID,
+			ProblemTitle:     polls[i].ProblemTitle,
+			Question:         polls[i].Question,
+			CreatedBy:        polls[i].CreatedBy,
+			CreatedAt:        utils.FormatTimestamp(polls[i].CreatedAt),
+		}
+	}
+
+	return data, int(total), nil // #nosec G115 - total is from database count
+}

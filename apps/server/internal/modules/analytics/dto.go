@@ -151,3 +151,53 @@ type GenericResponse struct {
 	Data    map[string]any `json:"data"`
 	Success bool           `json:"success" example:"true"`
 }
+
+// Super Admin DTOs
+
+// SuperAdminLeaderboardData represents a leaderboard entry with organization context
+// @Description Leaderboard entry with organization and bootcamp context for super admin
+type SuperAdminLeaderboardData struct {
+	ID                   pgtype.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	BootcampID           pgtype.UUID `json:"bootcampId" example:"660e8400-e29b-41d4-a716-446655440000"`
+	BootcampName         string      `json:"bootcampName" example:"Full Stack Bootcamp 2024"`
+	OrganizationName     string      `json:"organizationName" example:"Tech Academy"`
+	BootcampEnrollmentID pgtype.UUID `json:"bootcampEnrollmentId" example:"770e8400-e29b-41d4-a716-446655440000"`
+	UserName             string      `json:"userName" example:"John Doe"`
+	Rank                 int32       `json:"rank" example:"1"`
+	ProblemsCompleted    int32       `json:"problemsCompleted" example:"25"`
+	ProblemsAttempted    int32       `json:"problemsAttempted" example:"30"`
+	CompletionRate       string      `json:"completionRate" example:"83.33"`
+	StreakDays           int32       `json:"streakDays" example:"7"`
+	Score                int32       `json:"score" example:"850"`
+	CalculatedAt         string      `json:"calculatedAt" example:"2024-01-15T10:30:00Z"`
+}
+
+// SuperAdminLeaderboardResponse represents a list of leaderboard entries for super admin
+// @Description Response containing leaderboard entries across all organizations
+type SuperAdminLeaderboardResponse struct {
+	Data    []SuperAdminLeaderboardData `json:"data"`
+	Meta    *OffsetPagination           `json:"meta,omitempty"`
+	Success bool                        `json:"success" example:"true"`
+}
+
+// SuperAdminPollData represents a poll with organization context
+// @Description Poll details with organization and bootcamp context for super admin
+type SuperAdminPollData struct {
+	ID               pgtype.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	BootcampID       pgtype.UUID `json:"bootcampId" example:"660e8400-e29b-41d4-a716-446655440000"`
+	BootcampName     string      `json:"bootcampName" example:"Full Stack Bootcamp 2024"`
+	OrganizationName string      `json:"organizationName" example:"Tech Academy"`
+	ProblemID        pgtype.UUID `json:"problemId" example:"770e8400-e29b-41d4-a716-446655440000"`
+	ProblemTitle     string      `json:"problemTitle" example:"Two Sum"`
+	Question         string      `json:"question" example:"How difficult did you find this problem?"`
+	CreatedBy        pgtype.UUID `json:"createdBy" example:"880e8400-e29b-41d4-a716-446655440000"`
+	CreatedAt        string      `json:"createdAt" example:"2024-01-15T09:00:00Z"`
+}
+
+// SuperAdminPollResultsResponse represents a list of polls for super admin
+// @Description Response containing polls across all organizations
+type SuperAdminPollResultsResponse struct {
+	Data    []SuperAdminPollData `json:"data"`
+	Meta    *OffsetPagination    `json:"meta,omitempty"`
+	Success bool                 `json:"success" example:"true"`
+}

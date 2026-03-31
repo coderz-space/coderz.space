@@ -44,6 +44,11 @@ func (h *Handler) CreateAssignmentGroup(c *echo.Context, body CreateAssignmentGr
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
 	}
 
+	// Prevent super_admin from creating assignments
+	if claims.Role == "super_admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "SUPER_ADMIN_CANNOT_CREATE_CONTENT", nil, nil)
+	}
+
 	bootcampID, err := utils.StringToUUID((*c).Param("bootcampId"))
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_BOOTCAMP_ID", nil, nil)

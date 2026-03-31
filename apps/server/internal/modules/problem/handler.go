@@ -43,6 +43,11 @@ func (h *Handler) CreateProblem(c *echo.Context, body CreateProblemRequest) erro
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
 	}
 
+	// Prevent super_admin from creating content
+	if claims.Role == "super_admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "SUPER_ADMIN_CANNOT_CREATE_CONTENT", nil, nil)
+	}
+
 	orgID, err := utils.StringToUUID((*c).Param("orgId"))
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ORGANIZATION_ID", nil, nil)
@@ -198,6 +203,11 @@ func (h *Handler) UpdateProblem(c *echo.Context, body UpdateProblemRequest) erro
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
 	}
 
+	// Prevent super_admin from modifying content
+	if claims.Role == "super_admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "SUPER_ADMIN_CANNOT_MODIFY_CONTENT", nil, nil)
+	}
+
 	orgID, err := utils.StringToUUID((*c).Param("orgId"))
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ORGANIZATION_ID", nil, nil)
@@ -264,6 +274,11 @@ func (h *Handler) DeleteProblem(c *echo.Context) error {
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
 	if !ok {
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	// Prevent super_admin from deleting content
+	if claims.Role == "super_admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "SUPER_ADMIN_CANNOT_DELETE_CONTENT", nil, nil)
 	}
 
 	orgID, err := utils.StringToUUID((*c).Param("orgId"))
@@ -1015,4 +1030,63 @@ func (h *Handler) DeleteResource(c *echo.Context) error {
 	}
 
 	return response.NewResponse(c, http.StatusOK, "SUCCESS", "RESOURCE_DELETED", map[string]any{"message": "Resource deleted successfully"}, nil)
+}
+
+// Super Admin handlers
+
+// ListAllProblems godoc
+// @Summary List all problems (super admin only)
+// @Description Retrieve all problems across all organizations with pagination
+// @Tags Problems
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 20, max: 100)"
+// @Success 200 {object} map[string]any "List of all problems with pagination"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - super admin role required"
+// @Failure 500 {object} map[string]any "Internal server error"
+// @Router /v1/super-admin/problems [get]
+func (h *Handler) ListAllProblems(c *echo.Context) error {
+	// Validate super_admin role
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	if claims.Role != "super_admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "SUPER_ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+
+	// Parse pagination parameters with defaults
+	page := 1
+	limit := 20
+
+	if pageStr := (*c).QueryParam("page"); pageStr != "" {
+		if p, err := utils.StringToInt(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	if limitStr := (*c).QueryParam("limit"); limitStr != "" {
+		if l, err := utils.StringToInt(limitStr); err == nil && l > 0 && l <= 100 {
+			limit = l
+		}
+	}
+
+	data, total, err := h.service.ListAllProblems(c.Request().Context(), page, limit)
+	if err != nil {
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error(), nil, nil)
+	}
+
+	return c.JSON(http.StatusOK, map[string]any{
+		"success": true,
+		"data":    data,
+		"meta": map[string]any{
+			"page":  page,
+			"limit": limit,
+			"total": total,
+		},
+	})
 }

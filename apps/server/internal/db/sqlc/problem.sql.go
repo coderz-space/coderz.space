@@ -68,6 +68,18 @@ func (q *Queries) ArchiveProblem(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const countAllProblems = `-- name: CountAllProblems :one
+SELECT COUNT(*) FROM problems
+WHERE archived_at IS NULL
+`
+
+func (q *Queries) CountAllProblems(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countAllProblems)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countTagUsage = `-- name: CountTagUsage :one
 SELECT COUNT(*) FROM problem_tags
 WHERE tag_id = $1
@@ -275,6 +287,70 @@ func (q *Queries) GetTagsByIDs(ctx context.Context, dollar_1 []pgtype.UUID) ([]T
 			&i.CreatedBy,
 			&i.Name,
 			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAllProblems = `-- name: ListAllProblems :many
+
+SELECT p.id, p.organization_id, p.created_by, p.title, p.description, p.difficulty, p.external_link, p.archived_at, p.created_at, p.updated_at, o.name as organization_name, o.slug as organization_slug
+FROM problems p
+JOIN organizations o ON p.organization_id = o.id
+WHERE p.archived_at IS NULL
+ORDER BY p.created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type ListAllProblemsParams struct {
+	Limit  int32 `db:"limit" json:"limit"`
+	Offset int32 `db:"offset" json:"offset"`
+}
+
+type ListAllProblemsRow struct {
+	ID               pgtype.UUID        `db:"id" json:"id"`
+	OrganizationID   pgtype.UUID        `db:"organization_id" json:"organization_id"`
+	CreatedBy        pgtype.UUID        `db:"created_by" json:"created_by"`
+	Title            string             `db:"title" json:"title"`
+	Description      pgtype.Text        `db:"description" json:"description"`
+	Difficulty       DifficultyLevel    `db:"difficulty" json:"difficulty"`
+	ExternalLink     pgtype.Text        `db:"external_link" json:"external_link"`
+	ArchivedAt       pgtype.Timestamptz `db:"archived_at" json:"archived_at"`
+	CreatedAt        pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	OrganizationName string             `db:"organization_name" json:"organization_name"`
+	OrganizationSlug string             `db:"organization_slug" json:"organization_slug"`
+}
+
+// Super Admin Queries
+func (q *Queries) ListAllProblems(ctx context.Context, arg ListAllProblemsParams) ([]ListAllProblemsRow, error) {
+	rows, err := q.db.Query(ctx, listAllProblems, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAllProblemsRow{}
+	for rows.Next() {
+		var i ListAllProblemsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.CreatedBy,
+			&i.Title,
+			&i.Description,
+			&i.Difficulty,
+			&i.ExternalLink,
+			&i.ArchivedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.OrganizationName,
+			&i.OrganizationSlug,
 		); err != nil {
 			return nil, err
 		}

@@ -26,4 +26,9 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 	orgRouter.GET("/:orgId/members", handler.ListMembers)
 	orgRouter.PATCH("/:orgId/members/:userId", core.WithBody(handler.UpdateMemberRole))
 	orgRouter.DELETE("/:orgId/members/:userId", handler.RemoveMember)
+
+	// Super admin cross-organization routes
+	superAdminRouter := e.Group("/v1/super-admin")
+	superAdminRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	superAdminRouter.GET("/organizations", handler.ListAllOrganizations)
 }

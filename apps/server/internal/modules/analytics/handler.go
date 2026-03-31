@@ -179,9 +179,12 @@ func (h *Handler) CreatePoll(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
 	}
 
-	// Validate user is mentor/admin
+	// Validate user is mentor/admin (not super_admin or mentee)
 	if claims.Role == "mentee" {
 		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "MENTOR_ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+	if claims.Role == "super_admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "SUPER_ADMIN_CANNOT_CREATE_CONTENT", nil, nil)
 	}
 
 	bootcampID, err := utils.StringToUUID((*c).Param("bootcampId"))
@@ -524,6 +527,100 @@ func (h *Handler) GetPollVotes(c *echo.Context) error {
 	return response.NewResponse(c, http.StatusOK, "SUCCESS", "VOTES_RETRIEVED", PollVotesResponse{
 		Success: true,
 		Data:    votes,
+		Meta: &OffsetPagination{
+			Page:  page,
+			Limit: limit,
+			Total: total,
+		},
+	}, nil)
+}
+
+// Super Admin Handlers
+
+// ViewAllLeaderboards godoc
+// @Summary View all leaderboards (super admin only)
+// @Description Retrieve leaderboard entries across all organizations and bootcamps. Super admin read-only access.
+// @Tags Leaderboards
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 20, max: 100)"
+// @Success 200 {object} SuperAdminLeaderboardResponse "Leaderboard entries with organization and bootcamp context"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - super_admin role required"
+// @Failure 500 {object} map[string]any "Internal server error"
+// @Router /v1/super-admin/leaderboards [get]
+func (h *Handler) ViewAllLeaderboards(c *echo.Context) error {
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	// Validate super_admin role
+	if claims.Role != "super_admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "SUPER_ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+
+	// Parse pagination parameters
+	page := ParsePage((*c).QueryParam("page"))
+	limit := ParseLimit((*c).QueryParam("limit"), 20, 100)
+
+	// Get all leaderboards
+	entries, total, err := h.service.ListAllLeaderboards(c.Request().Context(), page, limit)
+	if err != nil {
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "SUCCESS", "LEADERBOARDS_RETRIEVED", SuperAdminLeaderboardResponse{
+		Success: true,
+		Data:    entries,
+		Meta: &OffsetPagination{
+			Page:  page,
+			Limit: limit,
+			Total: total,
+		},
+	}, nil)
+}
+
+// ViewAllPollResults godoc
+// @Summary View all poll results (super admin only)
+// @Description Retrieve aggregated poll results across all organizations and bootcamps. Super admin read-only access.
+// @Tags Polls
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 20, max: 100)"
+// @Success 200 {object} SuperAdminPollResultsResponse "Poll results with organization and bootcamp context"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - super_admin role required"
+// @Failure 500 {object} map[string]any "Internal server error"
+// @Router /v1/super-admin/polls [get]
+func (h *Handler) ViewAllPollResults(c *echo.Context) error {
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	// Validate super_admin role
+	if claims.Role != "super_admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "SUPER_ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+
+	// Parse pagination parameters
+	page := ParsePage((*c).QueryParam("page"))
+	limit := ParseLimit((*c).QueryParam("limit"), 20, 100)
+
+	// Get all polls
+	polls, total, err := h.service.ListAllPolls(c.Request().Context(), page, limit)
+	if err != nil {
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "SUCCESS", "POLLS_RETRIEVED", SuperAdminPollResultsResponse{
+		Success: true,
+		Data:    polls,
 		Meta: &OffsetPagination{
 			Page:  page,
 			Limit: limit,
