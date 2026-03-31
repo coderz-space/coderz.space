@@ -3,7 +3,7 @@
 export
 
 
-.PHONY: build run clear-logs swagger sqlc
+.PHONY: build run clear-logs swagger sqlc validate
 
 MAIN="cmd/main.go"
 
@@ -16,6 +16,11 @@ build:
 run:
 	@echo "Running server..."
 	@go run ${MAIN}
+
+# validate CI/CD setup
+validate:
+	@echo "Validating CI/CD setup..."
+	@./scripts/validate-setup.sh
 
 # clear logs files
 clear-logs:
