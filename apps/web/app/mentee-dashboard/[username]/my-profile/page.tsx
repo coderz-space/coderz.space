@@ -27,43 +27,51 @@ export default function MenteeMyProfilePage({
   const [stats, setStats] = useState({ solved: 0, pending: 0, total: 0 });
 
   useEffect(() => {
-    const m = getMenteeRequests().find(
-      (r) => r.username === username && r.status === "approved"
-    ) ?? null;
-    setMentee(m);
-    if (m) {
-      setForm({ bio: m.bio ?? "", github: m.github ?? "", linkedin: m.linkedin ?? "" });
-      const questions = getMenteeQuestions(username);
-      setStats({
-        solved: questions.filter((q) => q.status === "completed").length,
-        pending: questions.filter((q) => q.status === "pending").length,
-        total: questions.length,
-      });
-    }
+    const loadProfile = async () => {
+      const requests = await getMenteeRequests();
+      const m = requests.find(
+        (r) => r.username === username && r.status === "approved"
+      ) ?? null;
+      setMentee(m);
+      if (m) {
+        setForm({ bio: m.bio ?? "", github: m.github ?? "", linkedin: m.linkedin ?? "" });
+        const questions = await getMenteeQuestions(username);
+        setStats({
+          solved: questions.filter((q) => q.status === "completed").length,
+          pending: questions.filter((q) => q.status === "pending").length,
+          total: questions.length,
+        });
+      }
+    };
+    loadProfile();
   }, [username]);
 
   if (!mentee) return null;
 
   const initials = mentee.firstName[0] + (mentee.lastName?.[0] ?? "");
 
-  const handleSave = () => {
-    updateMenteeProfile(username, form);
+  const handleSave = async () => {
+    await updateMenteeProfile(username, form);
     setMentee({ ...mentee, ...form });
     setEditing(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const handlePasswordUpdate = () => {
+  const handlePasswordUpdate = async () => {
     setPwError("");
     if (!pwForm.next.trim()) { setPwError("New password cannot be empty."); return; }
     if (pwForm.next !== pwForm.confirm) { setPwError("Passwords do not match."); return; }
     if (pwForm.next.length < 6) { setPwError("Password must be at least 6 characters."); return; }
-    const result = updateMenteePassword(username, pwForm.current, pwForm.next);
-    if (!result.ok) { setPwError(result.error ?? "Failed to update password."); return; }
-    setPwForm({ current: "", next: "", confirm: "" });
-    setPwSaved(true);
-    setTimeout(() => { setPwSaved(false); setShowPwCard(false); }, 2000);
+    try {
+      await updateMenteePassword(username, pwForm.current, pwForm.next);
+      setPwForm({ current: "", next: "", confirm: "" });
+      setPwSaved(true);
+      setTimeout(() => { setPwSaved(false); setShowPwCard(false); }, 2000);
+    } catch (error) {
+      setPwError("Failed to update password. Please check your current password.");
+      console.error("Password update error:", error);
+    }
   };
 
   return (

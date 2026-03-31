@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getMenteeRequests, updateMenteeStatus } from "@/services";
 import { deleteMentee } from "@/services";
 import Modal from "@/components/Modal";
@@ -12,31 +12,42 @@ const SHEETS: { id: SheetId; name: string; desc: string }[] = [
 ];
 
 export default function ApproveMenteePage() {
-  const [requests, setRequests] = useState<MenteeRequest[]>(() => getMenteeRequests());
+  const [requests, setRequests] = useState<MenteeRequest[]>([]);
   // pending approval: { menteeId, action }
   const [pendingApproval, setPendingApproval] = useState<{ id: string } | null>(null);
 
-  const refresh = () => setRequests(getMenteeRequests());
+  useEffect(() => {
+    const loadRequests = async () => {
+      const reqs = await getMenteeRequests();
+      setRequests(reqs);
+    };
+    loadRequests();
+  }, []);
+
+  const refresh = async () => {
+    const reqs = await getMenteeRequests();
+    setRequests(reqs);
+  };
 
   const handleApprove = (id: string) => {
     setPendingApproval({ id });
   };
 
-  const confirmApprove = (sheet: SheetId) => {
+  const confirmApprove = async (sheet: SheetId) => {
     if (!pendingApproval) return;
-    updateMenteeStatus(pendingApproval.id, "approved", sheet);
+    await updateMenteeStatus(pendingApproval.id, "approved", sheet);
     setPendingApproval(null);
-    refresh();
+    await refresh();
   };
 
-  const handleReject = (id: string) => {
-    updateMenteeStatus(id, "rejected");
-    refresh();
+  const handleReject = async (id: string) => {
+    await updateMenteeStatus(id, "rejected");
+    await refresh();
   };
 
-  const handleDelete = (id: string) => {
-    deleteMentee(id);
-    refresh();
+  const handleDelete = async (id: string) => {
+    await deleteMentee(id);
+    await refresh();
   };
 
   const pending = requests.filter((r) => r.status === "pending");

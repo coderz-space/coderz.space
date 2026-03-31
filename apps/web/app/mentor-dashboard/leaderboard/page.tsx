@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getLeaderboard } from "@/services";
 
 type LeaderboardEntry = { username: string; firstName: string; lastName: string; solved: number };
@@ -16,8 +16,15 @@ const rankBg = [
 
 export default function MentorLeaderboardPage() {
   const router = useRouter();
-  // Replace with: GET /api/leaderboard
-  const [board] = useState<LeaderboardEntry[]>(() => getLeaderboard());
+  const [board, setBoard] = useState<LeaderboardEntry[]>([]);
+
+  useEffect(() => {
+    const loadLeaderboard = async () => {
+      const entries = await getLeaderboard();
+      setBoard(entries);
+    };
+    loadLeaderboard();
+  }, []);
 
   return (
     <div className="max-w-2xl">

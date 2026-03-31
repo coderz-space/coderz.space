@@ -1,9 +1,10 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getMenteeRequests, assignTaskToMentee } from "@/services";
 import { SHEET_QUESTIONS, SHEET_NAMES, type SheetQuestion } from "@/app/mentor-dashboard/master-tasklist/questionsData";
+import type { MenteeRequest } from "@/types";
 
 const DIFFICULTY_COLOR: Record<string, string> = {
   easy: "text-green-400",
@@ -26,9 +27,18 @@ export default function AssignQuestionsPage({
   const questions: SheetQuestion[] = SHEET_QUESTIONS[sheetId] ?? [];
   const sheetName = SHEET_NAMES[sheetId] ?? sheetId;
 
-  const mentee = getMenteeRequests().find(
-    (r) => r.username === menteeUsername && r.status === "approved"
-  );
+  const [mentee, setMentee] = useState<MenteeRequest | null>(null);
+
+  useEffect(() => {
+    const loadMentee = async () => {
+      const requests = await getMenteeRequests();
+      const found = requests.find(
+        (r) => r.username === menteeUsername && r.status === "approved"
+      );
+      setMentee(found || null);
+    };
+    loadMentee();
+  }, [menteeUsername]);
 
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
   const [assigned, setAssigned] = useState(false);
@@ -49,17 +59,17 @@ export default function AssignQuestionsPage({
     }
   };
 
-  const handleAssign = () => {
+  const handleAssign = async () => {
     if (selectedQuestions.size === 0) return;
     const selectedQs = questions.filter((q) => selectedQuestions.has(q.id));
-    selectedQs.forEach((q) => {
+    await Promise.all(selectedQs.map((q) =>
       assignTaskToMentee(menteeUsername, {
         title: q.title,
         description: "",
         difficulty: q.difficulty,
         topic: q.topic,
-      });
-    });
+      })
+    ));
     setAssigned(true);
     setTimeout(() => {
       setAssigned(false);

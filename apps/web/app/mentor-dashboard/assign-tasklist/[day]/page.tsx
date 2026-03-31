@@ -23,9 +23,7 @@ export default function DayPage({ params }: { params: Promise<{ day: string }> }
   const router = useRouter();
   const dayLabel = capitalize(day);
 
-  const allApproved: MenteeRequest[] = getMenteeRequests().filter(
-    (r) => r.status === "approved"
-  );
+  const [allApproved, setAllApproved] = useState<MenteeRequest[]>([]);
 
   const [assignedIds, setAssignedIds] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
@@ -37,6 +35,16 @@ export default function DayPage({ params }: { params: Promise<{ day: string }> }
 
   // Modal state: which mentee's tasks to show
   const [taskModal, setTaskModal] = useState<{ mentee: MenteeRequest; tasks: Question[] } | null>(null);
+
+  // Load approved mentees
+  useEffect(() => {
+    const loadMentees = async () => {
+      const requests = await getMenteeRequests();
+      const approved = requests.filter((r) => r.status === "approved");
+      setAllApproved(approved);
+    };
+    loadMentees();
+  }, []);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {

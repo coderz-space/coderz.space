@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getMenteeQuestions, updateQuestionProgress } from "@/services";
 import type { Question, QuestionProgressStatus } from "@/types";
 
@@ -28,15 +28,22 @@ const progressColor: Record<QuestionProgressStatus, string> = {
 export default function CompletedQuestionsPage() {
   const { username } = useParams() as { username: string };
   const router = useRouter();
-  const [questions, setQuestions] = useState<Question[]>(() =>
-    getMenteeQuestions(username).filter((q) => q.status === "completed")
-  );
+  const [questions, setQuestions] = useState<Question[]>([]);
 
-  const handleProgressChange = (questionId: string, value: QuestionProgressStatus) => {
+  useEffect(() => {
+    const loadQuestions = async () => {
+      const allQuestions = await getMenteeQuestions(username);
+      setQuestions(allQuestions.filter((q) => q.status === "completed"));
+    };
+    loadQuestions();
+  }, [username]);
+
+  const handleProgressChange = async (questionId: string, value: QuestionProgressStatus) => {
     // Replace with: PATCH /api/mentees/:username/questions/:questionId  { progressStatus }
-    updateQuestionProgress(username, questionId, value);
+    await updateQuestionProgress(username, questionId, value);
     // Re-filter: if moved away from completed it drops off this list
-    setQuestions(getMenteeQuestions(username).filter((q) => q.status === "completed"));
+    const allQuestions = await getMenteeQuestions(username);
+    setQuestions(allQuestions.filter((q) => q.status === "completed"));
   };
 
   return (

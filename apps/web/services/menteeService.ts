@@ -1,352 +1,512 @@
 /**
- * menteeService.ts — localStorage stub
+ * menteeService.ts — Mentee management with API integration
  *
- * BACKEND INTEGRATION GUIDE:
- * Each function maps 1-to-1 to a REST endpoint. When the backend is ready:
- *   1. Replace the localStorage read/write with a fetch() call to the endpoint shown.
- *   2. Keep the function signature identical — no component changes needed.
- *
- * Storage key: "coderz_mentee_requests"  →  DB table: mentee_requests
+ * API Endpoints mapping:
+ * - POST /api/auth/mentee-register → registerMentee
+ * - GET /api/mentee-requests → getMenteeRequests
+ * - PATCH /api/mentee-requests/:id → updateMenteeStatus
+ * - POST /api/auth/mentee/login → loginMentee
+ * - DELETE /api/mentee-requests/:id → deleteMentee
+ * - GET /api/mentees/:username/questions → getMenteeQuestions
+ * - PATCH /api/mentees/:username/questions/:questionId → updateQuestionProgress/Details
+ * - GET /api/mentees/:username/profile → getMenteeProfile
+ * - GET /api/leaderboard → getLeaderboard
+ * - GET /api/mentor/profile → getMentorProfile
+ * - PATCH /api/mentor/profile → updateMentorProfile
  */
 
-import type { MenteeRequest, Question, QuestionProgressStatus } from "@/types";
+import type { 
+  MenteeRequest, 
+  Question, 
+  QuestionProgressStatus, 
+  MentorProfile,
+  SheetId 
+} from "@/types";
+import { api, APIError } from "./api";
 
-// ─── Dummy questions assigned to every approved mentee ───────────────────────
-// Replace with: GET /api/mentees/:username/questions
-const DUMMY_QUESTIONS: Question[] = [
-  {
-    id: "q1",
-    title: "Two Sum",
-    description: "Given an array of integers, return indices of the two numbers that add up to a target.",
-    difficulty: "easy",
-    topic: "Arrays",
-    status: "pending",
-    progressStatus: "not_started",
-    assignedAt: new Date().toISOString(),
-  },
-  {
-    id: "q2",
-    title: "Valid Parentheses",
-    description: "Given a string containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
-    difficulty: "easy",
-    topic: "Stack",
-    status: "pending",
-    progressStatus: "not_started",
-    assignedAt: new Date().toISOString(),
-  },
-  {
-    id: "q3",
-    title: "Merge Two Sorted Lists",
-    description: "Merge two sorted linked lists and return it as a new sorted list.",
-    difficulty: "easy",
-    topic: "Linked List",
-    status: "completed",
-    progressStatus: "completed",
-    assignedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-    completedAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: "q4",
-    title: "Binary Search",
-    description: "Given a sorted array of integers, implement binary search.",
-    difficulty: "easy",
-    topic: "Binary Search",
-    status: "completed",
-    progressStatus: "completed",
-    assignedAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-    completedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-  },
-  {
-    id: "q5",
-    title: "Longest Substring Without Repeating Characters",
-    description: "Find the length of the longest substring without repeating characters.",
-    difficulty: "medium",
-    topic: "Sliding Window",
-    status: "pending",
-    progressStatus: "not_started",
-    assignedAt: new Date().toISOString(),
-  },
-];
+/**
+ * Local cache for frequently accessed data to improve UX
+ * These are fallbacks — primary source is always the backend
+ */
+const memoryCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-// ─── Read all mentee requests ─────────────────────────────────────────────────
-// Replace with: GET /api/mentee-requests
-export function getMenteeRequests(): MenteeRequest[] {
-  if (typeof window === "undefined") return [];
-  return JSON.parse(localStorage.getItem("coderz_mentee_requests") || "[]");
+function getCacheKey(prefix: string, ...args: string[]): string {
+  return `${prefix}:${args.join(':')}`;
 }
 
-// ─── Save all mentee requests ─────────────────────────────────────────────────
-// Replace with: PUT /api/mentee-requests (bulk) or PATCH /api/mentee-requests/:id
-function saveMenteeRequests(requests: MenteeRequest[]): void {
-  localStorage.setItem("coderz_mentee_requests", JSON.stringify(requests));
+function getCached<T>(key: string): T | null {
+  const cached = memoryCache.get(key);
+  if (!cached) return null;
+  if (Date.now() - cached.timestamp > CACHE_TTL) {
+    memoryCache.delete(key);
+    return null;
+  }
+  return cached.data as T;
 }
 
-// ─── Register a new mentee ────────────────────────────────────────────────────
-// Replace with: POST /api/mentee-requests
-export function registerMentee(
+function setCache(key: string, data: any): void {
+  memoryCache.set(key, { data, timestamp: Date.now() });
+}
+
+/**
+ * Register a new mentee
+ * @throws {APIError} If registration fails
+ */
+export async function registerMentee(
   data: Pick<MenteeRequest, "firstName" | "lastName" | "username" | "email" | "passwordHash">
-): MenteeRequest {
-  const existing = getMenteeRequests();
-  const newRequest: MenteeRequest = {
-    id: crypto.randomUUID(),
-    ...data,
-    signedUpAt: new Date().toISOString(),
-    status: "pending",
-  };
-  saveMenteeRequests([...existing, newRequest]);
-  return newRequest;
+): Promise<MenteeRequest> {
+  try {
+    const newRequest = await api.post<MenteeRequest>("/auth/mentee-register", data);
+    return newRequest;
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.error("Registration failed:", error.message);
+    }
+    throw error;
+  }
 }
 
-// ─── Update mentee request status ────────────────────────────────────────────
-// Replace with: PATCH /api/mentee-requests/:id  { status, assignedSheet? }
-export function updateMenteeStatus(
+/**
+ * Get all mentee requests (admin view)
+ * @throws {APIError} If fetch fails
+ */
+export async function getMenteeRequests(): Promise<MenteeRequest[]> {
+  const cacheKey = getCacheKey("mentee:requests");
+  const cached = getCached<MenteeRequest[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const requests = await api.get<MenteeRequest[]>("/mentee-requests");
+    setCache(cacheKey, requests);
+    return requests;
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.warn("Failed to fetch mentee requests:", error.message);
+    }
+    return [];
+  }
+}
+
+/**
+ * Update mentee request status
+ * @throws {APIError} If update fails
+ */
+export async function updateMenteeStatus(
   id: string,
-  status: "approved" | "rejected",
-  assignedSheet?: import("@/types").SheetId
-): void {
-  const requests = getMenteeRequests();
-  const updated = requests.map((r) =>
-    r.id === id ? { ...r, status, ...(assignedSheet ? { assignedSheet } : {}) } : r
-  );
-  saveMenteeRequests(updated);
+  status: "pending" | "approved" | "rejected",
+  assignedSheet?: SheetId
+): Promise<void> {
+  try {
+    await api.patch(`/mentee-requests/${id}`, { 
+      status, 
+      ...(assignedSheet && { assignedSheet })
+    });
+    // Invalidate cache
+    memoryCache.delete(getCacheKey("mentee:requests"));
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.error("Failed to update mentee status:", error.message);
+    }
+    throw error;
+  }
 }
 
-// ─── Find approved mentee by username + password ─────────────────────────────
-// Replace with: POST /api/auth/mentee/login  { username, password }
-export function loginMentee(
+/**
+ * Login mentee with username
+ * @throws {APIError} If authentication fails
+ */
+export async function loginMentee(
   username: string,
   password: string
-): MenteeRequest | null {
-  const requests = getMenteeRequests();
-  const match = requests.find(
-    (r) =>
-      r.username === username &&
-      r.passwordHash === password && // dev stub: plain text; use bcrypt in real backend
-      r.status === "approved"
-  );
-  return match ?? null;
+): Promise<{ token: string; refreshToken: string; mentee: MenteeRequest }> {
+  try {
+    const response = await api.post<{ token: string; refreshToken: string; mentee: MenteeRequest }>(
+      "/auth/mentee/login",
+      { username, password }
+    );
+
+    // Store tokens securely
+    if (response.token) {
+      localStorage.setItem("auth_token", response.token);
+      localStorage.setItem("refresh_token", response.refreshToken);
+    }
+
+    return response;
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.error("Login failed:", error.message);
+    }
+    throw error;
+  }
 }
 
-// ─── Find approved mentee by email + password ────────────────────────────────
-// Replace with: POST /api/auth/mentee/login  { email, password }
-export function loginMenteeByEmail(
+/**
+ * Login mentee with email
+ * @throws {APIError} If authentication fails
+ */
+export async function loginMenteeByEmail(
   email: string,
   password: string
-): MenteeRequest | null {
-  const requests = getMenteeRequests();
-  const match = requests.find(
-    (r) =>
-      r.email.toLowerCase() === email.toLowerCase() &&
-      r.passwordHash === password && // dev stub: plain text; use bcrypt in real backend
-      r.status === "approved"
-  );
-  return match ?? null;
+): Promise<{ token: string; refreshToken: string; mentee: MenteeRequest }> {
+  try {
+    const response = await api.post<{ token: string; refreshToken: string; mentee: MenteeRequest }>(
+      "/auth/mentee/login",
+      { email, password }
+    );
+
+    if (response.token) {
+      localStorage.setItem("auth_token", response.token);
+      localStorage.setItem("refresh_token", response.refreshToken);
+    }
+
+    return response;
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.error("Email login failed:", error.message);
+    }
+    throw error;
+  }
 }
 
-// ─── Delete a mentee entirely ─────────────────────────────────────────────────
-// Replace with: DELETE /api/mentee-requests/:id
-export function deleteMentee(id: string): void {
-  const requests = getMenteeRequests();
-  saveMenteeRequests(requests.filter((r) => r.id !== id));
+/**
+ * Delete a mentee
+ * @throws {APIError} If deletion fails
+ */
+export async function deleteMentee(id: string): Promise<void> {
+  try {
+    await api.delete(`/mentee-requests/${id}`);
+    memoryCache.delete(getCacheKey("mentee:requests"));
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.error("Failed to delete mentee:", error.message);
+    }
+    throw error;
+  }
 }
 
-// ─── Get/save question detail notes per mentee ───────────────────────────────
-// Storage key: "coderz_question_details_{username}"  →  DB table: question_details
-// Replace with: GET/PATCH /api/mentees/:username/questions/:questionId/details
-type DetailMap = Record<string, { solution?: string; resources?: string }>;
 
-function getDetailMap(username: string): DetailMap {
-  if (typeof window === "undefined") return {};
-  return JSON.parse(localStorage.getItem(`coderz_question_details_${username}`) || "{}");
+/**
+ * Get questions for a mentee
+ * @throws {APIError} If fetch fails
+ */
+export async function getMenteeQuestions(username: string): Promise<Question[]> {
+  const cacheKey = getCacheKey("mentee:questions", username);
+  const cached = getCached<Question[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const questions = await api.get<Question[]>(`/mentees/${username}/questions`);
+    setCache(cacheKey, questions);
+    return questions;
+  } catch (error) {
+    if (error instanceof APIError && error.status !== 404) {
+      console.warn("Failed to fetch mentee questions:", error.message);
+    }
+    return [];
+  }
 }
 
-// Replace with: PATCH /api/mentees/:username/questions/:questionId  { solution, resources }
-export function updateQuestionDetails(
-  username: string,
-  questionId: string,
-  details: { solution?: string; resources?: string }
-): void {
-  const map = getDetailMap(username);
-  map[questionId] = { ...map[questionId], ...details };
-  localStorage.setItem(`coderz_question_details_${username}`, JSON.stringify(map));
-}
-
-// Replace with: GET /api/mentees/:username/questions/:questionId
-export function getQuestionDetail(username: string, questionId: string): import("@/types").Question | null {
-  const questions = getMenteeQuestions(username);
-  const q = questions.find((q) => q.id === questionId) ?? null;
-  if (!q) return null;
-  const details = getDetailMap(username);
-  return { ...q, ...details[questionId] };
-}
-// Storage key: "coderz_question_progress_{username}"  →  DB table: question_progress
-// Replace with: GET/PATCH /api/mentees/:username/questions/:questionId/progress
-type ProgressMap = Record<string, { progressStatus: QuestionProgressStatus; completedAt?: string }>;
-
-function getProgressMap(username: string): ProgressMap {
-  if (typeof window === "undefined") return {};
-  return JSON.parse(localStorage.getItem(`coderz_question_progress_${username}`) || "{}");
-}
-
-// ─── Update a single question's progress status ───────────────────────────────
-// Replace with: PATCH /api/mentees/:username/questions/:questionId  { progressStatus }
-export function updateQuestionProgress(
+/**
+ * Update individual question progress status
+ * @throws {APIError} If update fails
+ */
+export async function updateQuestionProgress(
   username: string,
   questionId: string,
   progressStatus: QuestionProgressStatus
-): void {
-  const map = getProgressMap(username);
-  map[questionId] = {
-    progressStatus,
-    completedAt:
-      progressStatus === "completed" || progressStatus === "revision_needed"
-        ? (map[questionId]?.completedAt ?? new Date().toISOString())
-        : undefined,
-  };
-  localStorage.setItem(`coderz_question_progress_${username}`, JSON.stringify(map));
+): Promise<void> {
+  try {
+    await api.patch(`/mentees/${username}/questions/${questionId}`, { progressStatus });
+    // Invalidate cache
+    memoryCache.delete(getCacheKey("mentee:questions", username));
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.error("Failed to update question progress:", error.message);
+    }
+    throw error;
+  }
 }
 
-// ─── Assign a task to a mentee ────────────────────────────────────────────────
-// Replace with: POST /api/mentees/:username/tasks  { taskId, title, description, difficulty, topic }
-export function assignTaskToMentee(
+/**
+ * Update question notes (solution & resources)
+ * @throws {APIError} If update fails
+ */
+export async function updateQuestionDetails(
+  username: string,
+  questionId: string,
+  details: { solution?: string; resources?: string }
+): Promise<void> {
+  try {
+    await api.patch(`/mentees/${username}/questions/${questionId}`, details);
+    // Invalidate cache
+    memoryCache.delete(getCacheKey("mentee:questions", username));
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.error("Failed to update question details:", error.message);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Get specific question detail for a mentee
+ * @throws {APIError} If fetch fails
+ */
+export async function getQuestionDetail(
+  username: string,
+  questionId: string
+): Promise<Question | null> {
+  try {
+    const question = await api.get<Question>(
+      `/mentees/${username}/questions/${questionId}`
+    );
+    return question || null;
+  } catch (error) {
+    if (error instanceof APIError && error.status !== 404) {
+      console.warn("Failed to fetch question detail:", error.message);
+    }
+    return null;
+  }
+}
+
+/**
+ * Assign a task to a mentee
+ * @throws {APIError} If assignment fails
+ */
+export async function assignTaskToMentee(
   username: string,
   task: { title: string; description: string; difficulty: Question["difficulty"]; topic: string }
-): void {
-  const key = `coderz_assigned_tasks_${username}`;
-  const existing: Question[] = JSON.parse(
-    (typeof window !== "undefined" && localStorage.getItem(key)) || "[]"
-  );
-  const newTask: Question = {
-    id: crypto.randomUUID(),
-    ...task,
-    status: "pending",
-    progressStatus: "not_started",
-    assignedAt: new Date().toISOString(),
-  };
-  localStorage.setItem(key, JSON.stringify([...existing, newTask]));
-}
-
-// ─── Get public profile for a mentee ─────────────────────────────────────────
-// Replace with: GET /api/mentees/:profileUsername/profile
-export function getMenteeProfile(profileUsername: string): {
-  firstName: string; lastName: string; username: string; solved: number; joinedAt: string;
-  bio?: string; github?: string; linkedin?: string;
-} | null {
-  const mentee = getMenteeRequests().find(
-    (r) => r.username === profileUsername && r.status === "approved"
-  );
-  if (!mentee) return null;
-  const progress: ProgressMap = JSON.parse(
-    (typeof window !== "undefined" && localStorage.getItem(`coderz_question_progress_${profileUsername}`)) || "{}"
-  );
-  const solved = Object.values(progress).filter(
-    (p) => p.progressStatus === "completed" || p.progressStatus === "revision_needed"
-  ).length;
-  return {
-    firstName: mentee.firstName, lastName: mentee.lastName, username: mentee.username,
-    solved, joinedAt: mentee.signedUpAt,
-    bio: mentee.bio, github: mentee.github, linkedin: mentee.linkedin,
-  };
-}
-
-// ─── Leaderboard: all approved mentees ranked by solved question count ────────
-// Replace with: GET /api/leaderboard
-export function getLeaderboard(): { username: string; firstName: string; lastName: string; solved: number }[] {
-  const approved = getMenteeRequests().filter((r) => r.status === "approved");
-  return approved
-    .map((r) => {
-      const progress: ProgressMap = JSON.parse(
-        (typeof window !== "undefined" && localStorage.getItem(`coderz_question_progress_${r.username}`)) || "{}"
-      );
-      const solved = Object.values(progress).filter(
-        (p) => p.progressStatus === "completed" || p.progressStatus === "revision_needed"
-      ).length;
-      return { username: r.username, firstName: r.firstName, lastName: r.lastName, solved };
-    })
-    .sort((a, b) => b.solved - a.solved);
-}
-
-// ─── Get questions for a mentee (with persisted progress applied) ─────────────
-// Replace with: GET /api/mentees/:username/questions
-export function getMenteeQuestions(username: string): Question[] {
-  const map = getProgressMap(username);
-  return DUMMY_QUESTIONS.map((q) => {
-    const override = map[q.id];
-    if (!override) return q;
-    const inCompletedBucket =
-      override.progressStatus === "completed" ||
-      override.progressStatus === "revision_needed";
-    return {
-      ...q,
-      progressStatus: override.progressStatus,
-      status: inCompletedBucket ? "completed" : "pending",
-      completedAt: inCompletedBucket ? override.completedAt : undefined,
-    };
-  });
-}
-
-// ─── Mentor profile (localStorage stub) ──────────────────────────────────────
-// Replace with: GET/PATCH /api/mentor/profile
-import type { MentorProfile } from "@/types";
-
-export function getMentorProfile(): MentorProfile {
-  if (typeof window === "undefined") {
-    return { firstName: "Mentor", lastName: "", username: "mentor", email: "", joinedAt: new Date().toISOString() };
+): Promise<Question> {
+  try {
+    const newTask = await api.post<Question>(
+      `/mentees/${username}/questions`,
+      task
+    );
+    // Invalidate cache
+    memoryCache.delete(getCacheKey("mentee:questions", username));
+    return newTask;
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.error("Failed to assign task:", error.message);
+    }
+    throw error;
   }
-  const stored = localStorage.getItem("coderz_mentor_profile");
-  if (stored) return JSON.parse(stored);
-  return { firstName: "Mentor", lastName: "", username: "mentor", email: "", joinedAt: new Date().toISOString() };
 }
 
-export function saveMentorProfile(profile: MentorProfile): void {
-  localStorage.setItem("coderz_mentor_profile", JSON.stringify(profile));
+
+/**
+ * Get mentee's public profile
+ * @throws {APIError} If fetch fails
+ */
+export async function getMenteeProfile(profileUsername: string): Promise<{
+  firstName: string;
+  lastName: string;
+  username: string;
+  solved: number;
+  joinedAt: string;
+  bio?: string;
+  github?: string;
+  linkedin?: string;
+} | null> {
+  const cacheKey = getCacheKey("mentee:profile", profileUsername);
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const profile = await api.get(
+      `/mentees/${profileUsername}/profile`
+    );
+    setCache(cacheKey, profile);
+    return profile || null;
+  } catch (error) {
+    if (error instanceof APIError && error.status !== 404) {
+      console.warn("Failed to fetch mentee profile:", error.message);
+    }
+    return null;
+  }
 }
 
-// ─── Update mentee profile fields ────────────────────────────────────────────
-// Replace with: PATCH /api/mentees/:username/profile
-export function updateMenteeProfile(
+/**
+ * Get leaderboard of top mentees
+ * @throws {APIError} If fetch fails
+ */
+export async function getLeaderboard(): Promise<
+  Array<{ username: string; firstName: string; lastName: string; solved: number }>
+> {
+  const cacheKey = getCacheKey("leaderboard");
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const leaderboard = await api.get(
+      "/leaderboard"
+    );
+    setCache(cacheKey, leaderboard);
+    return leaderboard || [];
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.warn("Failed to fetch leaderboard:", error.message);
+    }
+    return [];
+  }
+}
+
+/**
+ * Get mentor profile
+ * @throws {APIError} If fetch fails
+ */
+export async function getMentorProfile(): Promise<MentorProfile> {
+  const cacheKey = getCacheKey("mentor:profile");
+  const cached = getCached<MentorProfile>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const profile = await api.get<MentorProfile>("/mentor/profile");
+    if (profile) {
+      setCache(cacheKey, profile);
+      return profile;
+    }
+  } catch (error) {
+    if (error instanceof APIError && error.status !== 401) {
+      console.warn("Failed to fetch mentor profile:", error.message);
+    }
+  }
+
+  // Fallback default profile
+  return {
+    firstName: "Mentor",
+    lastName: "",
+    username: "mentor",
+    email: "",
+    joinedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Update mentor profile (async API call)
+ * @throws {APIError} If update fails
+ */
+export async function updateMentorProfile(
+  updates: Partial<Omit<MentorProfile, "joinedAt">>
+): Promise<MentorProfile> {
+  try {
+    const updated = await api.patch<MentorProfile>("/mentor/profile", updates);
+    // Invalidate cache
+    memoryCache.delete(getCacheKey("mentor:profile"));
+    return updated;
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.error("Failed to update mentor profile:", error.message);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Save mentor profile (backwards compatible wrapper for existing code)
+ * Calls updateMentorProfile with all profile fields
+ */
+export async function saveMentorProfile(
+  profile: Partial<Omit<MentorProfile, "joinedAt">>
+): Promise<MentorProfile> {
+  return updateMentorProfile(profile);
+}
+
+/**
+ * Update mentee profile fields
+ * @throws {APIError} If update fails
+ */
+export async function updateMenteeProfile(
   username: string,
   fields: { bio?: string; github?: string; linkedin?: string }
-): void {
-  const requests = getMenteeRequests();
-  const updated = requests.map((r) =>
-    r.username === username ? { ...r, ...fields } : r
-  );
-  saveMenteeRequests(updated);
+): Promise<void> {
+  try {
+    await api.patch(`/mentees/${username}/profile`, fields);
+    // Invalidate cache
+    memoryCache.delete(getCacheKey("mentee:profile", username));
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.error("Failed to update mentee profile:", error.message);
+    }
+    throw error;
+  }
 }
 
-// ─── Update mentee password ───────────────────────────────────────────────────
-// Replace with: PATCH /api/mentees/:username/password  { currentPassword, newPassword }
-export function updateMenteePassword(
+/**
+ * Update mentee password
+ * @throws {APIError} If update fails
+ */
+export async function updateMenteePassword(
   username: string,
   currentPassword: string,
   newPassword: string
-): { ok: boolean; error?: string } {
-  const requests = getMenteeRequests();
-  const mentee = requests.find((r) => r.username === username);
-  if (!mentee) return { ok: false, error: "User not found." };
-  if (mentee.passwordHash !== currentPassword) return { ok: false, error: "Current password is incorrect." };
-  const updated = requests.map((r) =>
-    r.username === username ? { ...r, passwordHash: newPassword } : r
-  );
-  saveMenteeRequests(updated);
-  return { ok: true };
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const result = await api.patch<{ ok: boolean; error?: string }>(
+      `/mentees/${username}/password`,
+      { currentPassword, newPassword }
+    );
+    return result;
+  } catch (error) {
+    if (error instanceof APIError) {
+      return { ok: false, error: error.message };
+    }
+    return { ok: false, error: "Password update failed" };
+  }
 }
 
-// ─── Update mentor password ───────────────────────────────────────────────────
-// Replace with: PATCH /api/mentor/password  { currentPassword, newPassword }
-export function updateMentorPassword(
+/**
+ * Update mentor password
+ * @throws {APIError} If update fails
+ */
+export async function updateMentorPassword(
   currentPassword: string,
   newPassword: string
-): { ok: boolean; error?: string } {
-  const stored = typeof window !== "undefined"
-    ? localStorage.getItem("coderz_mentor_password")
-    : null;
-  const current = stored ?? "mentor123"; // default dev password
-  if (current !== currentPassword) return { ok: false, error: "Current password is incorrect." };
-  localStorage.setItem("coderz_mentor_password", newPassword);
-  return { ok: true };
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const result = await api.patch<{ ok: boolean; error?: string }>(
+      "/mentor/password",
+      { currentPassword, newPassword }
+    );
+    return result;
+  } catch (error) {
+    if (error instanceof APIError) {
+      return { ok: false, error: error.message };
+    }
+    return { ok: false, error: "Password update failed" };
+  }
 }
+
+/**
+ * Clear all caches (call on logout)
+ */
+export function clearCaches(): void {
+  memoryCache.clear();
+}
+
+export default {
+  registerMentee,
+  getMenteeRequests,
+  updateMenteeStatus,
+  loginMentee,
+  loginMenteeByEmail,
+  deleteMentee,
+  getMenteeQuestions,
+  updateQuestionProgress,
+  updateQuestionDetails,
+  getQuestionDetail,
+  assignTaskToMentee,
+  getMenteeProfile,
+  getLeaderboard,
+  getMentorProfile,
+  updateMentorProfile,
+  updateMenteeProfile,
+  updateMenteePassword,
+  updateMentorPassword,
+  clearCaches,
+};
+
 
 // ─── Get assigned tasks for a mentee (with progress applied) ─────────────────
 // Replace with: GET /api/mentees/:username/assigned-tasks

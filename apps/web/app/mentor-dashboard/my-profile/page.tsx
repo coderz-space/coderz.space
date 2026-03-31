@@ -13,12 +13,23 @@ export default function MentorMyProfilePage() {
   const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
   const [pwError, setPwError] = useState("");
   const [pwSaved, setPwSaved] = useState(false);
-  const totalMentees = getLeaderboard().length;
+  const [totalMentees, setTotalMentees] = useState(0);
 
   useEffect(() => {
-    const p = getMentorProfile();
-    setProfile(p);
-    setForm(p);
+    // Load mentor profile
+    const loadProfile = async () => {
+      const p = await getMentorProfile();
+      setProfile(p);
+      setForm(p);
+    };
+    loadProfile();
+
+    // Load mentees count
+    const loadMentees = async () => {
+      const mentees = await getLeaderboard();
+      setTotalMentees(mentees.length);
+    };
+    loadMentees();
   }, []);
 
   if (!profile || !form) return null;
@@ -26,25 +37,35 @@ export default function MentorMyProfilePage() {
   const initials =
     (profile.firstName?.[0] ?? "M") + (profile.lastName?.[0] ?? "");
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form) return;
-    saveMentorProfile(form);
-    setProfile(form);
-    setEditing(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    try {
+      await saveMentorProfile(form);
+      setProfile(form);
+      setEditing(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      console.error("Failed to save profile:", error);
+    }
   };
 
-  const handlePasswordUpdate = () => {
+  const handlePasswordUpdate = async () => {
     setPwError("");
     if (!pwForm.next.trim()) { setPwError("New password cannot be empty."); return; }
     if (pwForm.next !== pwForm.confirm) { setPwError("Passwords do not match."); return; }
     if (pwForm.next.length < 6) { setPwError("Password must be at least 6 characters."); return; }
-    const result = updateMentorPassword(pwForm.current, pwForm.next);
-    if (!result.ok) { setPwError(result.error ?? "Failed to update password."); return; }
-    setPwForm({ current: "", next: "", confirm: "" });
-    setPwSaved(true);
-    setTimeout(() => { setPwSaved(false); setShowPwCard(false); }, 2000);
+    
+    try {
+      const result = await updateMentorPassword(pwForm.current, pwForm.next);
+      if (!result.ok) { setPwError(result.error ?? "Failed to update password."); return; }
+      setPwForm({ current: "", next: "", confirm: "" });
+      setPwSaved(true);
+      setTimeout(() => { setPwSaved(false); setShowPwCard(false); }, 2000);
+    } catch (error) {
+      setPwError("An error occurred while updating password");
+      console.error("Password update error:", error);
+    }
   };
 
   return (
