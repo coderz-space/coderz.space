@@ -6,6 +6,7 @@ import (
 	"github.com/DSAwithGautam/Coderz.space/internal/common/middleware/auth"
 	"github.com/DSAwithGautam/Coderz.space/internal/common/response"
 	"github.com/DSAwithGautam/Coderz.space/internal/common/utils"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v5"
 )
 
@@ -393,7 +394,19 @@ func (h *Handler) ListTags(c *echo.Context) error {
 	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
 	if err != nil {
 		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
 
+	// Get search query parameter
+	searchQuery := (*c).QueryParam("q")
+
+	// List tags
+	tags, err := h.service.ListTags((*c).Request().Context(), orgID, searchQuery)
+	if err != nil {
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "SUCCESS", "TAGS_RETRIEVED", tags, nil)
+}
 
 // UpdateTag godoc
 // @Summary Update tag name
@@ -428,13 +441,40 @@ func (h *Handler) UpdateTag(c *echo.Context, body UpdateTagRequest) error {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_TAG_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
-	_ = tagID
-	_ = body
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
+	// Verify user is a member of the organization
+	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Verify tag exists and belongs to organization
+	existingTag, err := h.service.GetTag((*c).Request().Context(), tagID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "TAG_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	if existingTag.OrganizationID.Bytes != orgID.Bytes {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "TAG_NOT_FOUND", nil, nil)
+	}
+
+	// Update tag
+	tag, err := h.service.UpdateTag((*c).Request().Context(), body, tagID, orgID)
+	if err != nil {
+		if err.Error() == "TAG_NAME_ALREADY_EXISTS" {
+			return response.NewResponse(c, http.StatusConflict, "CONFLICT", "TAG_NAME_ALREADY_EXISTS", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "SUCCESS", "TAG_UPDATED", tag, nil)
 }
 
 // DeleteTag godoc
@@ -469,12 +509,40 @@ func (h *Handler) DeleteTag(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_TAG_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
-	_ = tagID
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
+	// Verify user is a member of the organization
+	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Verify tag exists and belongs to organization
+	existingTag, err := h.service.GetTag((*c).Request().Context(), tagID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "TAG_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	if existingTag.OrganizationID.Bytes != orgID.Bytes {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "TAG_NOT_FOUND", nil, nil)
+	}
+
+	// Delete tag
+	err = h.service.DeleteTag((*c).Request().Context(), tagID)
+	if err != nil {
+		if err.Error() == "TAG_IN_USE" {
+			return response.NewResponse(c, http.StatusConflict, "CONFLICT", "TAG_IN_USE", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "SUCCESS", "TAG_DELETED", map[string]any{"message": "Tag deleted successfully"}, nil)
 }
 
 // AttachTagsToProblem godoc
@@ -510,13 +578,59 @@ func (h *Handler) AttachTagsToProblem(c *echo.Context, body AttachTagsRequest) e
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_PROBLEM_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
-	_ = problemID
-	_ = body
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
+	// Verify user is a member of the organization
+	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Verify problem exists and belongs to organization
+	existingProblem, err := h.service.GetProblem((*c).Request().Context(), problemID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	if existingProblem.OrganizationID.Bytes != orgID.Bytes {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+	}
+
+	// Convert tag ID strings to UUIDs and deduplicate
+	tagIDMap := make(map[string]pgtype.UUID)
+	for _, tagIDStr := range body.TagIDs {
+		tagID, err := utils.StringToUUID(tagIDStr)
+		if err != nil {
+			return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_TAG_ID", nil, nil)
+		}
+		tagIDMap[tagIDStr] = tagID
+	}
+
+	// Convert map to slice
+	tagIDs := make([]pgtype.UUID, 0, len(tagIDMap))
+	for _, tagID := range tagIDMap {
+		tagIDs = append(tagIDs, tagID)
+	}
+
+	// Attach tags to problem
+	err = h.service.AttachTagsToProblem((*c).Request().Context(), problemID, tagIDs, orgID)
+	if err != nil {
+		if err.Error() == "SOME_TAGS_NOT_FOUND" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "SOME_TAGS_NOT_FOUND", nil, nil)
+		}
+		if err.Error() == "TAG_ORGANIZATION_MISMATCH" {
+			return response.NewResponse(c, http.StatusConflict, "CONFLICT", "TAG_ORGANIZATION_MISMATCH", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "SUCCESS", "TAGS_ATTACHED", map[string]any{"message": "Tags attached successfully"}, nil)
 }
 
 // DetachTagFromProblem godoc
@@ -556,13 +670,50 @@ func (h *Handler) DetachTagFromProblem(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_TAG_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
-	_ = problemID
-	_ = tagID
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
+	// Verify user is a member of the organization
+	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Verify problem exists and belongs to organization
+	existingProblem, err := h.service.GetProblem((*c).Request().Context(), problemID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	if existingProblem.OrganizationID.Bytes != orgID.Bytes {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+	}
+
+	// Verify tag exists and belongs to organization
+	existingTag, err := h.service.GetTag((*c).Request().Context(), tagID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "TAG_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	if existingTag.OrganizationID.Bytes != orgID.Bytes {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "TAG_NOT_FOUND", nil, nil)
+	}
+
+	// Detach tag from problem
+	err = h.service.DetachTagFromProblem((*c).Request().Context(), problemID, tagID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "SUCCESS", "TAG_DETACHED", map[string]any{"message": "Tag detached successfully"}, nil)
 }
 
 // Resource handlers
@@ -599,13 +750,37 @@ func (h *Handler) AddResource(c *echo.Context, body CreateResourceRequest) error
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_PROBLEM_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
-	_ = problemID
-	_ = body
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
+	// Verify user is a member of the organization
+	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Verify problem exists and belongs to organization
+	existingProblem, err := h.service.GetProblem((*c).Request().Context(), problemID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	if existingProblem.OrganizationID.Bytes != orgID.Bytes {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+	}
+
+	// Add resource
+	resource, err := h.service.AddResource((*c).Request().Context(), body, problemID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusCreated, "CREATED", "RESOURCE_ADDED", resource, nil)
 }
 
 // ListResources godoc
@@ -639,12 +814,37 @@ func (h *Handler) ListResources(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_PROBLEM_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
-	_ = problemID
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
+	// Verify user is a member of the organization
+	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Verify problem exists and belongs to organization
+	existingProblem, err := h.service.GetProblem((*c).Request().Context(), problemID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	if existingProblem.OrganizationID.Bytes != orgID.Bytes {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+	}
+
+	// List resources
+	resources, err := h.service.ListResources((*c).Request().Context(), problemID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "SUCCESS", "RESOURCES_RETRIEVED", resources, nil)
 }
 
 // UpdateResource godoc
@@ -685,14 +885,53 @@ func (h *Handler) UpdateResource(c *echo.Context, body UpdateResourceRequest) er
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_RESOURCE_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
-	_ = problemID
-	_ = resourceID
-	_ = body
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
+	// Verify user is a member of the organization
+	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Verify problem exists and belongs to organization
+	existingProblem, err := h.service.GetProblem((*c).Request().Context(), problemID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	if existingProblem.OrganizationID.Bytes != orgID.Bytes {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+	}
+
+	// Verify resource exists and belongs to problem
+	existingResource, err := h.service.GetResource((*c).Request().Context(), resourceID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "RESOURCE_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	if existingResource.ProblemID.Bytes != problemID.Bytes {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "RESOURCE_NOT_FOUND", nil, nil)
+	}
+
+	// Update resource
+	resource, err := h.service.UpdateResource((*c).Request().Context(), body, resourceID)
+	if err != nil {
+		if err.Error() == "NO_FIELDS_PROVIDED" {
+			return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "NO_FIELDS_PROVIDED", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "SUCCESS", "RESOURCE_UPDATED", resource, nil)
 }
 
 // DeleteResource godoc
@@ -732,11 +971,48 @@ func (h *Handler) DeleteResource(c *echo.Context) error {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_RESOURCE_ID", nil, nil)
 	}
 
-	// Implementation to be added
-	_ = claims
-	_ = orgID
-	_ = problemID
-	_ = resourceID
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_USER_ID", nil, nil)
+	}
 
-	return response.NewResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", "ENDPOINT_NOT_IMPLEMENTED", nil, nil)
+	// Verify user is a member of the organization
+	_, err = h.service.GetMember((*c).Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Verify problem exists and belongs to organization
+	existingProblem, err := h.service.GetProblem((*c).Request().Context(), problemID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	if existingProblem.OrganizationID.Bytes != orgID.Bytes {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "PROBLEM_NOT_FOUND", nil, nil)
+	}
+
+	// Verify resource exists and belongs to problem
+	existingResource, err := h.service.GetResource((*c).Request().Context(), resourceID)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "RESOURCE_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	if existingResource.ProblemID.Bytes != problemID.Bytes {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "RESOURCE_NOT_FOUND", nil, nil)
+	}
+
+	// Delete resource
+	err = h.service.DeleteResource((*c).Request().Context(), resourceID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "SUCCESS", "RESOURCE_DELETED", map[string]any{"message": "Resource deleted successfully"}, nil)
 }
