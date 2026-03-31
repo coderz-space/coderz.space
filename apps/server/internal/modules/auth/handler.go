@@ -6,6 +6,7 @@ import (
 	"github.com/DSAwithGautam/Coderz.space/internal/common/middleware/auth"
 	"github.com/DSAwithGautam/Coderz.space/internal/common/response"
 	"github.com/DSAwithGautam/Coderz.space/internal/common/utils"
+	"github.com/DSAwithGautam/Coderz.space/internal/common/validator"
 	"github.com/labstack/echo/v5"
 )
 
@@ -30,7 +31,16 @@ func NewHandler(service *Service) *Handler {
 // @Failure 400 {object} map[string]any "Bad request - validation error or email already exists"
 // @Router /v1/auth/signup [post]
 
-func (h *Handler) Signup(c *echo.Context, body SignupRequest) error {
+func (h *Handler) Signup(c *echo.Context) error {
+	var body SignupRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
 	data, err := h.service.Signup(c.Request().Context(), body)
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", err.Error(), nil, nil)
@@ -55,7 +65,16 @@ func (h *Handler) Signup(c *echo.Context, body SignupRequest) error {
 // @Failure 401 {object} map[string]any "Unauthorized - invalid credentials"
 // @Router /v1/auth/login [post]
 
-func (h *Handler) Login(c *echo.Context, body LoginRequest) error {
+func (h *Handler) Login(c *echo.Context) error {
+	var body LoginRequest
+	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
+	}
+
+	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
+	}
+
 	data, err := h.service.Login(c.Request().Context(), body)
 	if err != nil {
 		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error(), nil, nil)

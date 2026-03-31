@@ -111,3 +111,11 @@ FROM assignment_problems ap
 JOIN problems p ON ap.problem_id = p.id
 WHERE ap.assignment_id = $1
 ORDER BY ap.created_at ASC;
+
+-- name: CountAssignmentsByGroup :one
+SELECT COUNT(*) FROM assignments
+WHERE assignment_group_id = $1 AND archived_at IS NULL;
+
+-- name: DeleteAssignmentGroup :exec
+DELETE FROM assignment_groups
+WHERE id = $1;

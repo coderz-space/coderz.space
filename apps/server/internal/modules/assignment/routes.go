@@ -16,6 +16,7 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 	groupRouter.GET("", handler.ListAssignmentGroups)
 	groupRouter.GET("/:groupId", handler.GetAssignmentGroup)
 	groupRouter.PATCH("/:groupId", core.WithBody(handler.UpdateAssignmentGroup))
+	groupRouter.DELETE("/:groupId", handler.DeleteAssignmentGroup)
 	groupRouter.POST("/:groupId/problems", core.WithBody(handler.AddProblemsToGroup))
 	groupRouter.DELETE("/:groupId/problems/:problemId", handler.RemoveProblemFromGroup)
 

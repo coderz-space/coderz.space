@@ -103,6 +103,18 @@ func (q *Queries) CountAssignmentGroupsByBootcamp(ctx context.Context, arg Count
 	return count, err
 }
 
+const countAssignmentsByGroup = `-- name: CountAssignmentsByGroup :one
+SELECT COUNT(*) FROM assignments
+WHERE assignment_group_id = $1 AND archived_at IS NULL
+`
+
+func (q *Queries) CountAssignmentsByGroup(ctx context.Context, assignmentGroupID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countAssignmentsByGroup, assignmentGroupID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createAssignmentGroup = `-- name: CreateAssignmentGroup :one
 INSERT INTO assignment_groups (
     bootcamp_id, created_by, title, description, deadline_days
@@ -140,6 +152,16 @@ func (q *Queries) CreateAssignmentGroup(ctx context.Context, arg CreateAssignmen
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const deleteAssignmentGroup = `-- name: DeleteAssignmentGroup :exec
+DELETE FROM assignment_groups
+WHERE id = $1
+`
+
+func (q *Queries) DeleteAssignmentGroup(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteAssignmentGroup, id)
+	return err
 }
 
 const getAssignment = `-- name: GetAssignment :one

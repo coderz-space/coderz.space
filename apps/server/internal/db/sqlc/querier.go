@@ -25,6 +25,7 @@ type Querier interface {
 	CastPollVote(ctx context.Context, arg CastPollVoteParams) (PollVote, error)
 	ClearExpiredRefreshTokens(ctx context.Context) error
 	CountAssignmentGroupsByBootcamp(ctx context.Context, arg CountAssignmentGroupsByBootcampParams) (int64, error)
+	CountAssignmentsByGroup(ctx context.Context, assignmentGroupID pgtype.UUID) (int64, error)
 	CountBootcampsByEnrollment(ctx context.Context, arg CountBootcampsByEnrollmentParams) (int64, error)
 	CountBootcampsByOrg(ctx context.Context, arg CountBootcampsByOrgParams) (int64, error)
 	CountOrganizationAdmins(ctx context.Context, organizationID pgtype.UUID) (int64, error)
@@ -43,6 +44,7 @@ type Querier interface {
 	// Tags
 	CreateTag(ctx context.Context, arg CreateTagParams) (Tag, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteAssignmentGroup(ctx context.Context, id pgtype.UUID) error
 	DeleteExpiredPasswordResetTokens(ctx context.Context) error
 	DeletePasswordResetToken(ctx context.Context, tokenHash string) error
 	DeleteProblemResource(ctx context.Context, id pgtype.UUID) error

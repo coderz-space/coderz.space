@@ -1567,6 +1567,63 @@ paths:
       tags:
       - Assignment Groups
   /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignment-groups/{groupId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an assignment group if no assignments exist (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment Group ID (UUID)
+        in: path
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assignment group deleted successfully
+          schema:
+            $ref: '#/definitions/assignment.GenericResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - assignment group does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - assignment group has existing assignments
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete assignment group
+      tags:
+      - Assignment Groups
     get:
       consumes:
       - application/json

@@ -241,6 +241,22 @@ func (s *Service) RemoveProblemFromGroup(ctx context.Context, groupID, problemID
 	})
 }
 
+func (s *Service) DeleteAssignmentGroup(ctx context.Context, groupID pgtype.UUID) error {
+	// Check if there are any existing assignments for this group
+	count, err := s.queries.CountAssignmentsByGroup(ctx, groupID)
+	if err != nil {
+		return err
+	}
+
+	// Return conflict error if assignments exist (Requirements 7.9, 25.7)
+	if count > 0 {
+		return fmt.Errorf("ASSIGNMENT_GROUP_HAS_ASSIGNMENTS")
+	}
+
+	// Delete the assignment group
+	return s.queries.DeleteAssignmentGroup(ctx, groupID)
+}
+
 // Assignment Instance Methods
 
 func (s *Service) CreateAssignment(ctx context.Context, req CreateAssignmentRequest, assignedBy pgtype.UUID) (*AssignmentResponse, error) {

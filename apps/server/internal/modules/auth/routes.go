@@ -9,8 +9,8 @@ import (
 
 func RegisterPublicRoutes(e *echo.Group, handler *Handler) {
 	authRouter := e.Group("/v1/auth")
-	authRouter.POST("/login", core.WithBody(handler.Login))
-	authRouter.POST("/signup", core.WithBody(handler.Signup))
+	authRouter.POST("/login", handler.Login)
+	authRouter.POST("/signup", handler.Signup)
 	authRouter.POST("/refresh", handler.Refresh)
 	authRouter.POST("/forgot-password", core.WithBody(handler.ForgotPassword))
 	authRouter.POST("/reset-password", core.WithBody(handler.ResetPassword))

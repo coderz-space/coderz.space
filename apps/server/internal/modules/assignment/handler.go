@@ -288,6 +288,48 @@ func (h *Handler) RemoveProblemFromGroup(c *echo.Context) error {
 	return response.NewResponse(c, http.StatusOK, "OK", "PROBLEM_REMOVED_FROM_GROUP", map[string]any{"message": "Problem removed successfully"}, nil)
 }
 
+// DeleteAssignmentGroup godoc
+// @Summary Delete assignment group
+// @Description Delete an assignment group if no assignments exist (mentor only)
+// @Tags Assignment Groups
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param bootcampId path string true "Bootcamp ID (UUID)"
+// @Param groupId path string true "Assignment Group ID (UUID)"
+// @Success 200 {object} GenericResponse "Assignment group deleted successfully"
+// @Failure 400 {object} map[string]any "Bad request - invalid ID"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - mentor role required"
+// @Failure 404 {object} map[string]any "Not found - assignment group does not exist"
+// @Failure 409 {object} map[string]any "Conflict - assignment group has existing assignments"
+// @Router /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignment-groups/{groupId} [delete]
+func (h *Handler) DeleteAssignmentGroup(c *echo.Context) error {
+	_, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	groupID, err := utils.StringToUUID((*c).Param("groupId"))
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_GROUP_ID", nil, nil)
+	}
+
+	err = h.service.DeleteAssignmentGroup((*c).Request().Context(), groupID)
+	if err != nil {
+		if err.Error() == "ASSIGNMENT_GROUP_HAS_ASSIGNMENTS" {
+			return response.NewResponse(c, http.StatusConflict, "CONFLICT", "ASSIGNMENT_GROUP_HAS_ASSIGNMENTS", nil, nil)
+		}
+		if err.Error() == "no rows in result set" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "ASSIGNMENT_GROUP_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "OK", "ASSIGNMENT_GROUP_DELETED", map[string]any{"message": "Assignment group deleted successfully"}, nil)
+}
+
 // Assignment Instance Handlers
 
 // CreateAssignment godoc
