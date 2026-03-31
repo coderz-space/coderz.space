@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/DSAwithGautam/Coderz.space/internal/common/middleware/auth"
@@ -35,15 +36,23 @@ func (h *Handler) Signup(c *echo.Context) error {
 	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
 	}
+	fmt.Println("hello world😅 1")
 
 	if err := validator.NewValidator().ValidateStruct(body); err != nil {
+		fmt.Println("hello world😅 2")
+
 		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
 	}
+	fmt.Println("hello world😅 x")
+
+
 
 	data, err := h.service.Signup(c.Request().Context(), body)
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", err.Error(), nil, nil)
 	}
+	fmt.Println("hello world😅 3")
+
 
 	h.setAuthCookies(c, data.AccessToken, data.RefreshToken)
 

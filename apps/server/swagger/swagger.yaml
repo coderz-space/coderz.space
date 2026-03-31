@@ -255,6 +255,24 @@ definitions:
         example: 100
         type: integer
     type: object
+  assignment.ReplaceGroupProblemsRequest:
+    properties:
+      problems:
+        items:
+          $ref: '#/definitions/assignment.GroupProblemInput'
+        minItems: 1
+        type: array
+    required:
+    - problems
+    type: object
+  assignment.UpdateAssignmentDeadlineRequest:
+    properties:
+      deadlineAt:
+        example: "2024-01-20T23:59:59Z"
+        type: string
+    required:
+    - deadlineAt
+    type: object
   assignment.UpdateAssignmentGroupRequest:
     properties:
       deadlineDays:
@@ -300,6 +318,18 @@ definitions:
         - expired
         example: completed
         type: string
+    type: object
+  assignment.UpdateAssignmentStatusRequest:
+    properties:
+      status:
+        enum:
+        - active
+        - completed
+        - expired
+        example: completed
+        type: string
+    required:
+    - status
     type: object
   bootcamp.BootcampData:
     properties:
@@ -1885,6 +1915,66 @@ paths:
       summary: Add problems to assignment group
       tags:
       - Assignment Groups
+    put:
+      consumes:
+      - application/json
+      description: Atomically replace all problems in an assignment group with a new
+        set (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment Group ID (UUID)
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: New problems with positions
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/assignment.ReplaceGroupProblemsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Problems replaced successfully
+          schema:
+            $ref: '#/definitions/assignment.GenericResponse'
+        "400":
+          description: Bad request - validation error, duplicate problem IDs, or duplicate
+            positions
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - group or problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Replace all problems in assignment group
+      tags:
+      - Assignment Groups
   /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignment-groups/{groupId}/problems/{problemId}:
     delete:
       consumes:
@@ -1944,10 +2034,12 @@ paths:
       tags:
       - Assignment Groups
   /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments:
-    post:
+    get:
       consumes:
       - application/json
-      description: Assign a problem set to a mentee with deadline (mentor only)
+      description: Get all assignments for a bootcamp with filtering by assignment_group_id
+        and status. Supports pagination. Mentees see only their own assignments, mentors
+        see all.
       parameters:
       - description: Organization ID (UUID)
         in: path
@@ -1958,6 +2050,75 @@ paths:
         in: path
         name: bootcampId
         required: true
+        type: string
+      - description: Filter by assignment group ID (UUID)
+        in: query
+        name: assignment_group_id
+        type: string
+      - description: Filter by status (active, completed, expired)
+        in: query
+        name: status
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of assignments with pagination
+          schema:
+            $ref: '#/definitions/assignment.AssignmentListResponse'
+        "400":
+          description: Bad request - invalid bootcamp ID or query parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not a bootcamp member
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List assignments
+      tags:
+      - Assignments
+    post:
+      consumes:
+      - application/json
+      description: Assign a problem set to a mentee with deadline (mentor only). Snapshots
+        problems from group atomically. Prevents duplicate active assignments. Supports
+        Idempotency-Key header.
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Idempotency key for safe retries
+        in: header
+        name: Idempotency-Key
         type: string
       - description: Assignment details
         in: body
@@ -1993,7 +2154,8 @@ paths:
             additionalProperties: true
             type: object
         "409":
-          description: Conflict - duplicate active assignment
+          description: Conflict - duplicate active assignment or enrollment bootcamp
+            mismatch
           schema:
             additionalProperties: true
             type: object
@@ -2006,7 +2168,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieve assignment with problem progress
+      description: Retrieve assignment with problem progress and assignment group
+        metadata
       parameters:
       - description: Organization ID (UUID)
         in: path
@@ -2111,6 +2274,66 @@ paths:
       security:
       - BearerAuth: []
       summary: Update assignment
+      tags:
+      - Assignments
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/deadline:
+    patch:
+      consumes:
+      - application/json
+      description: Update the deadline of an assignment (mentor only). Mentees cannot
+        update deadlines.
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment ID (UUID)
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: New deadline
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/assignment.UpdateAssignmentDeadlineRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assignment deadline updated successfully
+          schema:
+            $ref: '#/definitions/assignment.AssignmentResponse'
+        "400":
+          description: Bad request - invalid deadline format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - assignment does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update assignment deadline
       tags:
       - Assignments
   /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/problems:
@@ -2231,6 +2454,66 @@ paths:
       summary: Update problem progress
       tags:
       - Assignment Progress
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/status:
+    patch:
+      consumes:
+      - application/json
+      description: 'Update the status of an assignment (mentor only). Valid transitions:
+        active, completed, expired. Mentees cannot update status.'
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment ID (UUID)
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: New status
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/assignment.UpdateAssignmentStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assignment status updated successfully
+          schema:
+            $ref: '#/definitions/assignment.AssignmentResponse'
+        "400":
+          description: Bad request - invalid status
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - assignment does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update assignment status
+      tags:
+      - Assignments
   /v1/organizations/{orgId}/bootcamps/{bootcampId}/deactivate:
     post:
       consumes:

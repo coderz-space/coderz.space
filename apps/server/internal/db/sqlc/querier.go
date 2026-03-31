@@ -23,8 +23,11 @@ type Querier interface {
 	// Assignment Instances
 	AssignGroupToMentee(ctx context.Context, arg AssignGroupToMenteeParams) (Assignment, error)
 	CastPollVote(ctx context.Context, arg CastPollVoteParams) (PollVote, error)
+	CheckDuplicateActiveAssignment(ctx context.Context, arg CheckDuplicateActiveAssignmentParams) (int64, error)
+	ClearAssignmentGroupProblems(ctx context.Context, assignmentGroupID pgtype.UUID) error
 	ClearExpiredRefreshTokens(ctx context.Context) error
 	CountAssignmentGroupsByBootcamp(ctx context.Context, arg CountAssignmentGroupsByBootcampParams) (int64, error)
+	CountAssignments(ctx context.Context, arg CountAssignmentsParams) (int64, error)
 	CountAssignmentsByGroup(ctx context.Context, assignmentGroupID pgtype.UUID) (int64, error)
 	CountBootcampsByEnrollment(ctx context.Context, arg CountBootcampsByEnrollmentParams) (int64, error)
 	CountBootcampsByOrg(ctx context.Context, arg CountBootcampsByOrgParams) (int64, error)
@@ -57,9 +60,11 @@ type Querier interface {
 	EnrollInBootcamp(ctx context.Context, arg EnrollInBootcampParams) (BootcampEnrollment, error)
 	GetAssignment(ctx context.Context, id pgtype.UUID) (Assignment, error)
 	GetAssignmentGroup(ctx context.Context, id pgtype.UUID) (AssignmentGroup, error)
+	GetAssignmentWithGroup(ctx context.Context, id pgtype.UUID) (GetAssignmentWithGroupRow, error)
 	GetBootcamp(ctx context.Context, id pgtype.UUID) (Bootcamp, error)
 	GetDoubt(ctx context.Context, id pgtype.UUID) (Doubt, error)
 	GetEnrollment(ctx context.Context, id pgtype.UUID) (BootcampEnrollment, error)
+	GetEnrollmentBootcamp(ctx context.Context, id pgtype.UUID) (GetEnrollmentBootcampRow, error)
 	GetEnrollmentByMember(ctx context.Context, arg GetEnrollmentByMemberParams) (BootcampEnrollment, error)
 	GetLeaderboardByBootcamp(ctx context.Context, bootcampID pgtype.UUID) ([]GetLeaderboardByBootcampRow, error)
 	GetOrganizationById(ctx context.Context, id pgtype.UUID) (Organization, error)
@@ -84,6 +89,7 @@ type Querier interface {
 	ListAssignmentGroupProblems(ctx context.Context, assignmentGroupID pgtype.UUID) ([]ListAssignmentGroupProblemsRow, error)
 	ListAssignmentGroupsByBootcamp(ctx context.Context, arg ListAssignmentGroupsByBootcampParams) ([]AssignmentGroup, error)
 	ListAssignmentProblemsStatus(ctx context.Context, assignmentID pgtype.UUID) ([]ListAssignmentProblemsStatusRow, error)
+	ListAssignments(ctx context.Context, arg ListAssignmentsParams) ([]ListAssignmentsRow, error)
 	ListAssignmentsByMentee(ctx context.Context, bootcampEnrollmentID pgtype.UUID) ([]ListAssignmentsByMenteeRow, error)
 	ListBootcampEnrollments(ctx context.Context, bootcampID pgtype.UUID) ([]ListBootcampEnrollmentsRow, error)
 	ListBootcampsByEnrollment(ctx context.Context, arg ListBootcampsByEnrollmentParams) ([]Bootcamp, error)
@@ -104,6 +110,7 @@ type Querier interface {
 	RemoveTagFromProblem(ctx context.Context, arg RemoveTagFromProblemParams) error
 	ResolveDoubt(ctx context.Context, arg ResolveDoubtParams) (Doubt, error)
 	SearchTagsByName(ctx context.Context, arg SearchTagsByNameParams) ([]Tag, error)
+	UpdateAssignmentDeadline(ctx context.Context, arg UpdateAssignmentDeadlineParams) (Assignment, error)
 	UpdateAssignmentGroup(ctx context.Context, arg UpdateAssignmentGroupParams) (AssignmentGroup, error)
 	UpdateAssignmentProblemProgress(ctx context.Context, arg UpdateAssignmentProblemProgressParams) (AssignmentProblem, error)
 	UpdateAssignmentStatus(ctx context.Context, arg UpdateAssignmentStatusParams) (Assignment, error)

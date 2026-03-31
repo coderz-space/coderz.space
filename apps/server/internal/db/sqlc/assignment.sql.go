@@ -85,6 +85,36 @@ func (q *Queries) AssignGroupToMentee(ctx context.Context, arg AssignGroupToMent
 	return i, err
 }
 
+const checkDuplicateActiveAssignment = `-- name: CheckDuplicateActiveAssignment :one
+SELECT COUNT(*) FROM assignments
+WHERE assignment_group_id = $1 
+  AND bootcamp_enrollment_id = $2 
+  AND status = 'active'
+  AND archived_at IS NULL
+`
+
+type CheckDuplicateActiveAssignmentParams struct {
+	AssignmentGroupID    pgtype.UUID `db:"assignment_group_id" json:"assignment_group_id"`
+	BootcampEnrollmentID pgtype.UUID `db:"bootcamp_enrollment_id" json:"bootcamp_enrollment_id"`
+}
+
+func (q *Queries) CheckDuplicateActiveAssignment(ctx context.Context, arg CheckDuplicateActiveAssignmentParams) (int64, error) {
+	row := q.db.QueryRow(ctx, checkDuplicateActiveAssignment, arg.AssignmentGroupID, arg.BootcampEnrollmentID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const clearAssignmentGroupProblems = `-- name: ClearAssignmentGroupProblems :exec
+DELETE FROM assignment_group_problems
+WHERE assignment_group_id = $1
+`
+
+func (q *Queries) ClearAssignmentGroupProblems(ctx context.Context, assignmentGroupID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, clearAssignmentGroupProblems, assignmentGroupID)
+	return err
+}
+
 const countAssignmentGroupsByBootcamp = `-- name: CountAssignmentGroupsByBootcamp :one
 SELECT COUNT(*) FROM assignment_groups
 WHERE bootcamp_id = $1
@@ -98,6 +128,29 @@ type CountAssignmentGroupsByBootcampParams struct {
 
 func (q *Queries) CountAssignmentGroupsByBootcamp(ctx context.Context, arg CountAssignmentGroupsByBootcampParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countAssignmentGroupsByBootcamp, arg.BootcampID, arg.CreatedBy)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countAssignments = `-- name: CountAssignments :one
+SELECT COUNT(*)
+FROM assignments a
+JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
+WHERE be.bootcamp_id = $1
+  AND ($2::uuid IS NULL OR a.assignment_group_id = $2::uuid)
+  AND ($3::assignment_status IS NULL OR a.status = $3::assignment_status)
+  AND a.archived_at IS NULL
+`
+
+type CountAssignmentsParams struct {
+	BootcampID        pgtype.UUID          `db:"bootcamp_id" json:"bootcamp_id"`
+	AssignmentGroupID pgtype.UUID          `db:"assignment_group_id" json:"assignment_group_id"`
+	Status            NullAssignmentStatus `db:"status" json:"status"`
+}
+
+func (q *Queries) CountAssignments(ctx context.Context, arg CountAssignmentsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countAssignments, arg.BootcampID, arg.AssignmentGroupID, arg.Status)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -205,6 +258,67 @@ func (q *Queries) GetAssignmentGroup(ctx context.Context, id pgtype.UUID) (Assig
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
+	return i, err
+}
+
+const getAssignmentWithGroup = `-- name: GetAssignmentWithGroup :one
+SELECT a.id, a.assignment_group_id, a.bootcamp_enrollment_id, a.assigned_by, a.assigned_at, a.deadline_at, a.status, a.archived_at, a.created_at, a.updated_at, ag.title as group_title, ag.description as group_description
+FROM assignments a
+JOIN assignment_groups ag ON a.assignment_group_id = ag.id
+WHERE a.id = $1 AND a.archived_at IS NULL LIMIT 1
+`
+
+type GetAssignmentWithGroupRow struct {
+	ID                   pgtype.UUID        `db:"id" json:"id"`
+	AssignmentGroupID    pgtype.UUID        `db:"assignment_group_id" json:"assignment_group_id"`
+	BootcampEnrollmentID pgtype.UUID        `db:"bootcamp_enrollment_id" json:"bootcamp_enrollment_id"`
+	AssignedBy           pgtype.UUID        `db:"assigned_by" json:"assigned_by"`
+	AssignedAt           pgtype.Timestamptz `db:"assigned_at" json:"assigned_at"`
+	DeadlineAt           pgtype.Timestamptz `db:"deadline_at" json:"deadline_at"`
+	Status               AssignmentStatus   `db:"status" json:"status"`
+	ArchivedAt           pgtype.Timestamptz `db:"archived_at" json:"archived_at"`
+	CreatedAt            pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt            pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	GroupTitle           string             `db:"group_title" json:"group_title"`
+	GroupDescription     pgtype.Text        `db:"group_description" json:"group_description"`
+}
+
+func (q *Queries) GetAssignmentWithGroup(ctx context.Context, id pgtype.UUID) (GetAssignmentWithGroupRow, error) {
+	row := q.db.QueryRow(ctx, getAssignmentWithGroup, id)
+	var i GetAssignmentWithGroupRow
+	err := row.Scan(
+		&i.ID,
+		&i.AssignmentGroupID,
+		&i.BootcampEnrollmentID,
+		&i.AssignedBy,
+		&i.AssignedAt,
+		&i.DeadlineAt,
+		&i.Status,
+		&i.ArchivedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.GroupTitle,
+		&i.GroupDescription,
+	)
+	return i, err
+}
+
+const getEnrollmentBootcamp = `-- name: GetEnrollmentBootcamp :one
+SELECT be.bootcamp_id, b.is_active
+FROM bootcamp_enrollments be
+JOIN bootcamps b ON be.bootcamp_id = b.id
+WHERE be.id = $1
+`
+
+type GetEnrollmentBootcampRow struct {
+	BootcampID pgtype.UUID `db:"bootcamp_id" json:"bootcamp_id"`
+	IsActive   bool        `db:"is_active" json:"is_active"`
+}
+
+func (q *Queries) GetEnrollmentBootcamp(ctx context.Context, id pgtype.UUID) (GetEnrollmentBootcampRow, error) {
+	row := q.db.QueryRow(ctx, getEnrollmentBootcamp, id)
+	var i GetEnrollmentBootcampRow
+	err := row.Scan(&i.BootcampID, &i.IsActive)
 	return i, err
 }
 
@@ -399,6 +513,80 @@ func (q *Queries) ListAssignmentProblemsStatus(ctx context.Context, assignmentID
 	return items, nil
 }
 
+const listAssignments = `-- name: ListAssignments :many
+SELECT a.id, a.assignment_group_id, a.bootcamp_enrollment_id, a.assigned_by, a.assigned_at, a.deadline_at, a.status, a.archived_at, a.created_at, a.updated_at, ag.title as group_title
+FROM assignments a
+JOIN assignment_groups ag ON a.assignment_group_id = ag.id
+JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
+WHERE be.bootcamp_id = $1
+  AND ($2::uuid IS NULL OR a.assignment_group_id = $2::uuid)
+  AND ($3::assignment_status IS NULL OR a.status = $3::assignment_status)
+  AND a.archived_at IS NULL
+ORDER BY a.created_at DESC
+LIMIT $5
+OFFSET $4
+`
+
+type ListAssignmentsParams struct {
+	BootcampID        pgtype.UUID          `db:"bootcamp_id" json:"bootcamp_id"`
+	AssignmentGroupID pgtype.UUID          `db:"assignment_group_id" json:"assignment_group_id"`
+	Status            NullAssignmentStatus `db:"status" json:"status"`
+	Offset            int32                `db:"offset" json:"offset"`
+	Limit             int32                `db:"limit" json:"limit"`
+}
+
+type ListAssignmentsRow struct {
+	ID                   pgtype.UUID        `db:"id" json:"id"`
+	AssignmentGroupID    pgtype.UUID        `db:"assignment_group_id" json:"assignment_group_id"`
+	BootcampEnrollmentID pgtype.UUID        `db:"bootcamp_enrollment_id" json:"bootcamp_enrollment_id"`
+	AssignedBy           pgtype.UUID        `db:"assigned_by" json:"assigned_by"`
+	AssignedAt           pgtype.Timestamptz `db:"assigned_at" json:"assigned_at"`
+	DeadlineAt           pgtype.Timestamptz `db:"deadline_at" json:"deadline_at"`
+	Status               AssignmentStatus   `db:"status" json:"status"`
+	ArchivedAt           pgtype.Timestamptz `db:"archived_at" json:"archived_at"`
+	CreatedAt            pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt            pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	GroupTitle           string             `db:"group_title" json:"group_title"`
+}
+
+func (q *Queries) ListAssignments(ctx context.Context, arg ListAssignmentsParams) ([]ListAssignmentsRow, error) {
+	rows, err := q.db.Query(ctx, listAssignments,
+		arg.BootcampID,
+		arg.AssignmentGroupID,
+		arg.Status,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAssignmentsRow{}
+	for rows.Next() {
+		var i ListAssignmentsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.AssignmentGroupID,
+			&i.BootcampEnrollmentID,
+			&i.AssignedBy,
+			&i.AssignedAt,
+			&i.DeadlineAt,
+			&i.Status,
+			&i.ArchivedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.GroupTitle,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAssignmentsByMentee = `-- name: ListAssignmentsByMentee :many
 SELECT a.id, a.assignment_group_id, a.bootcamp_enrollment_id, a.assigned_by, a.assigned_at, a.deadline_at, a.status, a.archived_at, a.created_at, a.updated_at, ag.title as group_title 
 FROM assignments a
@@ -466,6 +654,36 @@ type RemoveProblemFromAssignmentGroupParams struct {
 func (q *Queries) RemoveProblemFromAssignmentGroup(ctx context.Context, arg RemoveProblemFromAssignmentGroupParams) error {
 	_, err := q.db.Exec(ctx, removeProblemFromAssignmentGroup, arg.AssignmentGroupID, arg.ProblemID)
 	return err
+}
+
+const updateAssignmentDeadline = `-- name: UpdateAssignmentDeadline :one
+UPDATE assignments
+SET deadline_at = $2, updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+RETURNING id, assignment_group_id, bootcamp_enrollment_id, assigned_by, assigned_at, deadline_at, status, archived_at, created_at, updated_at
+`
+
+type UpdateAssignmentDeadlineParams struct {
+	ID         pgtype.UUID        `db:"id" json:"id"`
+	DeadlineAt pgtype.Timestamptz `db:"deadline_at" json:"deadline_at"`
+}
+
+func (q *Queries) UpdateAssignmentDeadline(ctx context.Context, arg UpdateAssignmentDeadlineParams) (Assignment, error) {
+	row := q.db.QueryRow(ctx, updateAssignmentDeadline, arg.ID, arg.DeadlineAt)
+	var i Assignment
+	err := row.Scan(
+		&i.ID,
+		&i.AssignmentGroupID,
+		&i.BootcampEnrollmentID,
+		&i.AssignedBy,
+		&i.AssignedAt,
+		&i.DeadlineAt,
+		&i.Status,
+		&i.ArchivedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const updateAssignmentGroup = `-- name: UpdateAssignmentGroup :one

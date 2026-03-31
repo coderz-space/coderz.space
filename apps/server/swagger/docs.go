@@ -1341,6 +1341,92 @@ const docTemplate = `{
             }
         },
         "/v1/organizations/{orgId}/bootcamps/{bootcampId}/assignment-groups/{groupId}/problems": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Atomically replace all problems in an assignment group with a new set (mentor only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Assignment Groups"
+                ],
+                "summary": "Replace all problems in assignment group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID (UUID)",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Assignment Group ID (UUID)",
+                        "name": "groupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New problems with positions",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/assignment.ReplaceGroupProblemsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Problems replaced successfully",
+                        "schema": {
+                            "$ref": "#/definitions/assignment.GenericResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - validation error, duplicate problem IDs, or duplicate positions",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - mentor role required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - group or problem does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -1515,13 +1601,107 @@ const docTemplate = `{
             }
         },
         "/v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all assignments for a bootcamp with filtering by assignment_group_id and status. Supports pagination. Mentees see only their own assignments, mentors see all.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Assignments"
+                ],
+                "summary": "List assignments",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID (UUID)",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by assignment group ID (UUID)",
+                        "name": "assignment_group_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by status (active, completed, expired)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default: 20, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of assignments with pagination",
+                        "schema": {
+                            "$ref": "#/definitions/assignment.AssignmentListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid bootcamp ID or query parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - not a bootcamp member",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Assign a problem set to a mentee with deadline (mentor only)",
+                "description": "Assign a problem set to a mentee with deadline (mentor only). Snapshots problems from group atomically. Prevents duplicate active assignments. Supports Idempotency-Key header.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1546,6 +1726,12 @@ const docTemplate = `{
                         "name": "bootcampId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Idempotency key for safe retries",
+                        "name": "Idempotency-Key",
+                        "in": "header"
                     },
                     {
                         "description": "Assignment details",
@@ -1593,7 +1779,7 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "Conflict - duplicate active assignment",
+                        "description": "Conflict - duplicate active assignment or enrollment bootcamp mismatch",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1609,7 +1795,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve assignment with problem progress",
+                "description": "Retrieve assignment with problem progress and assignment group metadata",
                 "consumes": [
                     "application/json"
                 ],
@@ -1738,6 +1924,94 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad request - validation error or no fields provided",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - mentor role required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - assignment does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/deadline": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update the deadline of an assignment (mentor only). Mentees cannot update deadlines.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Assignments"
+                ],
+                "summary": "Update assignment deadline",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID (UUID)",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Assignment ID (UUID)",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New deadline",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/assignment.UpdateAssignmentDeadlineRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Assignment deadline updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/assignment.AssignmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid deadline format",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1933,6 +2207,94 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not found - assignment problem does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update the status of an assignment (mentor only). Valid transitions: active, completed, expired. Mentees cannot update status.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Assignments"
+                ],
+                "summary": "Update assignment status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID (UUID)",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Assignment ID (UUID)",
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New status",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/assignment.UpdateAssignmentStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Assignment status updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/assignment.AssignmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid status",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - mentor role required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - assignment does not exist",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -4160,6 +4522,33 @@ const docTemplate = `{
                 }
             }
         },
+        "assignment.ReplaceGroupProblemsRequest": {
+            "type": "object",
+            "required": [
+                "problems"
+            ],
+            "properties": {
+                "problems": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/assignment.GroupProblemInput"
+                    }
+                }
+            }
+        },
+        "assignment.UpdateAssignmentDeadlineRequest": {
+            "type": "object",
+            "required": [
+                "deadlineAt"
+            ],
+            "properties": {
+                "deadlineAt": {
+                    "type": "string",
+                    "example": "2024-01-20T23:59:59Z"
+                }
+            }
+        },
         "assignment.UpdateAssignmentGroupRequest": {
             "type": "object",
             "properties": {
@@ -4211,6 +4600,23 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2024-01-20T23:59:59Z"
                 },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "completed",
+                        "expired"
+                    ],
+                    "example": "completed"
+                }
+            }
+        },
+        "assignment.UpdateAssignmentStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
                 "status": {
                     "type": "string",
                     "enum": [

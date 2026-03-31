@@ -288,6 +288,53 @@ func (h *Handler) RemoveProblemFromGroup(c *echo.Context) error {
 	return response.NewResponse(c, http.StatusOK, "OK", "PROBLEM_REMOVED_FROM_GROUP", map[string]any{"message": "Problem removed successfully"}, nil)
 }
 
+// ReplaceGroupProblems godoc
+// @Summary Replace all problems in assignment group
+// @Description Atomically replace all problems in an assignment group with a new set (mentor only)
+// @Tags Assignment Groups
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param bootcampId path string true "Bootcamp ID (UUID)"
+// @Param groupId path string true "Assignment Group ID (UUID)"
+// @Param body body ReplaceGroupProblemsRequest true "New problems with positions"
+// @Success 200 {object} GenericResponse "Problems replaced successfully"
+// @Failure 400 {object} map[string]any "Bad request - validation error, duplicate problem IDs, or duplicate positions"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - mentor role required"
+// @Failure 404 {object} map[string]any "Not found - group or problem does not exist"
+// @Router /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignment-groups/{groupId}/problems [put]
+func (h *Handler) ReplaceGroupProblems(c *echo.Context, body ReplaceGroupProblemsRequest) error {
+	_, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	groupID, err := utils.StringToUUID((*c).Param("groupId"))
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_GROUP_ID", nil, nil)
+	}
+
+	err = h.service.ReplaceGroupProblems((*c).Request().Context(), groupID, body)
+	if err != nil {
+		// Handle specific validation errors
+		errMsg := err.Error()
+		if len(errMsg) >= 19 && errMsg[:19] == "DUPLICATE_PROBLEM_ID" {
+			return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", errMsg, nil, nil)
+		}
+		if len(errMsg) >= 18 && errMsg[:18] == "DUPLICATE_POSITION" {
+			return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", errMsg, nil, nil)
+		}
+		if len(errMsg) >= 16 && errMsg[:16] == "INVALID_POSITION" {
+			return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", errMsg, nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "OK", "PROBLEMS_REPLACED", map[string]any{"message": "Problems replaced successfully"}, nil)
+}
+
 // DeleteAssignmentGroup godoc
 // @Summary Delete assignment group
 // @Description Delete an assignment group if no assignments exist (mentor only)
@@ -334,20 +381,21 @@ func (h *Handler) DeleteAssignmentGroup(c *echo.Context) error {
 
 // CreateAssignment godoc
 // @Summary Create assignment instance
-// @Description Assign a problem set to a mentee with deadline (mentor only)
+// @Description Assign a problem set to a mentee with deadline (mentor only). Snapshots problems from group atomically. Prevents duplicate active assignments. Supports Idempotency-Key header.
 // @Tags Assignments
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param orgId path string true "Organization ID (UUID)"
 // @Param bootcampId path string true "Bootcamp ID (UUID)"
+// @Param Idempotency-Key header string false "Idempotency key for safe retries"
 // @Param body body CreateAssignmentRequest true "Assignment details"
 // @Success 201 {object} AssignmentResponse "Assignment created successfully"
 // @Failure 400 {object} map[string]any "Bad request - validation error"
 // @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
 // @Failure 403 {object} map[string]any "Forbidden - mentor role required"
 // @Failure 404 {object} map[string]any "Not found - group or enrollment does not exist"
-// @Failure 409 {object} map[string]any "Conflict - duplicate active assignment"
+// @Failure 409 {object} map[string]any "Conflict - duplicate active assignment or enrollment bootcamp mismatch"
 // @Router /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments [post]
 func (h *Handler) CreateAssignment(c *echo.Context, body CreateAssignmentRequest) error {
 	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
@@ -362,6 +410,22 @@ func (h *Handler) CreateAssignment(c *echo.Context, body CreateAssignmentRequest
 
 	result, err := h.service.CreateAssignment((*c).Request().Context(), body, assignedBy)
 	if err != nil {
+		errMsg := err.Error()
+		if errMsg == "ASSIGNMENT_GROUP_NOT_FOUND" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "ASSIGNMENT_GROUP_NOT_FOUND", nil, nil)
+		}
+		if errMsg == "ENROLLMENT_NOT_FOUND" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "ENROLLMENT_NOT_FOUND", nil, nil)
+		}
+		if errMsg == "ENROLLMENT_BOOTCAMP_MISMATCH" {
+			return response.NewResponse(c, http.StatusConflict, "CONFLICT", "ENROLLMENT_BOOTCAMP_MISMATCH", nil, nil)
+		}
+		if errMsg == "BOOTCAMP_INACTIVE" {
+			return response.NewResponse(c, http.StatusConflict, "CONFLICT", "BOOTCAMP_INACTIVE", nil, nil)
+		}
+		if errMsg == "DUPLICATE_ACTIVE_ASSIGNMENT" {
+			return response.NewResponse(c, http.StatusConflict, "CONFLICT", "DUPLICATE_ACTIVE_ASSIGNMENT", nil, nil)
+		}
 		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
 	}
 
@@ -370,7 +434,7 @@ func (h *Handler) CreateAssignment(c *echo.Context, body CreateAssignmentRequest
 
 // GetAssignment godoc
 // @Summary Get assignment details
-// @Description Retrieve assignment with problem progress
+// @Description Retrieve assignment with problem progress and assignment group metadata
 // @Tags Assignments
 // @Accept json
 // @Produce json
@@ -404,6 +468,85 @@ func (h *Handler) GetAssignment(c *echo.Context) error {
 	}
 
 	return response.NewResponse(c, http.StatusOK, "OK", "ASSIGNMENT_RETRIEVED", result, nil)
+}
+
+// ListAssignments godoc
+// @Summary List assignments
+// @Description Get all assignments for a bootcamp with filtering by assignment_group_id and status. Supports pagination. Mentees see only their own assignments, mentors see all.
+// @Tags Assignments
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param bootcampId path string true "Bootcamp ID (UUID)"
+// @Param assignment_group_id query string false "Filter by assignment group ID (UUID)"
+// @Param status query string false "Filter by status (active, completed, expired)"
+// @Param page query int false "Page number (default: 1)"
+// @Param limit query int false "Items per page (default: 20, max: 100)"
+// @Success 200 {object} AssignmentListResponse "List of assignments with pagination"
+// @Failure 400 {object} map[string]any "Bad request - invalid bootcamp ID or query parameters"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - not a bootcamp member"
+// @Failure 500 {object} map[string]any "Internal server error"
+// @Router /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments [get]
+func (h *Handler) ListAssignments(c *echo.Context) error {
+	_, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	bootcampID, err := utils.StringToUUID((*c).Param("bootcampId"))
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_BOOTCAMP_ID", nil, nil)
+	}
+
+	// Parse query parameters
+	var assignmentGroupID *pgtype.UUID
+	assignmentGroupIDStr := (*c).QueryParam("assignment_group_id")
+	if assignmentGroupIDStr != "" {
+		agID, err := utils.StringToUUID(assignmentGroupIDStr)
+		if err != nil {
+			return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ASSIGNMENT_GROUP_ID", nil, nil)
+		}
+		assignmentGroupID = &agID
+	}
+
+	var status *string
+	statusStr := (*c).QueryParam("status")
+	if statusStr != "" {
+		// Validate status value
+		validStatuses := map[string]bool{
+			"active":    true,
+			"completed": true,
+			"expired":   true,
+		}
+		if !validStatuses[statusStr] {
+			return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_STATUS", nil, nil)
+		}
+		status = &statusStr
+	}
+
+	// Parse pagination parameters
+	page := 1
+	if pageStr := (*c).QueryParam("page"); pageStr != "" {
+		if p, err := utils.StringToInt(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	limit := 20
+	if limitStr := (*c).QueryParam("limit"); limitStr != "" {
+		if l, err := utils.StringToInt(limitStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
+
+	result, err := h.service.ListAssignments((*c).Request().Context(), bootcampID, assignmentGroupID, status, page, limit)
+	if err != nil {
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "OK", "ASSIGNMENTS_RETRIEVED", result, nil)
 }
 
 // ListAssignmentsByMentee godoc
@@ -475,6 +618,92 @@ func (h *Handler) UpdateAssignment(c *echo.Context, body UpdateAssignmentRequest
 	}
 
 	return response.NewResponse(c, http.StatusOK, "OK", "ASSIGNMENT_UPDATED", result, nil)
+}
+
+// UpdateAssignmentDeadline godoc
+// @Summary Update assignment deadline
+// @Description Update the deadline of an assignment (mentor only). Mentees cannot update deadlines.
+// @Tags Assignments
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param bootcampId path string true "Bootcamp ID (UUID)"
+// @Param assignmentId path string true "Assignment ID (UUID)"
+// @Param body body UpdateAssignmentDeadlineRequest true "New deadline"
+// @Success 200 {object} AssignmentResponse "Assignment deadline updated successfully"
+// @Failure 400 {object} map[string]any "Bad request - invalid deadline format"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - mentor role required"
+// @Failure 404 {object} map[string]any "Not found - assignment does not exist"
+// @Router /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/deadline [patch]
+func (h *Handler) UpdateAssignmentDeadline(c *echo.Context, body UpdateAssignmentDeadlineRequest) error {
+	_, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	assignmentID, err := utils.StringToUUID((*c).Param("assignmentId"))
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ASSIGNMENT_ID", nil, nil)
+	}
+
+	result, err := h.service.UpdateAssignmentDeadline((*c).Request().Context(), assignmentID, body)
+	if err != nil {
+		errMsg := err.Error()
+		if errMsg == "INVALID_DEADLINE_FORMAT" {
+			return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_DEADLINE_FORMAT", nil, nil)
+		}
+		if errMsg == "ASSIGNMENT_NOT_FOUND" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "ASSIGNMENT_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "OK", "ASSIGNMENT_DEADLINE_UPDATED", result, nil)
+}
+
+// UpdateAssignmentStatus godoc
+// @Summary Update assignment status
+// @Description Update the status of an assignment (mentor only). Valid transitions: active, completed, expired. Mentees cannot update status.
+// @Tags Assignments
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param orgId path string true "Organization ID (UUID)"
+// @Param bootcampId path string true "Bootcamp ID (UUID)"
+// @Param assignmentId path string true "Assignment ID (UUID)"
+// @Param body body UpdateAssignmentStatusRequest true "New status"
+// @Success 200 {object} AssignmentResponse "Assignment status updated successfully"
+// @Failure 400 {object} map[string]any "Bad request - invalid status"
+// @Failure 401 {object} map[string]any "Unauthorized - invalid or missing token"
+// @Failure 403 {object} map[string]any "Forbidden - mentor role required"
+// @Failure 404 {object} map[string]any "Not found - assignment does not exist"
+// @Router /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/status [patch]
+func (h *Handler) UpdateAssignmentStatus(c *echo.Context, body UpdateAssignmentStatusRequest) error {
+	_, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	assignmentID, err := utils.StringToUUID((*c).Param("assignmentId"))
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ASSIGNMENT_ID", nil, nil)
+	}
+
+	result, err := h.service.UpdateAssignmentStatus((*c).Request().Context(), assignmentID, body)
+	if err != nil {
+		errMsg := err.Error()
+		if errMsg == "INVALID_STATUS" {
+			return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_STATUS", nil, nil)
+		}
+		if errMsg == "ASSIGNMENT_NOT_FOUND" {
+			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "ASSIGNMENT_NOT_FOUND", nil, nil)
+		}
+		return response.NewResponse(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", err.Error(), nil, nil)
+	}
+
+	return response.NewResponse(c, http.StatusOK, "OK", "ASSIGNMENT_STATUS_UPDATED", result, nil)
 }
 
 // Assignment Problem Progress Handlers

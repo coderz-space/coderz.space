@@ -18,6 +18,7 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 	groupRouter.PATCH("/:groupId", core.WithBody(handler.UpdateAssignmentGroup))
 	groupRouter.DELETE("/:groupId", handler.DeleteAssignmentGroup)
 	groupRouter.POST("/:groupId/problems", core.WithBody(handler.AddProblemsToGroup))
+	groupRouter.PUT("/:groupId/problems", core.WithBody(handler.ReplaceGroupProblems))
 	groupRouter.DELETE("/:groupId/problems/:problemId", handler.RemoveProblemFromGroup)
 
 	// Assignment Instance routes
@@ -25,8 +26,11 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 	assignmentRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
 
 	assignmentRouter.POST("", core.WithBody(handler.CreateAssignment))
+	assignmentRouter.GET("", handler.ListAssignments)
 	assignmentRouter.GET("/:assignmentId", handler.GetAssignment)
 	assignmentRouter.PATCH("/:assignmentId", core.WithBody(handler.UpdateAssignment))
+	assignmentRouter.PATCH("/:assignmentId/deadline", core.WithBody(handler.UpdateAssignmentDeadline))
+	assignmentRouter.PATCH("/:assignmentId/status", core.WithBody(handler.UpdateAssignmentStatus))
 
 	// Assignment by enrollment routes
 	enrollmentAssignmentRouter := e.Group("/v1/organizations/:orgId/bootcamps/:bootcampId/enrollments/:enrollmentId/assignments")

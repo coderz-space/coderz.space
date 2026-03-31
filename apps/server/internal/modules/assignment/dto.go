@@ -20,6 +20,10 @@ type AddProblemsToGroupRequest struct {
 	Problems []GroupProblemInput `json:"problems" validate:"required,min=1,dive"`
 }
 
+type ReplaceGroupProblemsRequest struct {
+	Problems []GroupProblemInput `json:"problems" validate:"required,min=1,dive"`
+}
+
 type GroupProblemInput struct {
 	ProblemID string `json:"problemId" validate:"required,uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Position  int32  `json:"position" validate:"required,min=1" example:"1"`
@@ -66,6 +70,14 @@ type CreateAssignmentRequest struct {
 type UpdateAssignmentRequest struct {
 	DeadlineAt string `json:"deadlineAt" validate:"omitempty,datetime=2006-01-02T15:04:05Z07:00" example:"2024-01-20T23:59:59Z"`
 	Status     string `json:"status" validate:"omitempty,oneof=active completed expired" example:"completed"`
+}
+
+type UpdateAssignmentDeadlineRequest struct {
+	DeadlineAt string `json:"deadlineAt" validate:"required,datetime=2006-01-02T15:04:05Z07:00" example:"2024-01-20T23:59:59Z"`
+}
+
+type UpdateAssignmentStatusRequest struct {
+	Status string `json:"status" validate:"required,oneof=active completed expired" example:"completed"`
 }
 
 type AssignmentData struct {
