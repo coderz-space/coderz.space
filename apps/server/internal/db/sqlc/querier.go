@@ -56,6 +56,7 @@ type Querier interface {
 	GetOrganizationById(ctx context.Context, id pgtype.UUID) (Organization, error)
 	GetOrganizationBySlug(ctx context.Context, slug string) (Organization, error)
 	GetOrganizationMember(ctx context.Context, arg GetOrganizationMemberParams) (OrganizationMember, error)
+	GetOrganizationMemberById(ctx context.Context, id pgtype.UUID) (OrganizationMember, error)
 	GetPendingOrganizations(ctx context.Context) ([]Organization, error)
 	GetPoll(ctx context.Context, id pgtype.UUID) (Poll, error)
 	GetPollResults(ctx context.Context, pollID pgtype.UUID) ([]GetPollResultsRow, error)

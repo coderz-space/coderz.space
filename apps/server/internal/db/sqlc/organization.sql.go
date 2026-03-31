@@ -177,6 +177,24 @@ func (q *Queries) GetOrganizationMember(ctx context.Context, arg GetOrganization
 	return i, err
 }
 
+const getOrganizationMemberById = `-- name: GetOrganizationMemberById :one
+SELECT id, organization_id, user_id, role, joined_at FROM organization_members
+WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetOrganizationMemberById(ctx context.Context, id pgtype.UUID) (OrganizationMember, error) {
+	row := q.db.QueryRow(ctx, getOrganizationMemberById, id)
+	var i OrganizationMember
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.UserID,
+		&i.Role,
+		&i.JoinedAt,
+	)
+	return i, err
+}
+
 const getPendingOrganizations = `-- name: GetPendingOrganizations :many
 SELECT id, name, slug, description, status, created_at, updated_at FROM organizations
 WHERE status = 'pending_approval'

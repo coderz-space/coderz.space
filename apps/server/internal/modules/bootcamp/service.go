@@ -211,7 +211,7 @@ func (s *Service) DeactivateBootcamp(ctx context.Context, bootcampID pgtype.UUID
 
 // Enrollment operations
 
-func (s *Service) EnrollMember(ctx context.Context, bootcampID pgtype.UUID, req EnrollMemberRequest) (*EnrollmentData, error) {
+func (s *Service) EnrollMember(ctx context.Context, orgID pgtype.UUID, bootcampID pgtype.UUID, req EnrollMemberRequest) (*EnrollmentData, error) {
 	memberUUID, err := utils.StringToUUID(req.OrganizationMemberID)
 	if err != nil {
 		return nil, errors.New("INVALID_MEMBER_ID")
@@ -222,14 +222,30 @@ func (s *Service) EnrollMember(ctx context.Context, bootcampID pgtype.UUID, req 
 		return nil, err
 	}
 
-	// Check if bootcamp is active
+	// Check if bootcamp exists and is active
 	bootcamp, err := s.queries.GetBootcamp(ctx, bootcampID)
 	if err != nil {
 		return nil, errors.New("BOOTCAMP_NOT_FOUND")
 	}
 
+	// Validate bootcamp belongs to the organization
+	if bootcamp.OrganizationID != orgID {
+		return nil, errors.New("BOOTCAMP_NOT_FOUND")
+	}
+
 	if !bootcamp.IsActive {
 		return nil, errors.New("BOOTCAMP_INACTIVE")
+	}
+
+	// Validate member belongs to the same organization
+	orgMember, err := s.queries.GetOrganizationMemberById(ctx, memberUUID)
+	if err != nil {
+		return nil, errors.New("MEMBER_NOT_FOUND")
+	}
+
+	// Check if member belongs to the same organization as the bootcamp
+	if orgMember.OrganizationID != bootcamp.OrganizationID {
+		return nil, errors.New("CROSS_ORG_VIOLATION")
 	}
 
 	enrollment, err := s.queries.EnrollInBootcamp(ctx, db.EnrollInBootcampParams{

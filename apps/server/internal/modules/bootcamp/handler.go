@@ -157,10 +157,11 @@ func (h *Handler) ListBootcamps(c *echo.Context) error {
 	// Parse is_active filter
 	var isActive *bool
 	if isActiveStr := (*c).QueryParam("is_active"); isActiveStr != "" {
-		if isActiveStr == "true" {
+		switch isActiveStr {
+		case "true":
 			val := true
 			isActive = &val
-		} else if isActiveStr == "false" {
+		case "false":
 			val := false
 			isActive = &val
 		}
@@ -197,9 +198,45 @@ func (h *Handler) ListBootcamps(c *echo.Context) error {
 }
 
 func (h *Handler) UpdateBootcamp(c *echo.Context, body UpdateBootcampRequest) error {
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	orgID, err := utils.StringToUUID((*c).Param("orgId"))
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ORGANIZATION_ID", nil, nil)
+	}
+
 	bootcampID, err := utils.StringToUUID((*c).Param("bootcampId"))
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_BOOTCAMP_ID", nil, nil)
+	}
+
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_USER_ID", nil, nil)
+	}
+
+	// Get the organization member to verify admin role
+	member, err := h.service.GetMember(c.Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Validate admin role authorization
+	if member.Role != "admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+
+	// Verify bootcamp belongs to the organization
+	bootcamp, err := h.service.GetBootcampByID(c.Request().Context(), bootcampID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "BOOTCAMP_NOT_FOUND", nil, nil)
+	}
+
+	if bootcamp.OrganizationID != orgID {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "BOOTCAMP_NOT_FOUND", nil, nil)
 	}
 
 	data, err := h.service.UpdateBootcamp(c.Request().Context(), bootcampID, body)
@@ -223,9 +260,45 @@ func (h *Handler) UpdateBootcamp(c *echo.Context, body UpdateBootcampRequest) er
 }
 
 func (h *Handler) DeactivateBootcamp(c *echo.Context) error {
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	orgID, err := utils.StringToUUID((*c).Param("orgId"))
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ORGANIZATION_ID", nil, nil)
+	}
+
 	bootcampID, err := utils.StringToUUID((*c).Param("bootcampId"))
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_BOOTCAMP_ID", nil, nil)
+	}
+
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_USER_ID", nil, nil)
+	}
+
+	// Get the organization member to verify admin role
+	member, err := h.service.GetMember(c.Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Validate admin role authorization
+	if member.Role != "admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+
+	// Verify bootcamp belongs to the organization
+	bootcamp, err := h.service.GetBootcampByID(c.Request().Context(), bootcampID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "BOOTCAMP_NOT_FOUND", nil, nil)
+	}
+
+	if bootcamp.OrganizationID != orgID {
+		return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "BOOTCAMP_NOT_FOUND", nil, nil)
 	}
 
 	err = h.service.DeactivateBootcamp(c.Request().Context(), bootcampID)
@@ -242,18 +315,47 @@ func (h *Handler) DeactivateBootcamp(c *echo.Context) error {
 // Enrollment handlers
 
 func (h *Handler) EnrollMember(c *echo.Context, body EnrollMemberRequest) error {
+	claims, ok := (*c).Get(auth.ClaimsKey).(*utils.TokenPayload)
+	if !ok {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_TOKEN_CLAIMS", nil, nil)
+	}
+
+	orgID, err := utils.StringToUUID((*c).Param("orgId"))
+	if err != nil {
+		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_ORGANIZATION_ID", nil, nil)
+	}
+
 	bootcampID, err := utils.StringToUUID((*c).Param("bootcampId"))
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_BOOTCAMP_ID", nil, nil)
 	}
 
-	data, err := h.service.EnrollMember(c.Request().Context(), bootcampID, body)
+	userID, err := utils.StringToUUID(claims.UserID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "INVALID_USER_ID", nil, nil)
+	}
+
+	// Get the organization member to verify admin role
+	member, err := h.service.GetMember(c.Request().Context(), orgID, userID)
+	if err != nil {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "NOT_ORGANIZATION_MEMBER", nil, nil)
+	}
+
+	// Validate admin role authorization
+	if member.Role != "admin" {
+		return response.NewResponse(c, http.StatusForbidden, "FORBIDDEN", "ADMIN_ROLE_REQUIRED", nil, nil)
+	}
+
+	data, err := h.service.EnrollMember(c.Request().Context(), orgID, bootcampID, body)
 	if err != nil {
 		if err.Error() == "BOOTCAMP_INACTIVE" {
 			return response.NewResponse(c, http.StatusConflict, "CONFLICT", "BOOTCAMP_INACTIVE", nil, nil)
 		}
 		if err.Error() == "BOOTCAMP_NOT_FOUND" {
 			return response.NewResponse(c, http.StatusNotFound, "NOT_FOUND", "BOOTCAMP_NOT_FOUND", nil, nil)
+		}
+		if err.Error() == "CROSS_ORG_VIOLATION" {
+			return response.NewResponse(c, http.StatusConflict, "CONFLICT", "CROSS_ORG_VIOLATION", nil, nil)
 		}
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", err.Error(), nil, nil)
 	}
