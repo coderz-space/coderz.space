@@ -11,7 +11,7 @@ import (
 
 func InitDB(cfg *config.Config) (*pgxpool.Pool, error) {
 	// configuration
-	config, err := pgxpool.ParseConfig(cfg.DB_URL)
+	config, err := pgxpool.ParseConfig(cfg.DBURL)
 	if err != nil {
 		return nil, err
 	}

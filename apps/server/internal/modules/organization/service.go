@@ -242,7 +242,7 @@ func (s *Service) ListMembers(ctx context.Context, orgID pgtype.UUID, page, limi
 			JoinedAt:       m.JoinedAt.Time.Format("2006-01-02T15:04:05Z07:00"),
 			Name:           m.Name,
 			Email:          m.Email.String,
-			AvatarUrl:      m.AvatarUrl.String,
+			AvatarURL:      m.AvatarUrl.String,
 			ID:             m.ID,
 			OrganizationID: m.OrganizationID,
 			UserID:         m.UserID,

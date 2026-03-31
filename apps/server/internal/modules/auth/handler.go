@@ -258,7 +258,7 @@ func (h *Handler) setAuthCookies(c *echo.Context, accessToken, refreshToken stri
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
-		MaxAge:   int(h.service.config.REFRESH_TOKEN_EXPIRES.Seconds()),
+		MaxAge:   int(h.service.config.RefreshTokenExpires.Seconds()),
 	}
 	c.SetCookie(refreshCookie)
 }

@@ -15,15 +15,15 @@ const (
 )
 
 // middleware to check if the user is authenticated
-func AuthMiddleware(jwtSecret, jwtExpiryTime string) echo.MiddlewareFunc {
+func AuthMiddleware(jwtSecret, _ /* jwtExpiryTime */ string) echo.MiddlewareFunc {
 	echojwtConfig := echojwt.Config{
 		SigningKey: []byte(jwtSecret),
-		NewClaimsFunc: func(c *echo.Context) jwt.Claims {
+		NewClaimsFunc: func(_ *echo.Context) jwt.Claims {
 			return &utils.TokenPayload{}
 		},
 		// Prioritize header over cookie by listing header first
 		TokenLookup: "header:Authorization:Bearer ,cookie:access_token",
-		ErrorHandler: func(c *echo.Context, err error) error {
+		ErrorHandler: func(c *echo.Context, _ /* err */ error) error {
 			return c.JSON(http.StatusUnauthorized, map[string]any{
 				"message": "INVALID_TOKEN",
 			})
@@ -61,7 +61,7 @@ func AuthMiddleware(jwtSecret, jwtExpiryTime string) echo.MiddlewareFunc {
 type CookieConfig struct {
 	Domain   string
 	Secure   bool
-	HttpOnly bool
+	HTTPOnly bool
 	SameSite http.SameSite
 	Path     string
 }
@@ -71,7 +71,7 @@ func DefaultCookieConfig() CookieConfig {
 	return CookieConfig{
 		Domain:   "",
 		Secure:   true,
-		HttpOnly: true,
+		HTTPOnly: true,
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 	}
@@ -86,7 +86,7 @@ func SetAccessTokenCookie(c *echo.Context, token string, maxAge int, config Cook
 		Domain:   config.Domain,
 		MaxAge:   maxAge,
 		Secure:   config.Secure,
-		HttpOnly: config.HttpOnly,
+		HttpOnly: config.HTTPOnly,
 		SameSite: config.SameSite,
 	}
 	c.SetCookie(cookie)
@@ -101,7 +101,7 @@ func SetRefreshTokenCookie(c *echo.Context, token string, maxAge int, config Coo
 		Domain:   config.Domain,
 		MaxAge:   maxAge,
 		Secure:   config.Secure,
-		HttpOnly: config.HttpOnly,
+		HttpOnly: config.HTTPOnly,
 		SameSite: config.SameSite,
 	}
 	c.SetCookie(cookie)
@@ -117,7 +117,7 @@ func ClearAuthCookies(c *echo.Context, config CookieConfig) {
 		Domain:   config.Domain,
 		MaxAge:   -1,
 		Secure:   config.Secure,
-		HttpOnly: config.HttpOnly,
+		HttpOnly: config.HTTPOnly,
 		SameSite: config.SameSite,
 	}
 	c.SetCookie(accessCookie)
@@ -130,7 +130,7 @@ func ClearAuthCookies(c *echo.Context, config CookieConfig) {
 		Domain:   config.Domain,
 		MaxAge:   -1,
 		Secure:   config.Secure,
-		HttpOnly: config.HttpOnly,
+		HttpOnly: config.HTTPOnly,
 		SameSite: config.SameSite,
 	}
 	c.SetCookie(refreshCookie)

@@ -86,7 +86,7 @@ func TestListMembersResponseStructure(t *testing.T) {
 			{
 				Name:      "Test User",
 				Email:     "test@example.com",
-				AvatarUrl: "https://example.com/avatar.jpg",
+				AvatarURL: "https://example.com/avatar.jpg",
 			},
 		},
 		Meta: &PaginationMeta{

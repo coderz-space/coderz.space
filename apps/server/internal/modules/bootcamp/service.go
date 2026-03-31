@@ -278,7 +278,7 @@ func (s *Service) ListEnrollments(ctx context.Context, bootcampID pgtype.UUID) (
 			EnrolledAt:           enrollment.EnrolledAt.Time.Format("2006-01-02T15:04:05Z07:00"),
 			Name:                 enrollment.Name,
 			Email:                enrollment.Email.String,
-			AvatarUrl:            enrollment.AvatarUrl.String,
+			AvatarURL:            enrollment.AvatarUrl.String,
 			OrgRole:              string(enrollment.OrgRole),
 		}
 	}

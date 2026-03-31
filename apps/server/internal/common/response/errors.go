@@ -25,7 +25,7 @@ func ValidationError(c *echo.Context, code string, err error) error {
 }
 
 // AuthorizationError returns a standardized authorization error response
-func AuthorizationError(c *echo.Context, code, message string) error {
+func AuthorizationError(c *echo.Context, _ /* code */, message string) error {
 	if message == "" {
 		message = "Access denied"
 	}
@@ -33,7 +33,7 @@ func AuthorizationError(c *echo.Context, code, message string) error {
 }
 
 // AuthenticationError returns a standardized authentication error response
-func AuthenticationError(c *echo.Context, code, message string) error {
+func AuthenticationError(c *echo.Context, _ /* code */, message string) error {
 	if message == "" {
 		message = "Authentication required"
 	}
@@ -41,7 +41,7 @@ func AuthenticationError(c *echo.Context, code, message string) error {
 }
 
 // ConflictError returns a standardized conflict error response
-func ConflictError(c *echo.Context, code, message string) error {
+func ConflictError(c *echo.Context, _ /* code */, message string) error {
 	if message == "" {
 		message = "Resource conflict"
 	}
@@ -49,7 +49,7 @@ func ConflictError(c *echo.Context, code, message string) error {
 }
 
 // NotFoundError returns a standardized not found error response
-func NotFoundError(c *echo.Context, code, message string) error {
+func NotFoundError(c *echo.Context, _ /* code */, message string) error {
 	if message == "" {
 		message = "Resource not found"
 	}
@@ -57,7 +57,7 @@ func NotFoundError(c *echo.Context, code, message string) error {
 }
 
 // BadRequestError returns a standardized bad request error response
-func BadRequestError(c *echo.Context, code, message string) error {
+func BadRequestError(c *echo.Context, _ /* code */, message string) error {
 	if message == "" {
 		message = "Bad request"
 	}
@@ -70,7 +70,7 @@ func InternalServerError(c *echo.Context, code string, err error) error {
 }
 
 // UnprocessableEntityError returns a standardized unprocessable entity error response
-func UnprocessableEntityError(c *echo.Context, code, message string) error {
+func UnprocessableEntityError(c *echo.Context, _ /* code */, message string) error {
 	if message == "" {
 		message = "Unprocessable entity"
 	}
@@ -78,7 +78,7 @@ func UnprocessableEntityError(c *echo.Context, code, message string) error {
 }
 
 // TooManyRequestsError returns a standardized rate limit error response
-func TooManyRequestsError(c *echo.Context, code, message string) error {
+func TooManyRequestsError(c *echo.Context, _ /* code */, message string) error {
 	if message == "" {
 		message = "Too many requests"
 	}

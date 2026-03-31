@@ -79,7 +79,7 @@ func TestListAssignmentGroups_FilterByCreatedBy(t *testing.T) {
 	})
 
 	t.Run("without created_by filter", func(t *testing.T) {
-		var createdBy *pgtype.UUID = nil
+		var createdBy *pgtype.UUID
 
 		// Verify that the pointer is nil when no filter is provided
 		assert.Nil(t, createdBy, "created_by should be nil when no filter is provided")
@@ -125,7 +125,7 @@ func TestListAssignmentGroups_Integration(t *testing.T) {
 func TestListAssignmentGroups_ServiceSignature(t *testing.T) {
 	// This test verifies that the service method has the correct signature
 
-	t.Run("service method accepts correct parameters", func(t *testing.T) {
+	t.Run("service method accepts correct parameters", func(_ *testing.T) {
 		// Create a mock service (without actual database connection)
 		// This just verifies the method signature compiles correctly
 
@@ -133,7 +133,7 @@ func TestListAssignmentGroups_ServiceSignature(t *testing.T) {
 		if service != nil {
 			ctx := context.Background()
 			bootcampID := pgtype.UUID{}
-			var createdBy *pgtype.UUID = nil
+			var createdBy *pgtype.UUID
 			page := 1
 			limit := 20
 

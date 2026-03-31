@@ -10,7 +10,7 @@ import (
 func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Config) {
 	// Assignment Group routes
 	groupRouter := e.Group("/v1/organizations/:orgId/bootcamps/:bootcampId/assignment-groups")
-	groupRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	groupRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 
 	groupRouter.POST("", core.WithBody(handler.CreateAssignmentGroup))
 	groupRouter.GET("", handler.ListAssignmentGroups)
@@ -23,7 +23,7 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 
 	// Assignment Instance routes
 	assignmentRouter := e.Group("/v1/organizations/:orgId/bootcamps/:bootcampId/assignments")
-	assignmentRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	assignmentRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 
 	assignmentRouter.POST("", core.WithBody(handler.CreateAssignment))
 	assignmentRouter.GET("", handler.ListAssignments)
@@ -34,13 +34,13 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 
 	// Assignment by enrollment routes
 	enrollmentAssignmentRouter := e.Group("/v1/organizations/:orgId/bootcamps/:bootcampId/enrollments/:enrollmentId/assignments")
-	enrollmentAssignmentRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	enrollmentAssignmentRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 
 	enrollmentAssignmentRouter.GET("", handler.ListAssignmentsByMentee)
 
 	// Assignment Problem Progress routes
 	problemProgressRouter := e.Group("/v1/organizations/:orgId/bootcamps/:bootcampId/assignments/:assignmentId/problems")
-	problemProgressRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	problemProgressRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 
 	problemProgressRouter.GET("", handler.ListAssignmentProblems)
 	problemProgressRouter.GET("/:problemId", handler.GetAssignmentProblem)

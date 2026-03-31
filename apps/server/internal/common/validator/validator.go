@@ -61,7 +61,7 @@ func (v *validator) registerCustomValidators() {
 	}
 
 	// Register date_range validator
-	err = v.validator.RegisterValidation("date_range", func(fl go_validator.FieldLevel) bool {
+	err = v.validator.RegisterValidation("date_range", func(_ /* fl */ go_validator.FieldLevel) bool {
 		// This is a placeholder - actual date range validation should be done at service layer
 		// where we have access to both start and end dates
 		return true

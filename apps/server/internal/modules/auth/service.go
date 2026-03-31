@@ -112,7 +112,7 @@ func (s *Service) generateAuthData(ctx context.Context, user *db.User) (*AuthRes
 		UserName: user.Name,
 	}
 
-	accessToken, err := utils.GenerateToken(payload, s.config.JWT_EXPIRES)
+	accessToken, err := utils.GenerateToken(payload, s.config.JWTExpires)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (s *Service) generateAuthData(ctx context.Context, user *db.User) (*AuthRes
 	}
 
 	tokenHash := utils.HashString(refreshToken)
-	expiresAt := time.Now().Add(s.config.REFRESH_TOKEN_EXPIRES)
+	expiresAt := time.Now().Add(s.config.RefreshTokenExpires)
 
 	_, err = s.queries.CreateRefreshToken(ctx, db.CreateRefreshTokenParams{
 		UserID:    user.ID,

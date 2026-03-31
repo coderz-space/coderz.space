@@ -12,7 +12,7 @@ import (
 // RegisterProtectedRoutes registers all progress (doubts) module routes
 func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Config) {
 	doubtRouter := e.Group("/v1/doubts")
-	doubtRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	doubtRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 
 	// Doubt management endpoints with rate limiting for creation
 	// Rate limit: 10 requests per minute per user for doubt creation

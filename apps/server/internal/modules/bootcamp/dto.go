@@ -67,7 +67,7 @@ type EnrollmentData struct {
 	EnrolledAt           string      `json:"enrolledAt"`
 	Name                 string      `json:"name,omitempty"`
 	Email                string      `json:"email,omitempty"`
-	AvatarUrl            string      `json:"avatarUrl,omitempty"`
+	AvatarURL            string      `json:"avatarUrl,omitempty"`
 	OrgRole              string      `json:"orgRole,omitempty"`
 	ID                   pgtype.UUID `json:"id"`
 	BootcampID           pgtype.UUID `json:"bootcampId"`

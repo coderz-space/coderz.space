@@ -656,7 +656,7 @@ func (s *Service) UpdateAssignmentStatus(ctx context.Context, assignmentID pgtyp
 
 // Assignment Problem Progress Methods
 
-func (s *Service) UpdateAssignmentProblemProgress(ctx context.Context, assignmentID, problemID pgtype.UUID, req UpdateAssignmentProblemRequest, userID pgtype.UUID) (*AssignmentProblemResponse, error) {
+func (s *Service) UpdateAssignmentProblemProgress(ctx context.Context, assignmentID, problemID pgtype.UUID, req UpdateAssignmentProblemRequest, _ /* userID */ pgtype.UUID) (*AssignmentProblemResponse, error) {
 	// Get assignment with enrollment to verify ownership
 	_, err := s.queries.GetAssignmentWithEnrollment(ctx, assignmentID)
 	if err != nil {
