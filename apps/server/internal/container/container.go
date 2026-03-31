@@ -3,6 +3,7 @@ package container
 import (
 	"github.com/DSAwithGautam/Coderz.space/internal/config"
 	"github.com/DSAwithGautam/Coderz.space/internal/db"
+	db_sqlc "github.com/DSAwithGautam/Coderz.space/internal/db/sqlc"
 	"github.com/DSAwithGautam/Coderz.space/internal/modules/auth"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
@@ -24,20 +25,21 @@ type Container struct {
 
 func NewContainer(config *config.Config, logger *zap.Logger) (*Container, error) {
 
-	authService := auth.NewService()
-	authHandler := auth.NewHandler(authService)
-
-	db, err := db.InitDB(config)
+	pool, err := db.InitDB(config)
 	if err != nil {
 		return nil, err
 	}
+
+	queries := db_sqlc.New(pool)
+	authService := auth.NewService(queries, config)
+	authHandler := auth.NewHandler(authService)
 
 	container := &Container{
 		Config:      config,
 		Logger:      logger,
 		AuthHandler: authHandler,
 		AuthService: authService,
-		DB:          db,
+		DB:          pool,
 	}
 	return container, nil
 }
