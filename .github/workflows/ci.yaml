@@ -1,128 +1,137 @@
 name: CI
 
 on:
-    pull_request:
-        branches:
-            - "*"
-    push:
-        branches:
-            - prod
-            - main
-            - master
-            - dev
+  pull_request:
+    branches:
+      - "*"
+  push:
+    branches:
+      - prod
+      - main
+      - master
+      - dev
 
 env:
-    GO_VERSION: "1.24.x"
-    NODE_VERSION: "24"
+  GO_VERSION: "1.25.0"
+  NODE_VERSION: "24"
 
 jobs:
-    go-server:
-        name: Go Server CI
-        runs-on: ubuntu-latest
-        defaults:
-            run:
-                working-directory: ./apps/server
+  go-server:
+    name: Go Server CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./apps/server
 
-        services:
-            postgres:
-                image: postgres:18
-                env:
-                    POSTGRES_USER: coderz-space
-                    POSTGRES_PASSWORD: coderz-space
-                    POSTGRES_DB: coderz
-                ports:
-                    - 5432:5432
-                options: >-
-                    --health-cmd pg_isready
-                    --health-interval 10s
-                    --health-timeout 5s
-                    --health-retries 5
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: coderz-space
+          POSTGRES_PASSWORD: coderz-space
+          POSTGRES_DB: coderz
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Setup Go
-              uses: actions/setup-go@v5
-              with:
-                  go-version: ${{ env.GO_VERSION }}
-                  cache-dependency-path: apps/server/go.sum
+      # ✅ Go setup (aligned with go.mod)
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: apps/server/go.sum
 
-            - name: Install dependencies
-              run: go mod download
+      - name: Install dependencies
+        run: go mod download
 
-            - name: Verify dependencies
-              run: go mod verify
+      - name: Verify dependencies
+        run: go mod verify
 
-            - name: Run go vet
-              run: go vet ./...
+      - name: Run go vet
+        run: go vet ./...
 
-            - name: Install staticcheck
-              run: go install honnef.co/go/tools/cmd/staticcheck@latest
+      # ✅ staticcheck built with correct Go version
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
 
-            - name: Run staticcheck
-              run: staticcheck ./...
+      - name: Run staticcheck
+        run: staticcheck ./...
 
-            - name: Install golangci-lint
-              uses: golangci/golangci-lint-action@v6
-              with:
-                  version: latest
-                  working-directory: apps/server
-                  args: --timeout=5m
+      # ✅ golangci-lint (compatible with Go 1.25)
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.65.0
+          working-directory: apps/server
+          args: --timeout=5m
 
-            - name: Setup test environment
-              run: |
-                  cp .env .env.test
-                  echo "DB_URL=postgresql://coderz-space:coderz-space@localhost:5432/coderz?sslmode=disable" >> .env.test
-                  echo "DB_DSN=postgresql://coderz-space:coderz-space@localhost:5432/coderz?sslmode=disable" >> .env.test
+      # ✅ Test env
+      - name: Setup test environment
+        run: |
+          cp .env .env.test
+          echo "DB_URL=postgresql://coderz-space:coderz-space@localhost:5432/coderz?sslmode=disable" >> .env.test
+          echo "DB_DSN=postgresql://coderz-space:coderz-space@localhost:5432/coderz?sslmode=disable" >> .env.test
 
-            - name: Run migrations
-              run: |
-                  go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-                  migrate -path ./db/migrations -database "postgresql://coderz-space:coderz-space@localhost:5432/coderz?sslmode=disable" up
+      # ✅ DB migrations
+      - name: Run migrations
+        run: |
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+          migrate -path ./db/migrations -database "postgresql://coderz-space:coderz-space@localhost:5432/coderz?sslmode=disable" up
 
-            - name: Run tests
-              env:
-                  DB_URL: postgresql://coderz-space:coderz-space@localhost:5432/coderz?sslmode=disable
-              run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+      # ✅ Tests
+      - name: Run tests
+        env:
+          DB_URL: postgresql://coderz-space:coderz-space@localhost:5432/coderz?sslmode=disable
+        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 
-            - name: Upload coverage
-              uses: codecov/codecov-action@v5
-              with:
-                  files: ./apps/server/coverage.out
-                  flags: go-server
-                  fail_ci_if_error: false
+      # ✅ Coverage upload
+      - name: Upload coverage
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./apps/server/coverage.out
+          flags: go-server
+          fail_ci_if_error: false
 
-            - name: Build binary
-              run: go build -v -o bin/main ./cmd/main.go
+      # ✅ Build
+      - name: Build binary
+        run: go build -v -o bin/main ./cmd/main.go
 
-            - name: Install swag
-              run: go install github.com/swaggo/swag/cmd/swag@latest
+      # ✅ Swagger
+      - name: Install swag
+        run: go install github.com/swaggo/swag/cmd/swag@latest
 
-            - name: Generate Swagger docs
-              run: swag init -o ./swagger --parseDependency --parseInternal -g cmd/main.go
+      - name: Generate Swagger docs
+        run: swag init -o ./swagger --parseDependency --parseInternal -g cmd/main.go
 
-            - name: Verify Swagger docs
-              run: test -f swagger/swagger.json && test -f swagger/swagger.yaml
+      - name: Verify Swagger docs
+        run: test -f swagger/swagger.json && test -f swagger/swagger.yaml
 
-    docker-build:
-        name: Docker Build
-        runs-on: ubuntu-latest
-        needs: go-server
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: go-server
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-            - name: Build Docker image
-              uses: docker/build-push-action@v6
-              with:
-                  context: ./apps/server
-                  file: ./apps/server/dockerfile
-                  push: false
-                  tags: coderz-space-server:${{ github.sha }}
-                  cache-from: type=gha
-                  cache-to: type=gha,mode=max
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./apps/server
+          file: ./apps/server/dockerfile
+          push: false
+          tags: coderz-space-server:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
