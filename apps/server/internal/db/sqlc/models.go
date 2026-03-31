@@ -14,9 +14,12 @@ import (
 type AssignmentProblemStatus string
 
 const (
-	AssignmentProblemStatusPending   AssignmentProblemStatus = "pending"
-	AssignmentProblemStatusAttempted AssignmentProblemStatus = "attempted"
-	AssignmentProblemStatusCompleted AssignmentProblemStatus = "completed"
+	AssignmentProblemStatusPending          AssignmentProblemStatus = "pending"
+	AssignmentProblemStatusAttempted        AssignmentProblemStatus = "attempted"
+	AssignmentProblemStatusCompleted        AssignmentProblemStatus = "completed"
+	AssignmentProblemStatusNotStarted       AssignmentProblemStatus = "not_started"
+	AssignmentProblemStatusDiscussionNeeded AssignmentProblemStatus = "discussion_needed"
+	AssignmentProblemStatusRevisionNeeded   AssignmentProblemStatus = "revision_needed"
 )
 
 func (e *AssignmentProblemStatus) Scan(src interface{}) error {
@@ -58,7 +61,10 @@ func (e AssignmentProblemStatus) Valid() bool {
 	switch e {
 	case AssignmentProblemStatusPending,
 		AssignmentProblemStatusAttempted,
-		AssignmentProblemStatusCompleted:
+		AssignmentProblemStatusCompleted,
+		AssignmentProblemStatusNotStarted,
+		AssignmentProblemStatusDiscussionNeeded,
+		AssignmentProblemStatusRevisionNeeded:
 		return true
 	}
 	return false
@@ -226,6 +232,7 @@ type EnrollmentStatus string
 const (
 	EnrollmentStatusActive   EnrollmentStatus = "active"
 	EnrollmentStatusInactive EnrollmentStatus = "inactive"
+	EnrollmentStatusPending  EnrollmentStatus = "pending"
 )
 
 func (e *EnrollmentStatus) Scan(src interface{}) error {
@@ -266,7 +273,8 @@ func (ns NullEnrollmentStatus) Value() (driver.Value, error) {
 func (e EnrollmentStatus) Valid() bool {
 	switch e {
 	case EnrollmentStatusActive,
-		EnrollmentStatusInactive:
+		EnrollmentStatusInactive,
+		EnrollmentStatusPending:
 		return true
 	}
 	return false

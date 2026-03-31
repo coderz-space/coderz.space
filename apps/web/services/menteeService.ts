@@ -64,7 +64,7 @@ function setCache(key: string, data: any): void {
  * @throws {APIError} If registration fails
  */
 export async function registerMentee(
-  data: Pick<MenteeRequest, "firstName" | "lastName" | "username" | "email" | "passwordHash">
+  data: Pick<MenteeRequest, "firstName" | "lastName" | "email" | "passwordHash">
 ): Promise<MenteeRequest> {
   try {
     const response = await api.post<AuthResponse>("/v1/auth/signup", {
@@ -78,7 +78,6 @@ export async function registerMentee(
       id: response.data.user.id,
       firstName: data.firstName,
       lastName: data.lastName,
-      username: data.username,
       email: data.email,
       passwordHash: "", // never store on client
       signedUpAt: new Date().toISOString(),
@@ -130,7 +129,6 @@ export async function loginMenteeByEmail(
         id: response.data.user.id,
         firstName: nameParts[0] || "",
         lastName: nameParts.slice(1).join(" ") || "",
-        username: response.data.user.email.split("@")[0], // derive username from email
         email: response.data.user.email,
         passwordHash: "",
         signedUpAt: new Date().toISOString(),
@@ -181,63 +179,63 @@ export async function deleteMentee(id: string): Promise<void> {
 
 /**
  * Get questions for a mentee
- * TODO: Implement backend endpoint GET /api/mentees/:username/questions
+ * TODO: Implement backend endpoint GET /api/mentees/:id/questions
  */
-export async function getMenteeQuestions(username: string): Promise<Question[]> {
+export async function getMenteeQuestions(id: string): Promise<Question[]> {
   showStubNotification("Get Mentee Questions");
-  void username;
+  void id;
   return [];
 }
 
 /**
  * Update individual question progress status
- * TODO: Implement backend endpoint PATCH /api/mentees/:username/questions/:questionId
+ * TODO: Implement backend endpoint PATCH /api/mentees/:id/questions/:questionId
  */
 export async function updateQuestionProgress(
-  username: string,
+  id: string,
   questionId: string,
   progressStatus: QuestionProgressStatus
 ): Promise<void> {
   showStubNotification("Update Question Progress");
-  void username; void questionId; void progressStatus;
+  void id; void questionId; void progressStatus;
 }
 
 /**
  * Update question notes (solution & resources)
- * TODO: Implement backend endpoint PATCH /api/mentees/:username/questions/:questionId
+ * TODO: Implement backend endpoint PATCH /api/mentees/:id/questions/:questionId
  */
 export async function updateQuestionDetails(
-  username: string,
+  id: string,
   questionId: string,
   details: { solution?: string; resources?: string }
 ): Promise<void> {
   showStubNotification("Update Question Details");
-  void username; void questionId; void details;
+  void id; void questionId; void details;
 }
 
 /**
  * Get specific question detail for a mentee
- * TODO: Implement backend endpoint GET /api/mentees/:username/questions/:questionId
+ * TODO: Implement backend endpoint GET /api/mentees/:id/questions/:questionId
  */
 export async function getQuestionDetail(
-  username: string,
+  id: string,
   questionId: string
 ): Promise<Question | null> {
   showStubNotification("Get Question Detail");
-  void username; void questionId;
+  void id; void questionId;
   return null;
 }
 
 /**
  * Assign a task to a mentee
- * TODO: Implement backend endpoint POST /api/mentees/:username/questions
+ * TODO: Implement backend endpoint POST /api/mentees/:id/questions
  */
 export async function assignTaskToMentee(
-  username: string,
+  id: string,
   task: { title: string; description: string; difficulty: Question["difficulty"]; topic: string }
 ): Promise<Question> {
   showStubNotification("Assign Task to Mentee");
-  void username;
+  void id;
   return {
     id: crypto.randomUUID(),
     ...task,
@@ -250,20 +248,16 @@ export async function assignTaskToMentee(
 
 /**
  * Get mentee's public profile
- * TODO: Implement backend endpoint GET /api/mentees/:username/profile
+ * TODO: Implement backend endpoint GET /api/mentees/:id/profile
  */
-export async function getMenteeProfile(profileUsername: string): Promise<{
+export async function getMenteeProfile(id: string): Promise<{
   firstName: string;
   lastName: string;
-  username: string;
   solved: number;
   joinedAt: string;
-  bio?: string;
-  github?: string;
-  linkedin?: string;
 } | null> {
   showStubNotification("Get Mentee Profile");
-  void profileUsername;
+  void id;
   return null;
 }
 
@@ -272,7 +266,7 @@ export async function getMenteeProfile(profileUsername: string): Promise<{
  * TODO: Implement backend endpoint GET /api/leaderboard
  */
 export async function getLeaderboard(): Promise<
-  Array<{ username: string; firstName: string; lastName: string; solved: number }>
+  Array<{ id: string; firstName: string; lastName: string; solved: number }>
 > {
   showStubNotification("Get Leaderboard");
   return [];
@@ -288,7 +282,6 @@ export async function getMentorProfile(): Promise<MentorProfile> {
   return {
     firstName: "Mentor",
     lastName: "",
-    username: "mentor",
     email: "",
     joinedAt: new Date().toISOString(),
   };
@@ -305,7 +298,6 @@ export async function updateMentorProfile(
   return {
     firstName: updates.firstName ?? "Mentor",
     lastName: updates.lastName ?? "",
-    username: updates.username ?? "mentor",
     email: updates.email ?? "",
     joinedAt: new Date().toISOString(),
     ...updates,
@@ -324,27 +316,27 @@ export async function saveMentorProfile(
 
 /**
  * Update mentee profile fields
- * TODO: Implement backend endpoint PATCH /api/mentees/:username/profile
+ * TODO: Implement backend endpoint PATCH /api/mentees/:id/profile
  */
 export async function updateMenteeProfile(
-  username: string,
-  fields: { bio?: string; github?: string; linkedin?: string }
+  id: string,
+  fields: { firstName?: string; lastName?: string; }
 ): Promise<void> {
   showStubNotification("Update Mentee Profile");
-  void username; void fields;
+  void id; void fields;
 }
 
 /**
  * Update mentee password
- * TODO: Implement backend endpoint PATCH /api/mentees/:username/password
+ * TODO: Implement backend endpoint PATCH /api/mentees/:id/password
  */
 export async function updateMenteePassword(
-  username: string,
+  id: string,
   currentPassword: string,
   newPassword: string
 ): Promise<{ ok: boolean; error?: string }> {
   showStubNotification("Update Mentee Password");
-  void username; void currentPassword; void newPassword;
+  void id; void currentPassword; void newPassword;
   return { ok: false, error: "Backend not implemented yet" };
 }
 
@@ -369,10 +361,10 @@ export function clearCaches(): void {
 }
 
 // ─── STUB: Get assigned tasks for a mentee (with progress applied) ───────────
-// TODO: Replace with real API call: GET /api/mentees/:username/assigned-tasks
-export function getAssignedTasks(username: string): Question[] {
+// TODO: Replace with real API call: GET /api/mentees/:id/assigned-tasks
+export function getAssignedTasks(id: string): Question[] {
   showStubNotification("Get Assigned Tasks");
-  void username;
+  void id;
   return [];
 }
 

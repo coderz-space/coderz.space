@@ -6,7 +6,10 @@ import (
 
 	"github.com/DSAwithGautam/Coderz.space/internal/container"
 	"github.com/DSAwithGautam/Coderz.space/internal/modules/auth"
+	"github.com/DSAwithGautam/Coderz.space/internal/modules/mentorship"
 	"github.com/DSAwithGautam/Coderz.space/internal/modules/organization"
+	"github.com/DSAwithGautam/Coderz.space/internal/modules/profile"
+	"github.com/DSAwithGautam/Coderz.space/internal/modules/tasks"
 	"github.com/labstack/echo/v5"
 )
 
@@ -18,6 +21,9 @@ func RegisterRoutes(e *echo.Group, di *container.Container) {
 	auth.RegisterProtectedRoutes(e, di.AuthHandler, di.Config)
 
 	organization.RegisterProtectedRoutes(e, di.OrganizationHandler, di.Config)
+	mentorship.RegisterProtectedRoutes(e, di.MentorshipHandler, di.Config)
+	tasks.RegisterProtectedRoutes(e, di.TasksHandler, di.Config)
+	profile.RegisterProtectedRoutes(e, di.ProfileHandler, di.Config)
 }
 
 // healthCheck godoc

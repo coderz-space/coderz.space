@@ -65,26 +65,18 @@ export interface MenteeRequest {
   id: string;
   firstName: string;
   lastName: string;
-  username: string;
   email: string;
   passwordHash: string;
   signedUpAt: string;
   status: "pending" | "approved" | "rejected";
   assignedSheet?: SheetId;
-  bio?: string;
-  github?: string;
-  linkedin?: string;
 }
 
 // ─── Mentor Profile ───────────────────────────────────────────────────────────
 export interface MentorProfile {
   firstName: string;
   lastName: string;
-  username: string;
   email: string;
-  bio?: string;
-  github?: string;
-  linkedin?: string;
   joinedAt: string;
 }
 

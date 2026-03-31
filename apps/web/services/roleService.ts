@@ -20,6 +20,14 @@ export async function selectRole(role: Role): Promise<void> {
     throw new Error("Invalid role");
   }
 
+  // Persist to backend via the mentorship module
+  try {
+    const { api } = await import("./api");
+    await api.post("/v1/mentorship/request-role", { role });
+  } catch (err) {
+    console.error("Failed to persist role to backend", err);
+  }
+
   _selectedRole = role;
   if (typeof window !== "undefined") {
     localStorage.setItem("coderz_selected_role", role);

@@ -105,6 +105,14 @@ type Querier interface {
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpsertLeaderboardEntry(ctx context.Context, arg UpsertLeaderboardEntryParams) (LeaderboardEntry, error)
+	WebGetLeaderboard(ctx context.Context) ([]WebGetLeaderboardRow, error)
+	WebGetMenteeQuestion(ctx context.Context, arg WebGetMenteeQuestionParams) (WebGetMenteeQuestionRow, error)
+	WebGetProfileStats(ctx context.Context, id pgtype.UUID) (WebGetProfileStatsRow, error)
+	WebListMenteeQuestions(ctx context.Context, userID pgtype.UUID) ([]WebListMenteeQuestionsRow, error)
+	// Web UI Specific Queries for Coderz Dashboard
+	WebListPendingRequests(ctx context.Context) ([]WebListPendingRequestsRow, error)
+	WebUpdateQuestionDetails(ctx context.Context, arg WebUpdateQuestionDetailsParams) error
+	WebUpdateQuestionProgress(ctx context.Context, arg WebUpdateQuestionProgressParams) error
 }
 
 var _ Querier = (*Queries)(nil)

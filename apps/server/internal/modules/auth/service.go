@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/DSAwithGautam/Coderz.space/internal/common/utils"
@@ -187,9 +188,12 @@ func (s *Service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 		return err
 	}
 
-	// TODO: Send email with reset token
-	// For now, we just log it (in production, send via email service)
-	// Email would contain a link like: https://app.com/reset-password?token={resetToken}
+	// Mock email sending for now (in production, integrate with SendGrid/SMTP)
+	fmt.Printf("==== MOCK EMAIL SENDER ====\n")
+	fmt.Printf("To: %s\n", req.Email)
+	fmt.Printf("Subject: Password Reset Request\n")
+	fmt.Printf("Body: Click here to reset your password: https://coderz.space/reset-password?token=%s\n", resetToken)
+	fmt.Printf("===========================\n")
 
 	return nil
 }
