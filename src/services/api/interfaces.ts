@@ -34,6 +34,7 @@ export interface IAuthService {
   logout(): Promise<void>;
   refreshToken(): Promise<{ accessToken: string }>;
   getMe(): Promise<LoginResponse>;
+  changePassword(params: { currentPassword: string; newPassword: string }): Promise<void>;
 }
 
 // ✅ UPDATED AUTH (V2)
@@ -41,6 +42,7 @@ export interface IAuthServiceV2 extends IAuthService {
   signup(payload: SignupPayload): Promise<SignupResponse>;
   forgotPassword(email: string): Promise<void>;
   resetPassword(params: { token: string; newPassword: string }): Promise<void>;
+  changePassword(params: { currentPassword: string; newPassword: string }): Promise<void>;
 }
 
 // ─── Mentee ───────────────────────────────────────────────────

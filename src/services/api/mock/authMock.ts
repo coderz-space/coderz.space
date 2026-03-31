@@ -66,4 +66,43 @@ export const authMock: IAuthService = {
       activeBootcampId: 'bootcamp-1',
     };
   },
+
+  // ✅ NEW METHOD
+  async changePassword({
+    currentPassword,
+    newPassword,
+  }: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<void> {
+    await delay(1000);
+
+    // Retrieve stored password (mock)
+    let storedPassword = await AsyncStorage.getItem('@mock_password');
+
+    if (!storedPassword) {
+      // First time default
+      storedPassword = 'pass123';
+      await AsyncStorage.setItem('@mock_password', storedPassword);
+    }
+
+    // Validate current password
+    if (currentPassword !== storedPassword) {
+      throw new Error('Current password is incorrect');
+    }
+
+    // Validate new password strength
+    if (newPassword.length < 8) {
+      throw new Error('New password must be at least 8 characters');
+    }
+
+    if (!/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      throw new Error('New password must contain at least one letter and one number');
+    }
+
+    // Update password
+    await AsyncStorage.setItem('@mock_password', newPassword);
+
+    console.log('[Mock] Password changed successfully');
+  },
 };

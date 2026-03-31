@@ -12,6 +12,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useMenteeStore } from '../../store/menteeStore';
 import { getInitials } from '../../utils/formatters';
 import { toast } from '../../utils/toast';
+import ChangePasswordForm from '../../components/molecules/ChangePasswordForm';
 
 export default function MenteeProfileScreen() {
   const { session, logout } = useAuthStore();
@@ -95,6 +96,8 @@ export default function MenteeProfileScreen() {
           <Text style={styles.infoVal}>{session.bootcampEnrollmentId}</Text>
         </View>
       </View>
+
+      <ChangePasswordForm />
 
       <Button
         label="Sign Out"

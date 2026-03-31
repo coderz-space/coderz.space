@@ -12,6 +12,7 @@ import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { getInitials, formatDate } from '../../utils/formatters';
 import { toast } from '../../utils/toast';
+import ChangePasswordForm from '../../components/molecules/ChangePasswordForm';
 
 export default function MentorProfileScreen() {
   const { session, logout } = useAuthStore();
@@ -75,6 +76,8 @@ export default function MentorProfileScreen() {
         <DetailRow label="Bootcamp ID" value={session.activeBootcampId} />
         <DetailRow label="Member ID" value={session.orgMemberId} />
       </View>
+
+      <ChangePasswordForm />
 
       <Button
         label="Sign Out"
