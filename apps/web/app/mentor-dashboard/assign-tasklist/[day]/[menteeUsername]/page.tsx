@@ -1,8 +1,9 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getMenteeRequests } from "@/services";
+import type { MenteeRequest } from "@/types";
 
 const TASKLISTS = [
   { id: "gfg-dsa-360", name: "GFG DSA 360" },
@@ -21,9 +22,18 @@ export default function MenteeSheetSelectorPage({
   const { day, menteeUsername } = use(params);
   const router = useRouter();
 
-  const mentee = getMenteeRequests().find(
-    (r) => r.username === menteeUsername && r.status === "approved"
-  );
+  const [mentee, setMentee] = useState<MenteeRequest | null>(null);
+
+  useEffect(() => {
+    const loadMentee = async () => {
+      const requests = await getMenteeRequests();
+      const found = requests.find(
+        (r) => r.username === menteeUsername && r.status === "approved"
+      );
+      setMentee(found || null);
+    };
+    loadMentee();
+  }, [menteeUsername]);
 
   return (
     <div className="max-w-2xl">

@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { logout } from "@/services/authService";
+import { clearSelectedRole } from "@/services/roleService";
+import { clearCaches } from "@/services/menteeService";
 
 const navItems = [
   { label: "Approve Mentee", href: "/mentor-dashboard/approve-mentee" },
@@ -15,7 +18,10 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logout();
+    clearSelectedRole();
+    clearCaches();
     router.push("/");
   };
 

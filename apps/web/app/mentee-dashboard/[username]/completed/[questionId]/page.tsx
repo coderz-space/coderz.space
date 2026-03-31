@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { getQuestionDetail, updateQuestionDetails } from "@/services";
 import type { Question } from "@/types";
 
@@ -14,19 +14,31 @@ function QuestionDetailContent() {
   const owner = searchParams.get("owner") ?? username;
   const isReadOnly = owner !== username;
 
-  const [question] = useState<Question | null>(() =>
-    // Replace with: GET /api/mentees/:owner/questions/:questionId
-    getQuestionDetail(owner, questionId)
-  );
-  const [solution, setSolution] = useState(() => question?.solution ?? "");
-  const [resources, setResources] = useState(() => question?.resources ?? "");
+  const [question, setQuestion] = useState<Question | null>(null);
+  const [solution, setSolution] = useState("");
+  const [resources, setResources] = useState("");
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    // Replace with: PATCH /api/mentees/:username/questions/:questionId  { solution, resources }
-    updateQuestionDetails(username, questionId, { solution, resources });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  useEffect(() => {
+    const loadQuestion = async () => {
+      const q = await getQuestionDetail(owner, questionId);
+      setQuestion(q);
+      if (q) {
+        setSolution(q.solution ?? "");
+        setResources(q.resources ?? "");
+      }
+    };
+    loadQuestion();
+  }, [owner, questionId]);
+
+  const handleSave = async () => {
+    try {
+      await updateQuestionDetails(username, questionId, { solution, resources });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      console.error("Failed to save details:", error);
+    }
   };
 
   if (!question) {

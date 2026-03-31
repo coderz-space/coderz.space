@@ -19,15 +19,22 @@ export default function SheetAssignPage({ params }: { params: Promise<{ sheetId:
   const questions: SheetQuestion[] = SHEET_QUESTIONS[sheetId] ?? [];
   const sheetName = SHEET_NAMES[sheetId] ?? sheetId;
 
-  const approvedMentees: MenteeRequest[] = getMenteeRequests().filter(
-    (r) => r.status === "approved"
-  );
-
+  const [approvedMentees, setApprovedMentees] = useState<MenteeRequest[]>([]);
   const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
   const [selectedMentees, setSelectedMentees] = useState<MenteeRequest[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [assigned, setAssigned] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Load approved mentees
+  useEffect(() => {
+    const loadMentees = async () => {
+      const requests = await getMenteeRequests();
+      const approved = requests.filter((r) => r.status === "approved");
+      setApprovedMentees(approved);
+    };
+    loadMentees();
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {

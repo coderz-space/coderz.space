@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { loginMentee, loginMenteeByEmail } from "@/services";
+import { loginMenteeByEmail } from "@/services";
 
 interface MenteeLoginCardProps {
   role: "mentor" | "mentee";
@@ -28,33 +28,41 @@ const inputClass =
   "w-full px-4 py-2 rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500";
 
 export default function MenteeLoginCard({ role, onClose, onSignUp }: MenteeLoginCardProps) {
-  // mentor uses email; mentee can use username or email
-  const [useEmail, setUseEmail] = useState(false);
-  const [identifier, setIdentifier] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setError("");
-    if (role === "mentor") {
-      // Mentor auth — replace with real API call when backend is ready
-      // POST /api/auth/mentor/login  { email, password }
-      router.push("/mentor-dashboard");
+    if (!email.trim() || !password) {
+      setError("Please fill in all fields.");
       return;
     }
 
-    // Mentee: look up approved account by username or email
-    const mentee = useEmail
-      ? loginMenteeByEmail(identifier.trim(), password)
-      : loginMentee(identifier.trim().toLowerCase(), password);
+    setLoading(true);
+    try {
+      if (role === "mentor") {
+        // Mentor login — same backend endpoint
+        const result = await loginMenteeByEmail(email.trim(), password);
+        if (result) {
+          router.push("/mentor-dashboard");
+        }
+        return;
+      }
 
-    if (!mentee) {
-      setError("Invalid credentials, or account not yet approved.");
-      return;
+      // Mentee login via email
+      const result = await loginMenteeByEmail(email.trim(), password);
+      if (result?.mentee) {
+        router.push(`/mentee-dashboard/${result.mentee.username}`);
+      }
+    } catch (err: any) {
+      setError(err?.message || "Invalid credentials, or account not yet approved.");
+    } finally {
+      setLoading(false);
     }
-    router.push(`/mentee-dashboard/${mentee.username}`);
   };
 
   return (
@@ -70,31 +78,11 @@ export default function MenteeLoginCard({ role, onClose, onSignUp }: MenteeLogin
           {role === "mentor" ? "Mentor Login" : "Mentee Login"}
         </h2>
 
-        {/* Username / Email toggle — mentee only */}
-        {role === "mentee" && (
-          <div className="flex rounded-lg overflow-hidden border border-purple-300 dark:border-purple-700">
-            <button type="button"
-              onClick={() => { setUseEmail(false); setIdentifier(""); }}
-              className={`flex-1 py-1.5 text-sm font-medium transition-colors ${
-                !useEmail ? "bg-purple-600 text-white" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-gray-700"
-              }`}>
-              Username
-            </button>
-            <button type="button"
-              onClick={() => { setUseEmail(true); setIdentifier(""); }}
-              className={`flex-1 py-1.5 text-sm font-medium transition-colors ${
-                useEmail ? "bg-purple-600 text-white" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-gray-700"
-              }`}>
-              Email
-            </button>
-          </div>
-        )}
-
         <input
-          type={role === "mentor" || useEmail ? "email" : "text"}
-          placeholder={role === "mentor" ? "Email address" : useEmail ? "Email address" : "Username"}
-          value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
+          type="email"
+          placeholder="Email address"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className={inputClass}
         />
 
@@ -119,9 +107,12 @@ export default function MenteeLoginCard({ role, onClose, onSignUp }: MenteeLogin
 
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-        <button onClick={handleLogin}
-          className="bg-purple-600 hover:bg-purple-700 text-white w-full py-2 rounded-lg font-semibold">
-          Log In
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white w-full py-2 rounded-lg font-semibold"
+        >
+          {loading ? "Logging in…" : "Log In"}
         </button>
 
         <button className="flex items-center justify-center gap-2 border border-purple-300 dark:border-purple-700 text-gray-700 dark:text-gray-200 w-full py-2 rounded-lg hover:bg-purple-50 dark:hover:bg-gray-800">

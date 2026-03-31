@@ -1,11 +1,20 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getMenteeProfile, getMenteeQuestions } from "@/services";
 import type { Question, QuestionProgressStatus } from "@/types";
 
-type Profile = { firstName: string; lastName: string; username: string; solved: number; joinedAt: string };
+type Profile = { 
+  firstName: string; 
+  lastName: string; 
+  username: string; 
+  solved: number; 
+  joinedAt: string;
+  bio?: string;
+  github?: string;
+  linkedin?: string;
+};
 
 const difficultyColor: Record<Question["difficulty"], string> = {
   easy: "text-green-400 bg-green-900/30",
@@ -30,10 +39,29 @@ const progressLabel: Record<QuestionProgressStatus, string> = {
 export default function MenteeProfilePage() {
   const { username, profileUsername } = useParams() as { username: string; profileUsername: string };
   const router = useRouter();
-  const profile = getMenteeProfile(profileUsername);
-  const [completedQuestions] = useState<Question[]>(() =>
-    profile ? getMenteeQuestions(profileUsername).filter((q) => q.status === "completed") : []
-  );
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [completedQuestions, setCompletedQuestions] = useState<Question[]>([]);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const p = await getMenteeProfile(profileUsername);
+      if (p) {
+        setProfile({
+          firstName: p.firstName,
+          lastName: p.lastName,
+          username: p.username,
+          solved: p.solved,
+          joinedAt: p.joinedAt,
+          bio: p.bio,
+          github: p.github,
+          linkedin: p.linkedin,
+        });
+        const questions = await getMenteeQuestions(profileUsername);
+        setCompletedQuestions(questions.filter((q) => q.status === "completed"));
+      }
+    };
+    loadProfile();
+  }, [profileUsername]);
 
   if (!profile) {
     return <p className="text-gray-500 text-sm">Profile not found.</p>;

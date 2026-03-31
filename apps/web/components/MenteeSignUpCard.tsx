@@ -37,24 +37,32 @@ export default function MenteeSignUpCard({ role, onClose, onBackToLogin }: Mente
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     setError("");
     if (!firstName || !email || !password) { setError("Please fill all required fields."); return; }
     if (role === "mentee" && !username) { setError("Username is required."); return; }
+    if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
     if (password !== confirmPassword) { setError("Passwords do not match."); return; }
 
-    if (role === "mentee") {
-      registerMentee({
-        firstName,
-        lastName,
-        username: username.trim().toLowerCase(),
-        email,
-        passwordHash: password, // dev stub — backend should hash this
-      });
+    setLoading(true);
+    try {
+      if (role === "mentee") {
+        await registerMentee({
+          firstName,
+          lastName,
+          username: username.trim().toLowerCase(),
+          email,
+          passwordHash: password, // backend hashes this
+        });
+      }
+      setSubmitted(true);
+    } catch (err: any) {
+      setError(err?.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setSubmitted(true);
   };
 
   return (
@@ -92,7 +100,7 @@ export default function MenteeSignUpCard({ role, onClose, onBackToLogin }: Mente
 
         {/* Password */}
         <div className="relative">
-          <input type={showPassword ? "text" : "password"} placeholder="Set Password"
+          <input type={showPassword ? "text" : "password"} placeholder="Set Password (min 8 chars)"
             value={password} onChange={(e) => setPassword(e.target.value)}
             className={`${inputClass} pr-10`} />
           <button type="button" onClick={() => setShowPassword((v) => !v)}
@@ -116,15 +124,18 @@ export default function MenteeSignUpCard({ role, onClose, onBackToLogin }: Mente
 
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-        <button onClick={handleSignUp}
-          className="bg-purple-600 hover:bg-purple-700 text-white w-full py-2 rounded-lg font-semibold">
-          Sign Up
+        <button
+          onClick={handleSignUp}
+          disabled={loading}
+          className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white w-full py-2 rounded-lg font-semibold"
+        >
+          {loading ? "Signing up…" : "Sign Up"}
         </button>
 
         {submitted && (
           <p className="text-green-500 text-sm text-center">
             {role === "mentee"
-              ? "Request sent! Await mentor approval."
+              ? "Account created! You can now log in."
               : "Account created! You can now log in."}
           </p>
         )}

@@ -1,370 +1,400 @@
 /**
- * menteeService.ts — localStorage stub
+ * menteeService.ts — Mentee management service
  *
- * BACKEND INTEGRATION GUIDE:
- * Each function maps 1-to-1 to a REST endpoint. When the backend is ready:
- *   1. Replace the localStorage read/write with a fetch() call to the endpoint shown.
- *   2. Keep the function signature identical — no component changes needed.
+ * Auth functions (registerMentee, loginMentee) call the REAL backend.
+ * All other functions are STUBS — they show a toast notification and
+ * return mock data until backend endpoints are implemented.
  *
- * Storage key: "coderz_mentee_requests"  →  DB table: mentee_requests
+ * Real Backend Endpoints:
+ * - POST /api/v1/auth/signup  → registerMentee
+ * - POST /api/v1/auth/login   → loginMentee / loginMenteeByEmail
+ *
+ * Stubbed (no backend endpoint yet):
+ * - GET /api/mentee-requests → getMenteeRequests
+ * - PATCH /api/mentee-requests/:id → updateMenteeStatus
+ * - DELETE /api/mentee-requests/:id → deleteMentee
+ * - GET /api/mentees/:username/questions → getMenteeQuestions
+ * - PATCH /api/mentees/:username/questions/:questionId → updateQuestionProgress/Details
+ * - GET /api/mentees/:username/profile → getMenteeProfile
+ * - GET /api/leaderboard → getLeaderboard
+ * - GET /api/mentor/profile → getMentorProfile
+ * - PATCH /api/mentor/profile → updateMentorProfile
  */
 
-import type { MenteeRequest, Question, QuestionProgressStatus } from "@/types";
+import type {
+  MenteeRequest,
+  Question,
+  QuestionProgressStatus,
+  MentorProfile,
+  SheetId,
+  AuthResponse,
+} from "@/types";
+import { api, APIError } from "./api";
+import { showStubNotification } from "@/components/StubToast";
 
-// ─── Dummy questions assigned to every approved mentee ───────────────────────
-// Replace with: GET /api/mentees/:username/questions
-const DUMMY_QUESTIONS: Question[] = [
-  {
-    id: "q1",
-    title: "Two Sum",
-    description: "Given an array of integers, return indices of the two numbers that add up to a target.",
-    difficulty: "easy",
-    topic: "Arrays",
-    status: "pending",
-    progressStatus: "not_started",
-    assignedAt: new Date().toISOString(),
-  },
-  {
-    id: "q2",
-    title: "Valid Parentheses",
-    description: "Given a string containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
-    difficulty: "easy",
-    topic: "Stack",
-    status: "pending",
-    progressStatus: "not_started",
-    assignedAt: new Date().toISOString(),
-  },
-  {
-    id: "q3",
-    title: "Merge Two Sorted Lists",
-    description: "Merge two sorted linked lists and return it as a new sorted list.",
-    difficulty: "easy",
-    topic: "Linked List",
-    status: "completed",
-    progressStatus: "completed",
-    assignedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-    completedAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: "q4",
-    title: "Binary Search",
-    description: "Given a sorted array of integers, implement binary search.",
-    difficulty: "easy",
-    topic: "Binary Search",
-    status: "completed",
-    progressStatus: "completed",
-    assignedAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-    completedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-  },
-  {
-    id: "q5",
-    title: "Longest Substring Without Repeating Characters",
-    description: "Find the length of the longest substring without repeating characters.",
-    difficulty: "medium",
-    topic: "Sliding Window",
-    status: "pending",
-    progressStatus: "not_started",
-    assignedAt: new Date().toISOString(),
-  },
-];
+/**
+ * Local cache for frequently accessed data to improve UX
+ * These are fallbacks — primary source is always the backend
+ */
+const memoryCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-// ─── Read all mentee requests ─────────────────────────────────────────────────
-// Replace with: GET /api/mentee-requests
-export function getMenteeRequests(): MenteeRequest[] {
-  if (typeof window === "undefined") return [];
-  return JSON.parse(localStorage.getItem("coderz_mentee_requests") || "[]");
+function getCacheKey(prefix: string, ...args: string[]): string {
+  return `${prefix}:${args.join(':')}`;
 }
 
-// ─── Save all mentee requests ─────────────────────────────────────────────────
-// Replace with: PUT /api/mentee-requests (bulk) or PATCH /api/mentee-requests/:id
-function saveMenteeRequests(requests: MenteeRequest[]): void {
-  localStorage.setItem("coderz_mentee_requests", JSON.stringify(requests));
+function getCached<T>(key: string): T | null {
+  const cached = memoryCache.get(key);
+  if (!cached) return null;
+  if (Date.now() - cached.timestamp > CACHE_TTL) {
+    memoryCache.delete(key);
+    return null;
+  }
+  return cached.data as T;
 }
 
-// ─── Register a new mentee ────────────────────────────────────────────────────
-// Replace with: POST /api/mentee-requests
-export function registerMentee(
+function setCache(key: string, data: any): void {
+  memoryCache.set(key, { data, timestamp: Date.now() });
+}
+
+// ─── REAL API CALLS (connected to backend) ───────────────────────────────────
+
+/**
+ * Register a new mentee via POST /api/v1/auth/signup
+ * @throws {APIError} If registration fails
+ */
+export async function registerMentee(
   data: Pick<MenteeRequest, "firstName" | "lastName" | "username" | "email" | "passwordHash">
-): MenteeRequest {
-  const existing = getMenteeRequests();
-  const newRequest: MenteeRequest = {
-    id: crypto.randomUUID(),
-    ...data,
-    signedUpAt: new Date().toISOString(),
-    status: "pending",
-  };
-  saveMenteeRequests([...existing, newRequest]);
-  return newRequest;
+): Promise<MenteeRequest> {
+  try {
+    const response = await api.post<AuthResponse>("/v1/auth/signup", {
+      email: data.email,
+      password: data.passwordHash, // backend hashes this
+      name: `${data.firstName} ${data.lastName}`.trim(),
+    });
+
+    // Map backend response to MenteeRequest shape for UI compatibility
+    return {
+      id: response.data.user.id,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      username: data.username,
+      email: data.email,
+      passwordHash: "", // never store on client
+      signedUpAt: new Date().toISOString(),
+      status: "approved", // backend auto-approves on signup
+    };
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.error("Registration failed:", error.message);
+    }
+    throw error;
+  }
 }
 
-// ─── Update mentee request status ────────────────────────────────────────────
-// Replace with: PATCH /api/mentee-requests/:id  { status, assignedSheet? }
-export function updateMenteeStatus(
-  id: string,
-  status: "approved" | "rejected",
-  assignedSheet?: import("@/types").SheetId
-): void {
-  const requests = getMenteeRequests();
-  const updated = requests.map((r) =>
-    r.id === id ? { ...r, status, ...(assignedSheet ? { assignedSheet } : {}) } : r
-  );
-  saveMenteeRequests(updated);
-}
-
-// ─── Find approved mentee by username + password ─────────────────────────────
-// Replace with: POST /api/auth/mentee/login  { username, password }
-export function loginMentee(
-  username: string,
+/**
+ * Login mentee with email (username login removed — backend only supports email)
+ * Calls POST /api/v1/auth/login
+ * @throws {APIError} If authentication fails
+ */
+export async function loginMentee(
+  _usernameOrEmail: string,
   password: string
-): MenteeRequest | null {
-  const requests = getMenteeRequests();
-  const match = requests.find(
-    (r) =>
-      r.username === username &&
-      r.passwordHash === password && // dev stub: plain text; use bcrypt in real backend
-      r.status === "approved"
-  );
-  return match ?? null;
+): Promise<{ token: string; refreshToken: string; mentee: MenteeRequest }> {
+  // Backend only supports email login — treat the identifier as email
+  return loginMenteeByEmail(_usernameOrEmail, password);
 }
 
-// ─── Find approved mentee by email + password ────────────────────────────────
-// Replace with: POST /api/auth/mentee/login  { email, password }
-export function loginMenteeByEmail(
+/**
+ * Login mentee with email
+ * Calls POST /api/v1/auth/login
+ * @throws {APIError} If authentication fails
+ */
+export async function loginMenteeByEmail(
   email: string,
   password: string
-): MenteeRequest | null {
-  const requests = getMenteeRequests();
-  const match = requests.find(
-    (r) =>
-      r.email.toLowerCase() === email.toLowerCase() &&
-      r.passwordHash === password && // dev stub: plain text; use bcrypt in real backend
-      r.status === "approved"
-  );
-  return match ?? null;
+): Promise<{ token: string; refreshToken: string; mentee: MenteeRequest }> {
+  try {
+    const response = await api.post<AuthResponse>("/v1/auth/login", {
+      email,
+      password,
+    });
+
+    // Tokens are set as HttpOnly cookies by backend — no localStorage needed
+    // Map response to legacy shape for UI compatibility
+    const nameParts = response.data.user.name.split(" ");
+    return {
+      token: response.data.accessToken,
+      refreshToken: response.data.refreshToken,
+      mentee: {
+        id: response.data.user.id,
+        firstName: nameParts[0] || "",
+        lastName: nameParts.slice(1).join(" ") || "",
+        username: response.data.user.email.split("@")[0], // derive username from email
+        email: response.data.user.email,
+        passwordHash: "",
+        signedUpAt: new Date().toISOString(),
+        status: "approved",
+      },
+    };
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.error("Login failed:", error.message);
+    }
+    throw error;
+  }
 }
 
-// ─── Delete a mentee entirely ─────────────────────────────────────────────────
-// Replace with: DELETE /api/mentee-requests/:id
-export function deleteMentee(id: string): void {
-  const requests = getMenteeRequests();
-  saveMenteeRequests(requests.filter((r) => r.id !== id));
+// ─── STUB FUNCTIONS (no backend endpoint yet) ────────────────────────────────
+
+/**
+ * Get all mentee requests (admin view)
+ * TODO: Implement backend endpoint GET /api/mentee-requests
+ */
+export async function getMenteeRequests(): Promise<MenteeRequest[]> {
+  showStubNotification("Get Mentee Requests");
+  return [];
 }
 
-// ─── Get/save question detail notes per mentee ───────────────────────────────
-// Storage key: "coderz_question_details_{username}"  →  DB table: question_details
-// Replace with: GET/PATCH /api/mentees/:username/questions/:questionId/details
-type DetailMap = Record<string, { solution?: string; resources?: string }>;
-
-function getDetailMap(username: string): DetailMap {
-  if (typeof window === "undefined") return {};
-  return JSON.parse(localStorage.getItem(`coderz_question_details_${username}`) || "{}");
+/**
+ * Update mentee request status
+ * TODO: Implement backend endpoint PATCH /api/mentee-requests/:id
+ */
+export async function updateMenteeStatus(
+  id: string,
+  status: "pending" | "approved" | "rejected",
+  assignedSheet?: SheetId
+): Promise<void> {
+  showStubNotification("Update Mentee Status");
+  // no-op stub
+  void id; void status; void assignedSheet;
 }
 
-// Replace with: PATCH /api/mentees/:username/questions/:questionId  { solution, resources }
-export function updateQuestionDetails(
-  username: string,
-  questionId: string,
-  details: { solution?: string; resources?: string }
-): void {
-  const map = getDetailMap(username);
-  map[questionId] = { ...map[questionId], ...details };
-  localStorage.setItem(`coderz_question_details_${username}`, JSON.stringify(map));
+/**
+ * Delete a mentee
+ * TODO: Implement backend endpoint DELETE /api/mentee-requests/:id
+ */
+export async function deleteMentee(id: string): Promise<void> {
+  showStubNotification("Delete Mentee");
+  void id;
 }
 
-// Replace with: GET /api/mentees/:username/questions/:questionId
-export function getQuestionDetail(username: string, questionId: string): import("@/types").Question | null {
-  const questions = getMenteeQuestions(username);
-  const q = questions.find((q) => q.id === questionId) ?? null;
-  if (!q) return null;
-  const details = getDetailMap(username);
-  return { ...q, ...details[questionId] };
-}
-// Storage key: "coderz_question_progress_{username}"  →  DB table: question_progress
-// Replace with: GET/PATCH /api/mentees/:username/questions/:questionId/progress
-type ProgressMap = Record<string, { progressStatus: QuestionProgressStatus; completedAt?: string }>;
-
-function getProgressMap(username: string): ProgressMap {
-  if (typeof window === "undefined") return {};
-  return JSON.parse(localStorage.getItem(`coderz_question_progress_${username}`) || "{}");
+/**
+ * Get questions for a mentee
+ * TODO: Implement backend endpoint GET /api/mentees/:username/questions
+ */
+export async function getMenteeQuestions(username: string): Promise<Question[]> {
+  showStubNotification("Get Mentee Questions");
+  void username;
+  return [];
 }
 
-// ─── Update a single question's progress status ───────────────────────────────
-// Replace with: PATCH /api/mentees/:username/questions/:questionId  { progressStatus }
-export function updateQuestionProgress(
+/**
+ * Update individual question progress status
+ * TODO: Implement backend endpoint PATCH /api/mentees/:username/questions/:questionId
+ */
+export async function updateQuestionProgress(
   username: string,
   questionId: string,
   progressStatus: QuestionProgressStatus
-): void {
-  const map = getProgressMap(username);
-  map[questionId] = {
-    progressStatus,
-    completedAt:
-      progressStatus === "completed" || progressStatus === "revision_needed"
-        ? (map[questionId]?.completedAt ?? new Date().toISOString())
-        : undefined,
-  };
-  localStorage.setItem(`coderz_question_progress_${username}`, JSON.stringify(map));
+): Promise<void> {
+  showStubNotification("Update Question Progress");
+  void username; void questionId; void progressStatus;
 }
 
-// ─── Assign a task to a mentee ────────────────────────────────────────────────
-// Replace with: POST /api/mentees/:username/tasks  { taskId, title, description, difficulty, topic }
-export function assignTaskToMentee(
+/**
+ * Update question notes (solution & resources)
+ * TODO: Implement backend endpoint PATCH /api/mentees/:username/questions/:questionId
+ */
+export async function updateQuestionDetails(
+  username: string,
+  questionId: string,
+  details: { solution?: string; resources?: string }
+): Promise<void> {
+  showStubNotification("Update Question Details");
+  void username; void questionId; void details;
+}
+
+/**
+ * Get specific question detail for a mentee
+ * TODO: Implement backend endpoint GET /api/mentees/:username/questions/:questionId
+ */
+export async function getQuestionDetail(
+  username: string,
+  questionId: string
+): Promise<Question | null> {
+  showStubNotification("Get Question Detail");
+  void username; void questionId;
+  return null;
+}
+
+/**
+ * Assign a task to a mentee
+ * TODO: Implement backend endpoint POST /api/mentees/:username/questions
+ */
+export async function assignTaskToMentee(
   username: string,
   task: { title: string; description: string; difficulty: Question["difficulty"]; topic: string }
-): void {
-  const key = `coderz_assigned_tasks_${username}`;
-  const existing: Question[] = JSON.parse(
-    (typeof window !== "undefined" && localStorage.getItem(key)) || "[]"
-  );
-  const newTask: Question = {
+): Promise<Question> {
+  showStubNotification("Assign Task to Mentee");
+  void username;
+  return {
     id: crypto.randomUUID(),
     ...task,
+    description: task.description,
     status: "pending",
     progressStatus: "not_started",
     assignedAt: new Date().toISOString(),
   };
-  localStorage.setItem(key, JSON.stringify([...existing, newTask]));
 }
 
-// ─── Get public profile for a mentee ─────────────────────────────────────────
-// Replace with: GET /api/mentees/:profileUsername/profile
-export function getMenteeProfile(profileUsername: string): {
-  firstName: string; lastName: string; username: string; solved: number; joinedAt: string;
-  bio?: string; github?: string; linkedin?: string;
-} | null {
-  const mentee = getMenteeRequests().find(
-    (r) => r.username === profileUsername && r.status === "approved"
-  );
-  if (!mentee) return null;
-  const progress: ProgressMap = JSON.parse(
-    (typeof window !== "undefined" && localStorage.getItem(`coderz_question_progress_${profileUsername}`)) || "{}"
-  );
-  const solved = Object.values(progress).filter(
-    (p) => p.progressStatus === "completed" || p.progressStatus === "revision_needed"
-  ).length;
+/**
+ * Get mentee's public profile
+ * TODO: Implement backend endpoint GET /api/mentees/:username/profile
+ */
+export async function getMenteeProfile(profileUsername: string): Promise<{
+  firstName: string;
+  lastName: string;
+  username: string;
+  solved: number;
+  joinedAt: string;
+  bio?: string;
+  github?: string;
+  linkedin?: string;
+} | null> {
+  showStubNotification("Get Mentee Profile");
+  void profileUsername;
+  return null;
+}
+
+/**
+ * Get leaderboard of top mentees
+ * TODO: Implement backend endpoint GET /api/leaderboard
+ */
+export async function getLeaderboard(): Promise<
+  Array<{ username: string; firstName: string; lastName: string; solved: number }>
+> {
+  showStubNotification("Get Leaderboard");
+  return [];
+}
+
+/**
+ * Get mentor profile
+ * TODO: Implement backend endpoint GET /api/mentor/profile
+ */
+export async function getMentorProfile(): Promise<MentorProfile> {
+  showStubNotification("Get Mentor Profile");
+  // Fallback default profile
   return {
-    firstName: mentee.firstName, lastName: mentee.lastName, username: mentee.username,
-    solved, joinedAt: mentee.signedUpAt,
-    bio: mentee.bio, github: mentee.github, linkedin: mentee.linkedin,
+    firstName: "Mentor",
+    lastName: "",
+    username: "mentor",
+    email: "",
+    joinedAt: new Date().toISOString(),
   };
 }
 
-// ─── Leaderboard: all approved mentees ranked by solved question count ────────
-// Replace with: GET /api/leaderboard
-export function getLeaderboard(): { username: string; firstName: string; lastName: string; solved: number }[] {
-  const approved = getMenteeRequests().filter((r) => r.status === "approved");
-  return approved
-    .map((r) => {
-      const progress: ProgressMap = JSON.parse(
-        (typeof window !== "undefined" && localStorage.getItem(`coderz_question_progress_${r.username}`)) || "{}"
-      );
-      const solved = Object.values(progress).filter(
-        (p) => p.progressStatus === "completed" || p.progressStatus === "revision_needed"
-      ).length;
-      return { username: r.username, firstName: r.firstName, lastName: r.lastName, solved };
-    })
-    .sort((a, b) => b.solved - a.solved);
+/**
+ * Update mentor profile (async API call)
+ * TODO: Implement backend endpoint PATCH /api/mentor/profile
+ */
+export async function updateMentorProfile(
+  updates: Partial<Omit<MentorProfile, "joinedAt">>
+): Promise<MentorProfile> {
+  showStubNotification("Update Mentor Profile");
+  return {
+    firstName: updates.firstName ?? "Mentor",
+    lastName: updates.lastName ?? "",
+    username: updates.username ?? "mentor",
+    email: updates.email ?? "",
+    joinedAt: new Date().toISOString(),
+    ...updates,
+  };
 }
 
-// ─── Get questions for a mentee (with persisted progress applied) ─────────────
-// Replace with: GET /api/mentees/:username/questions
-export function getMenteeQuestions(username: string): Question[] {
-  const map = getProgressMap(username);
-  return DUMMY_QUESTIONS.map((q) => {
-    const override = map[q.id];
-    if (!override) return q;
-    const inCompletedBucket =
-      override.progressStatus === "completed" ||
-      override.progressStatus === "revision_needed";
-    return {
-      ...q,
-      progressStatus: override.progressStatus,
-      status: inCompletedBucket ? "completed" : "pending",
-      completedAt: inCompletedBucket ? override.completedAt : undefined,
-    };
-  });
+/**
+ * Save mentor profile (backwards compatible wrapper for existing code)
+ * Calls updateMentorProfile with all profile fields
+ */
+export async function saveMentorProfile(
+  profile: Partial<Omit<MentorProfile, "joinedAt">>
+): Promise<MentorProfile> {
+  return updateMentorProfile(profile);
 }
 
-// ─── Mentor profile (localStorage stub) ──────────────────────────────────────
-// Replace with: GET/PATCH /api/mentor/profile
-import type { MentorProfile } from "@/types";
-
-export function getMentorProfile(): MentorProfile {
-  if (typeof window === "undefined") {
-    return { firstName: "Mentor", lastName: "", username: "mentor", email: "", joinedAt: new Date().toISOString() };
-  }
-  const stored = localStorage.getItem("coderz_mentor_profile");
-  if (stored) return JSON.parse(stored);
-  return { firstName: "Mentor", lastName: "", username: "mentor", email: "", joinedAt: new Date().toISOString() };
-}
-
-export function saveMentorProfile(profile: MentorProfile): void {
-  localStorage.setItem("coderz_mentor_profile", JSON.stringify(profile));
-}
-
-// ─── Update mentee profile fields ────────────────────────────────────────────
-// Replace with: PATCH /api/mentees/:username/profile
-export function updateMenteeProfile(
+/**
+ * Update mentee profile fields
+ * TODO: Implement backend endpoint PATCH /api/mentees/:username/profile
+ */
+export async function updateMenteeProfile(
   username: string,
   fields: { bio?: string; github?: string; linkedin?: string }
-): void {
-  const requests = getMenteeRequests();
-  const updated = requests.map((r) =>
-    r.username === username ? { ...r, ...fields } : r
-  );
-  saveMenteeRequests(updated);
+): Promise<void> {
+  showStubNotification("Update Mentee Profile");
+  void username; void fields;
 }
 
-// ─── Update mentee password ───────────────────────────────────────────────────
-// Replace with: PATCH /api/mentees/:username/password  { currentPassword, newPassword }
-export function updateMenteePassword(
+/**
+ * Update mentee password
+ * TODO: Implement backend endpoint PATCH /api/mentees/:username/password
+ */
+export async function updateMenteePassword(
   username: string,
   currentPassword: string,
   newPassword: string
-): { ok: boolean; error?: string } {
-  const requests = getMenteeRequests();
-  const mentee = requests.find((r) => r.username === username);
-  if (!mentee) return { ok: false, error: "User not found." };
-  if (mentee.passwordHash !== currentPassword) return { ok: false, error: "Current password is incorrect." };
-  const updated = requests.map((r) =>
-    r.username === username ? { ...r, passwordHash: newPassword } : r
-  );
-  saveMenteeRequests(updated);
-  return { ok: true };
+): Promise<{ ok: boolean; error?: string }> {
+  showStubNotification("Update Mentee Password");
+  void username; void currentPassword; void newPassword;
+  return { ok: false, error: "Backend not implemented yet" };
 }
 
-// ─── Update mentor password ───────────────────────────────────────────────────
-// Replace with: PATCH /api/mentor/password  { currentPassword, newPassword }
-export function updateMentorPassword(
+/**
+ * Update mentor password
+ * TODO: Implement backend endpoint PATCH /api/mentor/password
+ */
+export async function updateMentorPassword(
   currentPassword: string,
   newPassword: string
-): { ok: boolean; error?: string } {
-  const stored = typeof window !== "undefined"
-    ? localStorage.getItem("coderz_mentor_password")
-    : null;
-  const current = stored ?? "mentor123"; // default dev password
-  if (current !== currentPassword) return { ok: false, error: "Current password is incorrect." };
-  localStorage.setItem("coderz_mentor_password", newPassword);
-  return { ok: true };
+): Promise<{ ok: boolean; error?: string }> {
+  showStubNotification("Update Mentor Password");
+  void currentPassword; void newPassword;
+  return { ok: false, error: "Backend not implemented yet" };
 }
 
-// ─── Get assigned tasks for a mentee (with progress applied) ─────────────────
-// Replace with: GET /api/mentees/:username/assigned-tasks
-export function getAssignedTasks(username: string): Question[] {
-  if (typeof window === "undefined") return [];
-  const tasks: Question[] = JSON.parse(localStorage.getItem(`coderz_assigned_tasks_${username}`) || "[]");
-  const progressMap: Record<string, { progressStatus: QuestionProgressStatus; completedAt?: string }> = JSON.parse(
-    localStorage.getItem(`coderz_question_progress_${username}`) || "{}"
-  );
-  return tasks.map((t) => {
-    const p = progressMap[t.id];
-    if (!p) return t;
-    const inCompleted = p.progressStatus === "completed" || p.progressStatus === "revision_needed";
-    return {
-      ...t,
-      progressStatus: p.progressStatus,
-      status: inCompleted ? "completed" : "pending",
-      completedAt: inCompleted ? p.completedAt : undefined,
-    };
-  });
+/**
+ * Clear all caches (call on logout)
+ */
+export function clearCaches(): void {
+  memoryCache.clear();
 }
+
+// ─── STUB: Get assigned tasks for a mentee (with progress applied) ───────────
+// TODO: Replace with real API call: GET /api/mentees/:username/assigned-tasks
+export function getAssignedTasks(username: string): Question[] {
+  showStubNotification("Get Assigned Tasks");
+  void username;
+  return [];
+}
+
+export default {
+  registerMentee,
+  getMenteeRequests,
+  updateMenteeStatus,
+  loginMentee,
+  loginMenteeByEmail,
+  deleteMentee,
+  getMenteeQuestions,
+  updateQuestionProgress,
+  updateQuestionDetails,
+  getQuestionDetail,
+  assignTaskToMentee,
+  getMenteeProfile,
+  getLeaderboard,
+  getMentorProfile,
+  updateMentorProfile,
+  updateMenteeProfile,
+  updateMenteePassword,
+  updateMentorPassword,
+  clearCaches,
+  getAssignedTasks,
+};
