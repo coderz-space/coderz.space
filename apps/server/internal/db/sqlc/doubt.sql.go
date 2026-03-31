@@ -11,13 +11,54 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countDoubtsByBootcamp = `-- name: CountDoubtsByBootcamp :one
+SELECT COUNT(*) FROM doubts d
+JOIN assignment_problems ap ON d.assignment_problem_id = ap.id
+JOIN assignments a ON ap.assignment_id = a.id
+JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
+WHERE be.bootcamp_id = $1
+    AND ($2::uuid IS NULL OR d.assignment_problem_id = $2)
+    AND ($3::boolean IS NULL OR d.resolved = $3)
+`
+
+type CountDoubtsByBootcampParams struct {
+	BootcampID pgtype.UUID `db:"bootcamp_id" json:"bootcamp_id"`
+	Column2    pgtype.UUID `db:"column_2" json:"column_2"`
+	Column3    bool        `db:"column_3" json:"column_3"`
+}
+
+func (q *Queries) CountDoubtsByBootcamp(ctx context.Context, arg CountDoubtsByBootcampParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countDoubtsByBootcamp, arg.BootcampID, arg.Column2, arg.Column3)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countDoubtsByMentee = `-- name: CountDoubtsByMentee :one
+SELECT COUNT(*) FROM doubts
+WHERE raised_by = $1
+    AND ($2::boolean IS NULL OR resolved = $2)
+`
+
+type CountDoubtsByMenteeParams struct {
+	RaisedBy pgtype.UUID `db:"raised_by" json:"raised_by"`
+	Column2  bool        `db:"column_2" json:"column_2"`
+}
+
+func (q *Queries) CountDoubtsByMentee(ctx context.Context, arg CountDoubtsByMenteeParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countDoubtsByMentee, arg.RaisedBy, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createDoubt = `-- name: CreateDoubt :one
 INSERT INTO doubts (
     assignment_problem_id, raised_by, message
 ) VALUES (
     $1, $2, $3
 )
-RETURNING id, assignment_problem_id, raised_by, message, resolved, resolved_by, resolved_at, created_at
+RETURNING id, assignment_problem_id, raised_by, message, resolved, resolved_by, resolved_at, resolution_note, created_at, updated_at
 `
 
 type CreateDoubtParams struct {
@@ -37,13 +78,59 @@ func (q *Queries) CreateDoubt(ctx context.Context, arg CreateDoubtParams) (Doubt
 		&i.Resolved,
 		&i.ResolvedBy,
 		&i.ResolvedAt,
+		&i.ResolutionNote,
 		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const deleteDoubt = `-- name: DeleteDoubt :exec
+DELETE FROM doubts
+WHERE id = $1
+`
+
+func (q *Queries) DeleteDoubt(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteDoubt, id)
+	return err
+}
+
+const getAssignmentProblemDetails = `-- name: GetAssignmentProblemDetails :one
+SELECT 
+    ap.id,
+    ap.assignment_id,
+    a.bootcamp_enrollment_id,
+    be.bootcamp_id,
+    be.organization_member_id
+FROM assignment_problems ap
+JOIN assignments a ON ap.assignment_id = a.id
+JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
+WHERE ap.id = $1
+`
+
+type GetAssignmentProblemDetailsRow struct {
+	ID                   pgtype.UUID `db:"id" json:"id"`
+	AssignmentID         pgtype.UUID `db:"assignment_id" json:"assignment_id"`
+	BootcampEnrollmentID pgtype.UUID `db:"bootcamp_enrollment_id" json:"bootcamp_enrollment_id"`
+	BootcampID           pgtype.UUID `db:"bootcamp_id" json:"bootcamp_id"`
+	OrganizationMemberID pgtype.UUID `db:"organization_member_id" json:"organization_member_id"`
+}
+
+func (q *Queries) GetAssignmentProblemDetails(ctx context.Context, id pgtype.UUID) (GetAssignmentProblemDetailsRow, error) {
+	row := q.db.QueryRow(ctx, getAssignmentProblemDetails, id)
+	var i GetAssignmentProblemDetailsRow
+	err := row.Scan(
+		&i.ID,
+		&i.AssignmentID,
+		&i.BootcampEnrollmentID,
+		&i.BootcampID,
+		&i.OrganizationMemberID,
 	)
 	return i, err
 }
 
 const getDoubt = `-- name: GetDoubt :one
-SELECT id, assignment_problem_id, raised_by, message, resolved, resolved_by, resolved_at, created_at FROM doubts
+SELECT id, assignment_problem_id, raised_by, message, resolved, resolved_by, resolved_at, resolution_note, created_at, updated_at FROM doubts
 WHERE id = $1 LIMIT 1
 `
 
@@ -58,13 +145,110 @@ func (q *Queries) GetDoubt(ctx context.Context, id pgtype.UUID) (Doubt, error) {
 		&i.Resolved,
 		&i.ResolvedBy,
 		&i.ResolvedAt,
+		&i.ResolutionNote,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
+const getDoubtWithDetails = `-- name: GetDoubtWithDetails :one
+SELECT 
+    d.id, d.assignment_problem_id, d.raised_by, d.message, d.resolved, d.resolved_by, d.resolved_at, d.resolution_note, d.created_at, d.updated_at,
+    u_raised.name as raised_by_name,
+    u_raised.email as raised_by_email,
+    u_resolved.name as resolved_by_name
+FROM doubts d
+JOIN organization_members om_raised ON d.raised_by = om_raised.id
+JOIN users u_raised ON om_raised.user_id = u_raised.id
+LEFT JOIN organization_members om_resolved ON d.resolved_by = om_resolved.id
+LEFT JOIN users u_resolved ON om_resolved.user_id = u_resolved.id
+WHERE d.id = $1 LIMIT 1
+`
+
+type GetDoubtWithDetailsRow struct {
+	ID                  pgtype.UUID        `db:"id" json:"id"`
+	AssignmentProblemID pgtype.UUID        `db:"assignment_problem_id" json:"assignment_problem_id"`
+	RaisedBy            pgtype.UUID        `db:"raised_by" json:"raised_by"`
+	Message             string             `db:"message" json:"message"`
+	Resolved            bool               `db:"resolved" json:"resolved"`
+	ResolvedBy          pgtype.UUID        `db:"resolved_by" json:"resolved_by"`
+	ResolvedAt          pgtype.Timestamptz `db:"resolved_at" json:"resolved_at"`
+	ResolutionNote      pgtype.Text        `db:"resolution_note" json:"resolution_note"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	RaisedByName        string             `db:"raised_by_name" json:"raised_by_name"`
+	RaisedByEmail       pgtype.Text        `db:"raised_by_email" json:"raised_by_email"`
+	ResolvedByName      pgtype.Text        `db:"resolved_by_name" json:"resolved_by_name"`
+}
+
+func (q *Queries) GetDoubtWithDetails(ctx context.Context, id pgtype.UUID) (GetDoubtWithDetailsRow, error) {
+	row := q.db.QueryRow(ctx, getDoubtWithDetails, id)
+	var i GetDoubtWithDetailsRow
+	err := row.Scan(
+		&i.ID,
+		&i.AssignmentProblemID,
+		&i.RaisedBy,
+		&i.Message,
+		&i.Resolved,
+		&i.ResolvedBy,
+		&i.ResolvedAt,
+		&i.ResolutionNote,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.RaisedByName,
+		&i.RaisedByEmail,
+		&i.ResolvedByName,
+	)
+	return i, err
+}
+
+const getEnrollmentByMemberID = `-- name: GetEnrollmentByMemberID :one
+SELECT be.id, be.bootcamp_id, be.organization_member_id, be.role, be.status, be.enrolled_at FROM bootcamp_enrollments be
+WHERE be.organization_member_id = $1 AND be.bootcamp_id = $2
+LIMIT 1
+`
+
+type GetEnrollmentByMemberIDParams struct {
+	OrganizationMemberID pgtype.UUID `db:"organization_member_id" json:"organization_member_id"`
+	BootcampID           pgtype.UUID `db:"bootcamp_id" json:"bootcamp_id"`
+}
+
+func (q *Queries) GetEnrollmentByMemberID(ctx context.Context, arg GetEnrollmentByMemberIDParams) (BootcampEnrollment, error) {
+	row := q.db.QueryRow(ctx, getEnrollmentByMemberID, arg.OrganizationMemberID, arg.BootcampID)
+	var i BootcampEnrollment
+	err := row.Scan(
+		&i.ID,
+		&i.BootcampID,
+		&i.OrganizationMemberID,
+		&i.Role,
+		&i.Status,
+		&i.EnrolledAt,
+	)
+	return i, err
+}
+
+const getMemberIDByUserID = `-- name: GetMemberIDByUserID :one
+SELECT om.id FROM organization_members om
+JOIN bootcamp_enrollments be ON om.id = be.organization_member_id
+WHERE om.user_id = $1 AND be.bootcamp_id = $2
+LIMIT 1
+`
+
+type GetMemberIDByUserIDParams struct {
+	UserID     pgtype.UUID `db:"user_id" json:"user_id"`
+	BootcampID pgtype.UUID `db:"bootcamp_id" json:"bootcamp_id"`
+}
+
+func (q *Queries) GetMemberIDByUserID(ctx context.Context, arg GetMemberIDByUserIDParams) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, getMemberIDByUserID, arg.UserID, arg.BootcampID)
+	var id pgtype.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const listDoubtsByAssignmentProblem = `-- name: ListDoubtsByAssignmentProblem :many
-SELECT d.id, d.assignment_problem_id, d.raised_by, d.message, d.resolved, d.resolved_by, d.resolved_at, d.created_at, u.name as raised_by_name 
+SELECT d.id, d.assignment_problem_id, d.raised_by, d.message, d.resolved, d.resolved_by, d.resolved_at, d.resolution_note, d.created_at, d.updated_at, u.name as raised_by_name 
 FROM doubts d
 JOIN organization_members om ON d.raised_by = om.id
 JOIN users u ON om.user_id = u.id
@@ -80,7 +264,9 @@ type ListDoubtsByAssignmentProblemRow struct {
 	Resolved            bool               `db:"resolved" json:"resolved"`
 	ResolvedBy          pgtype.UUID        `db:"resolved_by" json:"resolved_by"`
 	ResolvedAt          pgtype.Timestamptz `db:"resolved_at" json:"resolved_at"`
+	ResolutionNote      pgtype.Text        `db:"resolution_note" json:"resolution_note"`
 	CreatedAt           pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 	RaisedByName        string             `db:"raised_by_name" json:"raised_by_name"`
 }
 
@@ -101,7 +287,9 @@ func (q *Queries) ListDoubtsByAssignmentProblem(ctx context.Context, assignmentP
 			&i.Resolved,
 			&i.ResolvedBy,
 			&i.ResolvedAt,
+			&i.ResolutionNote,
 			&i.CreatedAt,
+			&i.UpdatedAt,
 			&i.RaisedByName,
 		); err != nil {
 			return nil, err
@@ -114,8 +302,338 @@ func (q *Queries) ListDoubtsByAssignmentProblem(ctx context.Context, assignmentP
 	return items, nil
 }
 
+const listDoubtsByBootcamp = `-- name: ListDoubtsByBootcamp :many
+SELECT 
+    d.id, d.assignment_problem_id, d.raised_by, d.message, d.resolved, d.resolved_by, d.resolved_at, d.resolution_note, d.created_at, d.updated_at,
+    u_raised.name as raised_by_name,
+    u_raised.email as raised_by_email,
+    u_resolved.name as resolved_by_name
+FROM doubts d
+JOIN assignment_problems ap ON d.assignment_problem_id = ap.id
+JOIN assignments a ON ap.assignment_id = a.id
+JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
+JOIN organization_members om_raised ON d.raised_by = om_raised.id
+JOIN users u_raised ON om_raised.user_id = u_raised.id
+LEFT JOIN organization_members om_resolved ON d.resolved_by = om_resolved.id
+LEFT JOIN users u_resolved ON om_resolved.user_id = u_resolved.id
+WHERE be.bootcamp_id = $1
+    AND ($2::uuid IS NULL OR d.assignment_problem_id = $2)
+    AND ($3::boolean IS NULL OR d.resolved = $3)
+ORDER BY d.created_at DESC
+LIMIT $4 OFFSET $5
+`
+
+type ListDoubtsByBootcampParams struct {
+	BootcampID pgtype.UUID `db:"bootcamp_id" json:"bootcamp_id"`
+	Column2    pgtype.UUID `db:"column_2" json:"column_2"`
+	Column3    bool        `db:"column_3" json:"column_3"`
+	Limit      int32       `db:"limit" json:"limit"`
+	Offset     int32       `db:"offset" json:"offset"`
+}
+
+type ListDoubtsByBootcampRow struct {
+	ID                  pgtype.UUID        `db:"id" json:"id"`
+	AssignmentProblemID pgtype.UUID        `db:"assignment_problem_id" json:"assignment_problem_id"`
+	RaisedBy            pgtype.UUID        `db:"raised_by" json:"raised_by"`
+	Message             string             `db:"message" json:"message"`
+	Resolved            bool               `db:"resolved" json:"resolved"`
+	ResolvedBy          pgtype.UUID        `db:"resolved_by" json:"resolved_by"`
+	ResolvedAt          pgtype.Timestamptz `db:"resolved_at" json:"resolved_at"`
+	ResolutionNote      pgtype.Text        `db:"resolution_note" json:"resolution_note"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	RaisedByName        string             `db:"raised_by_name" json:"raised_by_name"`
+	RaisedByEmail       pgtype.Text        `db:"raised_by_email" json:"raised_by_email"`
+	ResolvedByName      pgtype.Text        `db:"resolved_by_name" json:"resolved_by_name"`
+}
+
+func (q *Queries) ListDoubtsByBootcamp(ctx context.Context, arg ListDoubtsByBootcampParams) ([]ListDoubtsByBootcampRow, error) {
+	rows, err := q.db.Query(ctx, listDoubtsByBootcamp,
+		arg.BootcampID,
+		arg.Column2,
+		arg.Column3,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDoubtsByBootcampRow{}
+	for rows.Next() {
+		var i ListDoubtsByBootcampRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.AssignmentProblemID,
+			&i.RaisedBy,
+			&i.Message,
+			&i.Resolved,
+			&i.ResolvedBy,
+			&i.ResolvedAt,
+			&i.ResolutionNote,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.RaisedByName,
+			&i.RaisedByEmail,
+			&i.ResolvedByName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDoubtsByMentee = `-- name: ListDoubtsByMentee :many
+SELECT 
+    d.id, d.assignment_problem_id, d.raised_by, d.message, d.resolved, d.resolved_by, d.resolved_at, d.resolution_note, d.created_at, d.updated_at,
+    u_raised.name as raised_by_name,
+    u_raised.email as raised_by_email,
+    u_resolved.name as resolved_by_name
+FROM doubts d
+JOIN organization_members om_raised ON d.raised_by = om_raised.id
+JOIN users u_raised ON om_raised.user_id = u_raised.id
+LEFT JOIN organization_members om_resolved ON d.resolved_by = om_resolved.id
+LEFT JOIN users u_resolved ON om_resolved.user_id = u_resolved.id
+WHERE d.raised_by = $1
+    AND ($2::boolean IS NULL OR d.resolved = $2)
+ORDER BY d.created_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type ListDoubtsByMenteeParams struct {
+	RaisedBy pgtype.UUID `db:"raised_by" json:"raised_by"`
+	Column2  bool        `db:"column_2" json:"column_2"`
+	Limit    int32       `db:"limit" json:"limit"`
+	Offset   int32       `db:"offset" json:"offset"`
+}
+
+type ListDoubtsByMenteeRow struct {
+	ID                  pgtype.UUID        `db:"id" json:"id"`
+	AssignmentProblemID pgtype.UUID        `db:"assignment_problem_id" json:"assignment_problem_id"`
+	RaisedBy            pgtype.UUID        `db:"raised_by" json:"raised_by"`
+	Message             string             `db:"message" json:"message"`
+	Resolved            bool               `db:"resolved" json:"resolved"`
+	ResolvedBy          pgtype.UUID        `db:"resolved_by" json:"resolved_by"`
+	ResolvedAt          pgtype.Timestamptz `db:"resolved_at" json:"resolved_at"`
+	ResolutionNote      pgtype.Text        `db:"resolution_note" json:"resolution_note"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	RaisedByName        string             `db:"raised_by_name" json:"raised_by_name"`
+	RaisedByEmail       pgtype.Text        `db:"raised_by_email" json:"raised_by_email"`
+	ResolvedByName      pgtype.Text        `db:"resolved_by_name" json:"resolved_by_name"`
+}
+
+func (q *Queries) ListDoubtsByMentee(ctx context.Context, arg ListDoubtsByMenteeParams) ([]ListDoubtsByMenteeRow, error) {
+	rows, err := q.db.Query(ctx, listDoubtsByMentee,
+		arg.RaisedBy,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDoubtsByMenteeRow{}
+	for rows.Next() {
+		var i ListDoubtsByMenteeRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.AssignmentProblemID,
+			&i.RaisedBy,
+			&i.Message,
+			&i.Resolved,
+			&i.ResolvedBy,
+			&i.ResolvedAt,
+			&i.ResolutionNote,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.RaisedByName,
+			&i.RaisedByEmail,
+			&i.ResolvedByName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDoubtsByMenteeCursor = `-- name: ListDoubtsByMenteeCursor :many
+SELECT 
+    d.id, d.assignment_problem_id, d.raised_by, d.message, d.resolved, d.resolved_by, d.resolved_at, d.resolution_note, d.created_at, d.updated_at,
+    u_raised.name as raised_by_name,
+    u_raised.email as raised_by_email,
+    u_resolved.name as resolved_by_name
+FROM doubts d
+JOIN organization_members om_raised ON d.raised_by = om_raised.id
+JOIN users u_raised ON om_raised.user_id = u_raised.id
+LEFT JOIN organization_members om_resolved ON d.resolved_by = om_resolved.id
+LEFT JOIN users u_resolved ON om_resolved.user_id = u_resolved.id
+WHERE d.raised_by = $1
+    AND ($2::boolean IS NULL OR d.resolved = $2)
+    AND ($3::uuid IS NULL OR d.id < $3)
+ORDER BY d.created_at DESC, d.id DESC
+LIMIT $4
+`
+
+type ListDoubtsByMenteeCursorParams struct {
+	RaisedBy pgtype.UUID `db:"raised_by" json:"raised_by"`
+	Column2  bool        `db:"column_2" json:"column_2"`
+	Column3  pgtype.UUID `db:"column_3" json:"column_3"`
+	Limit    int32       `db:"limit" json:"limit"`
+}
+
+type ListDoubtsByMenteeCursorRow struct {
+	ID                  pgtype.UUID        `db:"id" json:"id"`
+	AssignmentProblemID pgtype.UUID        `db:"assignment_problem_id" json:"assignment_problem_id"`
+	RaisedBy            pgtype.UUID        `db:"raised_by" json:"raised_by"`
+	Message             string             `db:"message" json:"message"`
+	Resolved            bool               `db:"resolved" json:"resolved"`
+	ResolvedBy          pgtype.UUID        `db:"resolved_by" json:"resolved_by"`
+	ResolvedAt          pgtype.Timestamptz `db:"resolved_at" json:"resolved_at"`
+	ResolutionNote      pgtype.Text        `db:"resolution_note" json:"resolution_note"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	RaisedByName        string             `db:"raised_by_name" json:"raised_by_name"`
+	RaisedByEmail       pgtype.Text        `db:"raised_by_email" json:"raised_by_email"`
+	ResolvedByName      pgtype.Text        `db:"resolved_by_name" json:"resolved_by_name"`
+}
+
+func (q *Queries) ListDoubtsByMenteeCursor(ctx context.Context, arg ListDoubtsByMenteeCursorParams) ([]ListDoubtsByMenteeCursorRow, error) {
+	rows, err := q.db.Query(ctx, listDoubtsByMenteeCursor,
+		arg.RaisedBy,
+		arg.Column2,
+		arg.Column3,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDoubtsByMenteeCursorRow{}
+	for rows.Next() {
+		var i ListDoubtsByMenteeCursorRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.AssignmentProblemID,
+			&i.RaisedBy,
+			&i.Message,
+			&i.Resolved,
+			&i.ResolvedBy,
+			&i.ResolvedAt,
+			&i.ResolutionNote,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.RaisedByName,
+			&i.RaisedByEmail,
+			&i.ResolvedByName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDoubtsCursor = `-- name: ListDoubtsCursor :many
+SELECT 
+    d.id, d.assignment_problem_id, d.raised_by, d.message, d.resolved, d.resolved_by, d.resolved_at, d.resolution_note, d.created_at, d.updated_at,
+    u_raised.name as raised_by_name,
+    u_raised.email as raised_by_email,
+    u_resolved.name as resolved_by_name
+FROM doubts d
+JOIN assignment_problems ap ON d.assignment_problem_id = ap.id
+JOIN assignments a ON ap.assignment_id = a.id
+JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
+JOIN organization_members om_raised ON d.raised_by = om_raised.id
+JOIN users u_raised ON om_raised.user_id = u_raised.id
+LEFT JOIN organization_members om_resolved ON d.resolved_by = om_resolved.id
+LEFT JOIN users u_resolved ON om_resolved.user_id = u_resolved.id
+WHERE be.bootcamp_id = $1
+    AND ($2::uuid IS NULL OR d.assignment_problem_id = $2)
+    AND ($3::boolean IS NULL OR d.resolved = $3)
+    AND ($4::uuid IS NULL OR d.id < $4)
+ORDER BY d.created_at DESC, d.id DESC
+LIMIT $5
+`
+
+type ListDoubtsCursorParams struct {
+	BootcampID pgtype.UUID `db:"bootcamp_id" json:"bootcamp_id"`
+	Column2    pgtype.UUID `db:"column_2" json:"column_2"`
+	Column3    bool        `db:"column_3" json:"column_3"`
+	Column4    pgtype.UUID `db:"column_4" json:"column_4"`
+	Limit      int32       `db:"limit" json:"limit"`
+}
+
+type ListDoubtsCursorRow struct {
+	ID                  pgtype.UUID        `db:"id" json:"id"`
+	AssignmentProblemID pgtype.UUID        `db:"assignment_problem_id" json:"assignment_problem_id"`
+	RaisedBy            pgtype.UUID        `db:"raised_by" json:"raised_by"`
+	Message             string             `db:"message" json:"message"`
+	Resolved            bool               `db:"resolved" json:"resolved"`
+	ResolvedBy          pgtype.UUID        `db:"resolved_by" json:"resolved_by"`
+	ResolvedAt          pgtype.Timestamptz `db:"resolved_at" json:"resolved_at"`
+	ResolutionNote      pgtype.Text        `db:"resolution_note" json:"resolution_note"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	RaisedByName        string             `db:"raised_by_name" json:"raised_by_name"`
+	RaisedByEmail       pgtype.Text        `db:"raised_by_email" json:"raised_by_email"`
+	ResolvedByName      pgtype.Text        `db:"resolved_by_name" json:"resolved_by_name"`
+}
+
+func (q *Queries) ListDoubtsCursor(ctx context.Context, arg ListDoubtsCursorParams) ([]ListDoubtsCursorRow, error) {
+	rows, err := q.db.Query(ctx, listDoubtsCursor,
+		arg.BootcampID,
+		arg.Column2,
+		arg.Column3,
+		arg.Column4,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDoubtsCursorRow{}
+	for rows.Next() {
+		var i ListDoubtsCursorRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.AssignmentProblemID,
+			&i.RaisedBy,
+			&i.Message,
+			&i.Resolved,
+			&i.ResolvedBy,
+			&i.ResolvedAt,
+			&i.ResolutionNote,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.RaisedByName,
+			&i.RaisedByEmail,
+			&i.ResolvedByName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPendingDoubtsByBootcamp = `-- name: ListPendingDoubtsByBootcamp :many
-SELECT d.id, d.assignment_problem_id, d.raised_by, d.message, d.resolved, d.resolved_by, d.resolved_at, d.created_at, p.title as problem_title, u.name as mentee_name
+SELECT d.id, d.assignment_problem_id, d.raised_by, d.message, d.resolved, d.resolved_by, d.resolved_at, d.resolution_note, d.created_at, d.updated_at, p.title as problem_title, u.name as mentee_name
 FROM doubts d
 JOIN assignment_problems ap ON d.assignment_problem_id = ap.id
 JOIN assignments a ON ap.assignment_id = a.id
@@ -135,7 +653,9 @@ type ListPendingDoubtsByBootcampRow struct {
 	Resolved            bool               `db:"resolved" json:"resolved"`
 	ResolvedBy          pgtype.UUID        `db:"resolved_by" json:"resolved_by"`
 	ResolvedAt          pgtype.Timestamptz `db:"resolved_at" json:"resolved_at"`
+	ResolutionNote      pgtype.Text        `db:"resolution_note" json:"resolution_note"`
 	CreatedAt           pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 	ProblemTitle        string             `db:"problem_title" json:"problem_title"`
 	MenteeName          string             `db:"mentee_name" json:"mentee_name"`
 }
@@ -157,7 +677,9 @@ func (q *Queries) ListPendingDoubtsByBootcamp(ctx context.Context, bootcampID pg
 			&i.Resolved,
 			&i.ResolvedBy,
 			&i.ResolvedAt,
+			&i.ResolutionNote,
 			&i.CreatedAt,
+			&i.UpdatedAt,
 			&i.ProblemTitle,
 			&i.MenteeName,
 		); err != nil {
@@ -176,18 +698,21 @@ UPDATE doubts
 SET 
     resolved = TRUE,
     resolved_by = $2,
-    resolved_at = CURRENT_TIMESTAMP
+    resolved_at = CURRENT_TIMESTAMP,
+    resolution_note = $3,
+    updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
-RETURNING id, assignment_problem_id, raised_by, message, resolved, resolved_by, resolved_at, created_at
+RETURNING id, assignment_problem_id, raised_by, message, resolved, resolved_by, resolved_at, resolution_note, created_at, updated_at
 `
 
 type ResolveDoubtParams struct {
-	ID         pgtype.UUID `db:"id" json:"id"`
-	ResolvedBy pgtype.UUID `db:"resolved_by" json:"resolved_by"`
+	ID             pgtype.UUID `db:"id" json:"id"`
+	ResolvedBy     pgtype.UUID `db:"resolved_by" json:"resolved_by"`
+	ResolutionNote pgtype.Text `db:"resolution_note" json:"resolution_note"`
 }
 
 func (q *Queries) ResolveDoubt(ctx context.Context, arg ResolveDoubtParams) (Doubt, error) {
-	row := q.db.QueryRow(ctx, resolveDoubt, arg.ID, arg.ResolvedBy)
+	row := q.db.QueryRow(ctx, resolveDoubt, arg.ID, arg.ResolvedBy, arg.ResolutionNote)
 	var i Doubt
 	err := row.Scan(
 		&i.ID,
@@ -197,7 +722,30 @@ func (q *Queries) ResolveDoubt(ctx context.Context, arg ResolveDoubtParams) (Dou
 		&i.Resolved,
 		&i.ResolvedBy,
 		&i.ResolvedAt,
+		&i.ResolutionNote,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const validateAssignmentProblemOwnership = `-- name: ValidateAssignmentProblemOwnership :one
+SELECT EXISTS(
+    SELECT 1 FROM assignment_problems ap
+    JOIN assignments a ON ap.assignment_id = a.id
+    JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
+    WHERE ap.id = $1 AND be.organization_member_id = $2
+) as is_owner
+`
+
+type ValidateAssignmentProblemOwnershipParams struct {
+	ID                   pgtype.UUID `db:"id" json:"id"`
+	OrganizationMemberID pgtype.UUID `db:"organization_member_id" json:"organization_member_id"`
+}
+
+func (q *Queries) ValidateAssignmentProblemOwnership(ctx context.Context, arg ValidateAssignmentProblemOwnershipParams) (bool, error) {
+	row := q.db.QueryRow(ctx, validateAssignmentProblemOwnership, arg.ID, arg.OrganizationMemberID)
+	var is_owner bool
+	err := row.Scan(&is_owner)
+	return is_owner, err
 }

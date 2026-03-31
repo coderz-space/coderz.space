@@ -731,6 +731,117 @@ definitions:
         minLength: 3
         type: string
     type: object
+  internal_modules_progress.CreateDoubtRequest:
+    description: Request body for creating a doubt on an assignment problem
+    properties:
+      assignmentProblemId:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      message:
+        example: I'm having trouble understanding the time complexity of this algorithm
+        maxLength: 2000
+        minLength: 10
+        type: string
+    required:
+    - assignmentProblemId
+    - message
+    type: object
+  internal_modules_progress.CursorPagination:
+    description: Cursor-based pagination metadata for large datasets
+    properties:
+      hasMore:
+        example: true
+        type: boolean
+      limit:
+        example: 20
+        type: integer
+      nextCursor:
+        example: eyJpZCI6IjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCJ9
+        type: string
+    type: object
+  internal_modules_progress.DoubtData:
+    description: Doubt details with resolution information
+    properties:
+      assignmentProblemId:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+      createdAt:
+        example: "2024-01-15T09:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      message:
+        example: I'm having trouble understanding the time complexity
+        type: string
+      raisedBy:
+        example: 550e8400-e29b-41d4-a716-446655440002
+        type: string
+      raisedByEmail:
+        example: john@example.com
+        type: string
+      raisedByName:
+        example: John Doe
+        type: string
+      resolutionNote:
+        example: The time complexity is O(n log n)
+        type: string
+      resolved:
+        example: false
+        type: boolean
+      resolvedAt:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      resolvedBy:
+        example: 550e8400-e29b-41d4-a716-446655440003
+        type: string
+      resolvedByName:
+        example: Jane Smith
+        type: string
+      updatedAt:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+    type: object
+  internal_modules_progress.DoubtListResponse:
+    description: Response containing a list of doubts with cursor-based pagination
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_progress.DoubtData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_progress.CursorPagination'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_progress.DoubtResponse:
+    description: Response containing a single doubt
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_progress.DoubtData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_progress.GenericResponse:
+    description: Generic success response
+    properties:
+      data:
+        additionalProperties: {}
+        type: object
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_progress.ResolveDoubtRequest:
+    description: Request body for resolving a doubt with optional resolution note
+    properties:
+      resolutionNote:
+        example: The time complexity is O(n log n) because of the sorting step
+        maxLength: 1000
+        type: string
+    type: object
   problem.AttachTagsRequest:
     properties:
       tagIds:
@@ -1159,6 +1270,298 @@ paths:
       summary: List bootcamp enrollments
       tags:
       - Bootcamp Enrollments
+  /v1/doubts:
+    get:
+      consumes:
+      - application/json
+      description: List doubts with filtering and cursor-based pagination. Mentees
+        see only their own doubts, mentors/admins see all organization doubts.
+      parameters:
+      - description: Filter by bootcamp ID (UUID) - required for mentors/admins
+        in: query
+        name: bootcampId
+        type: string
+      - description: Filter by assignment problem ID (UUID)
+        in: query
+        name: assignmentProblemId
+        type: string
+      - description: Filter by resolved status
+        in: query
+        name: resolved
+        type: boolean
+      - description: Cursor for pagination
+        in: query
+        name: cursor
+        type: string
+      - description: 'Number of items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of doubts with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_progress.DoubtListResponse'
+        "400":
+          description: Bad request - invalid query parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - insufficient permissions
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List doubts
+      tags:
+      - Doubts
+    post:
+      consumes:
+      - application/json
+      description: Create a doubt for an assignment problem (mentee only). Rate limited
+        to prevent spam.
+      parameters:
+      - description: Doubt details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_progress.CreateDoubtRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Doubt created successfully
+          schema:
+            $ref: '#/definitions/internal_modules_progress.DoubtResponse'
+        "400":
+          description: Bad request - validation error or invalid assignment problem
+            ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not a mentee or problem not assigned to you
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - assignment problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "429":
+          description: Too many requests - rate limit exceeded
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new doubt
+      tags:
+      - Doubts
+  /v1/doubts/{doubtId}:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently delete a doubt (mentor/admin only). Mentees cannot
+        delete doubts for audit purposes.
+      parameters:
+      - description: Doubt ID (UUID)
+        in: path
+        name: doubtId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Doubt deleted successfully
+          schema:
+            $ref: '#/definitions/internal_modules_progress.GenericResponse'
+        "400":
+          description: Bad request - invalid doubt ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - only mentors/admins can delete doubts
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - doubt does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a doubt
+      tags:
+      - Doubts
+    get:
+      consumes:
+      - application/json
+      description: Retrieve full details of a specific doubt. Mentees can only view
+        their own doubts, mentors/admins can view all organization doubts.
+      parameters:
+      - description: Doubt ID (UUID)
+        in: path
+        name: doubtId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Doubt details
+          schema:
+            $ref: '#/definitions/internal_modules_progress.DoubtResponse'
+        "400":
+          description: Bad request - invalid doubt ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - access denied
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - doubt does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get doubt details
+      tags:
+      - Doubts
+  /v1/doubts/{doubtId}/resolve:
+    patch:
+      consumes:
+      - application/json
+      description: Mark a doubt as resolved by a mentor/admin with optional resolution
+        note. Idempotent operation.
+      parameters:
+      - description: Doubt ID (UUID)
+        in: path
+        name: doubtId
+        required: true
+        type: string
+      - description: Resolution details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_progress.ResolveDoubtRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Doubt resolved successfully
+          schema:
+            $ref: '#/definitions/internal_modules_progress.DoubtResponse'
+        "400":
+          description: Bad request - validation error or invalid doubt ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - only mentors/admins can resolve doubts
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - doubt does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Resolve a doubt
+      tags:
+      - Doubts
+  /v1/doubts/me:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all doubts raised by the authenticated mentee with cursor-based
+        pagination
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: query
+        name: bootcampId
+        required: true
+        type: string
+      - description: Filter by resolved status
+        in: query
+        name: resolved
+        type: boolean
+      - description: Cursor for pagination
+        in: query
+        name: cursor
+        type: string
+      - description: 'Number of items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of my doubts with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_progress.DoubtListResponse'
+        "400":
+          description: Bad request - invalid query parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - only mentees can access this endpoint
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my doubts
+      tags:
+      - Doubts
   /v1/organizations:
     get:
       consumes:

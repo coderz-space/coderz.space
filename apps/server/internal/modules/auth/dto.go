@@ -17,10 +17,10 @@ type SignupRequest struct {
 
 // AuthUser represents the authenticated user data
 type AuthUser struct {
-	ID            pgtype.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	EmailVerified bool        `json:"emailVerified" example:"false"`
 	Name          string      `json:"name" example:"John Doe"`
 	Email         string      `json:"email" example:"user@example.com"`
+	ID            pgtype.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	EmailVerified bool        `json:"emailVerified" example:"false"`
 }
 
 // AuthResponseData contains authentication tokens and user data

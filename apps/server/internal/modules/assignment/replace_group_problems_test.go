@@ -11,10 +11,10 @@ import (
 func TestReplaceGroupProblemsValidation(t *testing.T) {
 	tests := []struct {
 		name               string
-		problems           []GroupProblemInput
-		expectedStatusCode int
 		expectedError      string
 		description        string
+		problems           []GroupProblemInput
+		expectedStatusCode int
 	}{
 		{
 			name: "valid - unique problem IDs and positions",
@@ -207,10 +207,10 @@ func TestReplaceGroupProblemsAtomicity(t *testing.T) {
 func TestReplaceGroupProblemsTransactionScenarios(t *testing.T) {
 	tests := []struct {
 		name               string
-		clearSucceeds      bool
-		addProblemsSucceed bool
 		expectedOutcome    string
 		description        string
+		clearSucceeds      bool
+		addProblemsSucceed bool
 	}{
 		{
 			name:               "success - both clear and add succeed",
@@ -314,8 +314,8 @@ func TestReplaceGroupProblemsSQLQueries(t *testing.T) {
 func TestReplaceGroupProblemsAuthValidation(t *testing.T) {
 	tests := []struct {
 		name          string
-		hasAuthClaims bool
 		expectedError string
+		hasAuthClaims bool
 	}{
 		{
 			name:          "valid - auth claims present",
@@ -349,8 +349,8 @@ func TestReplaceGroupProblemsIDValidation(t *testing.T) {
 	tests := []struct {
 		name          string
 		groupID       string
-		isValidUUID   bool
 		expectedError string
+		isValidUUID   bool
 	}{
 		{
 			name:          "valid - proper UUID format",
@@ -391,9 +391,9 @@ func TestReplaceGroupProblemsIDValidation(t *testing.T) {
 func TestReplaceGroupProblemsResponseStructure(t *testing.T) {
 	tests := []struct {
 		name            string
+		expectedMessage string
 		statusCode      int
 		expectedSuccess bool
-		expectedMessage string
 		shouldHaveData  bool
 	}{
 		{

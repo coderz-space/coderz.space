@@ -11,11 +11,11 @@ import (
 func TestDeleteAssignmentGroupValidation(t *testing.T) {
 	tests := []struct {
 		name               string
-		groupExists        bool
-		hasAssignments     bool
+		expectedError      string
 		assignmentCount    int64
 		expectedStatusCode int
-		expectedError      string
+		groupExists        bool
+		hasAssignments     bool
 	}{
 		{
 			name:               "valid - group exists with no assignments",
@@ -101,12 +101,12 @@ func TestDeleteAssignmentGroupValidation(t *testing.T) {
 func TestDeleteAssignmentGroupConflictScenarios(t *testing.T) {
 	tests := []struct {
 		name                 string
+		expectedError        string
 		activeAssignments    int
 		completedAssignments int
 		expiredAssignments   int
 		archivedAssignments  int
 		shouldAllowDelete    bool
-		expectedError        string
 	}{
 		{
 			name:                 "no assignments - allow delete",
@@ -214,8 +214,8 @@ func TestDeleteAssignmentGroupConflictScenarios(t *testing.T) {
 func TestDeleteAssignmentGroupAuthValidation(t *testing.T) {
 	tests := []struct {
 		name          string
-		hasAuthClaims bool
 		expectedError string
+		hasAuthClaims bool
 	}{
 		{
 			name:          "valid - auth claims present",
@@ -251,8 +251,8 @@ func TestDeleteAssignmentGroupIDValidation(t *testing.T) {
 	tests := []struct {
 		name          string
 		groupID       string
-		isValidUUID   bool
 		expectedError string
+		isValidUUID   bool
 	}{
 		{
 			name:          "valid - proper UUID format",
@@ -301,9 +301,9 @@ func TestDeleteAssignmentGroupIDValidation(t *testing.T) {
 func TestDeleteAssignmentGroupResponseStructure(t *testing.T) {
 	tests := []struct {
 		name            string
+		expectedMessage string
 		statusCode      int
 		expectedSuccess bool
-		expectedMessage string
 		shouldHaveData  bool
 	}{
 		{

@@ -318,11 +318,15 @@ CREATE TABLE doubts (
     resolved              BOOLEAN     NOT NULL DEFAULT FALSE,
     resolved_by           UUID        REFERENCES organization_members(id) ON DELETE SET NULL,
     resolved_at           TIMESTAMPTZ,
-    created_at            TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    resolution_note       TEXT,
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at            TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_doubts_assignment_problem ON doubts(assignment_problem_id);
 CREATE INDEX idx_doubts_raised_by          ON doubts(raised_by);
+CREATE INDEX idx_doubts_resolved           ON doubts(resolved);
+CREATE INDEX idx_doubts_created_at         ON doubts(created_at DESC);
 
 -- ============================================================
 -- 7. ANALYTICS LAYER

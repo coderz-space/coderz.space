@@ -7,6 +7,7 @@ import (
 	"github.com/DSAwithGautam/Coderz.space/internal/container"
 	"github.com/DSAwithGautam/Coderz.space/internal/modules/auth"
 	"github.com/DSAwithGautam/Coderz.space/internal/modules/organization"
+	"github.com/DSAwithGautam/Coderz.space/internal/modules/progress"
 	"github.com/labstack/echo/v5"
 )
 
@@ -18,6 +19,9 @@ func RegisterRoutes(e *echo.Group, di *container.Container) {
 	auth.RegisterProtectedRoutes(e, di.AuthHandler, di.Config)
 
 	organization.RegisterProtectedRoutes(e, di.OrganizationHandler, di.Config)
+
+	// Register progress (doubts) routes
+	progress.RegisterProtectedRoutes(e, di.ProgressHandler, di.Config)
 }
 
 // healthCheck godoc

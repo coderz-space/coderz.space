@@ -45,14 +45,11 @@ func (h *Handler) Signup(c *echo.Context) error {
 	}
 	fmt.Println("hello world😅 x")
 
-
-
 	data, err := h.service.Signup(c.Request().Context(), body)
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", err.Error(), nil, nil)
 	}
 	fmt.Println("hello world😅 3")
-
 
 	h.setAuthCookies(c, data.AccessToken, data.RefreshToken)
 

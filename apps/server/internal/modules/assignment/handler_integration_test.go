@@ -12,8 +12,8 @@ func TestCreateAssignmentGroupValidation(t *testing.T) {
 	tests := []struct {
 		name          string
 		title         string
-		deadlineDays  int32
 		expectedError string
+		deadlineDays  int32
 	}{
 		{
 			name:          "valid input - minimum title length",
@@ -82,9 +82,9 @@ func TestCreateAssignmentGroupValidation(t *testing.T) {
 func TestCreateAssignmentGroupBootcampValidation(t *testing.T) {
 	tests := []struct {
 		name           string
+		expectedError  string
 		bootcampExists bool
 		bootcampActive bool
-		expectedError  string
 	}{
 		{
 			name:           "valid - bootcamp exists and is active",
@@ -123,8 +123,8 @@ func TestCreateAssignmentGroupBootcampValidation(t *testing.T) {
 func TestCreateAssignmentGroupAuthContext(t *testing.T) {
 	tests := []struct {
 		name          string
-		hasAuthClaims bool
 		expectedError string
+		hasAuthClaims bool
 	}{
 		{
 			name:          "valid - auth claims present",

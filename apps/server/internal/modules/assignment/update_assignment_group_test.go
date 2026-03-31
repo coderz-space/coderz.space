@@ -166,8 +166,8 @@ func TestUpdateAssignmentGroup_ErrorHandling(t *testing.T) {
 	tests := []struct {
 		name          string
 		groupID       string
-		request       UpdateAssignmentGroupRequest
 		expectedError string
+		request       UpdateAssignmentGroupRequest
 	}{
 		{
 			name:    "invalid group ID format",

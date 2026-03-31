@@ -12,8 +12,8 @@ func TestCreateTagNormalization(t *testing.T) {
 		name           string
 		tagName        string
 		expectedNorm   string
-		expectedStatus int
 		expectedError  string
+		expectedStatus int
 	}{
 		{
 			name:           "normalizes uppercase to lowercase",
@@ -323,8 +323,8 @@ func TestDeleteTagWhenAttached(t *testing.T) {
 	tests := []struct {
 		name           string
 		scenario       string
-		attachedCount  int
 		expectedError  string
+		attachedCount  int
 		expectedStatus int
 	}{
 		{
@@ -390,8 +390,8 @@ func TestAttachTagsToProblemDeduplication(t *testing.T) {
 	tests := []struct {
 		name           string
 		scenario       string
-		tagIDs         []string
 		expectedError  string
+		tagIDs         []string
 		expectedStatus int
 	}{
 		{
@@ -762,8 +762,8 @@ func TestTagErrorHandling(t *testing.T) {
 		name           string
 		operation      string
 		errorType      string
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
 	}{
 		{
 			name:           "CreateTag validation error",

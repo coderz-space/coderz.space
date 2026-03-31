@@ -295,8 +295,8 @@ func TestUpdateProblemValidation(t *testing.T) {
 	tests := []struct {
 		name           string
 		scenario       string
-		fieldsProvided int
 		expectedError  string
+		fieldsProvided int
 		expectedStatus int
 	}{
 		{
@@ -1117,8 +1117,8 @@ func TestUpdateResourceValidation(t *testing.T) {
 	tests := []struct {
 		name           string
 		scenario       string
-		fieldsProvided int
 		expectedError  string
+		fieldsProvided int
 		expectedStatus int
 	}{
 		{
@@ -1470,8 +1470,8 @@ func TestServiceErrorHandling(t *testing.T) {
 	tests := []struct {
 		name           string
 		errorType      string
-		expectedStatus int
 		expectedCode   string
+		expectedStatus int
 	}{
 		{
 			name:           "validation error returns 400",

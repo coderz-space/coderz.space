@@ -5,19 +5,19 @@ import "github.com/jackc/pgx/v5/pgtype"
 // Bootcamp DTOs
 
 type CreateBootcampRequest struct {
+	IsActive    *bool  `json:"isActive" validate:"omitempty"`
 	Name        string `json:"name" validate:"required,min=3,max=120"`
 	Description string `json:"description" validate:"omitempty,max=500"`
 	StartDate   string `json:"startDate" validate:"omitempty,datetime=2006-01-02"`
 	EndDate     string `json:"endDate" validate:"omitempty,datetime=2006-01-02"`
-	IsActive    *bool  `json:"isActive" validate:"omitempty"`
 }
 
 type UpdateBootcampRequest struct {
+	IsActive    *bool  `json:"isActive" validate:"omitempty"`
 	Name        string `json:"name" validate:"omitempty,min=3,max=120"`
 	Description string `json:"description" validate:"omitempty,max=500"`
 	StartDate   string `json:"startDate" validate:"omitempty,datetime=2006-01-02"`
 	EndDate     string `json:"endDate" validate:"omitempty,datetime=2006-01-02"`
-	IsActive    *bool  `json:"isActive" validate:"omitempty"`
 }
 
 type BootcampData struct {
@@ -39,8 +39,8 @@ type BootcampResponse struct {
 }
 
 type BootcampListResponse struct {
-	Data    []BootcampData  `json:"data"`
 	Meta    *PaginationMeta `json:"meta,omitempty"`
+	Data    []BootcampData  `json:"data"`
 	Success bool            `json:"success"`
 }
 
@@ -80,8 +80,8 @@ type EnrollmentResponse struct {
 }
 
 type EnrollmentListResponse struct {
-	Data    []EnrollmentData `json:"data"`
 	Meta    *PaginationMeta  `json:"meta,omitempty"`
+	Data    []EnrollmentData `json:"data"`
 	Success bool             `json:"success"`
 }
 

@@ -4,9 +4,9 @@ import "github.com/labstack/echo/v5"
 
 type apiResponse struct {
 	Data    any       `json:"data,omitempty"`
+	Error   *apiError `json:"error,omitempty"`
 	Message string    `json:"message,omitempty"`
 	Status  string    `json:"status,omitempty"`
-	Error   *apiError `json:"error,omitempty"`
 	Success bool      `json:"success,omitempty"`
 }
 

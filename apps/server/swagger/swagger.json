@@ -250,6 +250,437 @@
                 }
             }
         },
+        "/v1/doubts": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "List doubts with filtering and cursor-based pagination. Mentees see only their own doubts, mentors/admins see all organization doubts.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Doubts"
+                ],
+                "summary": "List doubts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by bootcamp ID (UUID) - required for mentors/admins",
+                        "name": "bootcampId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by assignment problem ID (UUID)",
+                        "name": "assignmentProblemId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by resolved status",
+                        "name": "resolved",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cursor for pagination",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of doubts with pagination",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_progress.DoubtListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid query parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - insufficient permissions",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a doubt for an assignment problem (mentee only). Rate limited to prevent spam.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Doubts"
+                ],
+                "summary": "Create a new doubt",
+                "parameters": [
+                    {
+                        "description": "Doubt details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_progress.CreateDoubtRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Doubt created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_progress.DoubtResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - validation error or invalid assignment problem ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - not a mentee or problem not assigned to you",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - assignment problem does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "429": {
+                        "description": "Too many requests - rate limit exceeded",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/doubts/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve all doubts raised by the authenticated mentee with cursor-based pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Doubts"
+                ],
+                "summary": "Get my doubts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bootcamp ID (UUID)",
+                        "name": "bootcampId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by resolved status",
+                        "name": "resolved",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cursor for pagination",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page (default: 20, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of my doubts with pagination",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_progress.DoubtListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid query parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - only mentees can access this endpoint",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/doubts/{doubtId}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve full details of a specific doubt. Mentees can only view their own doubts, mentors/admins can view all organization doubts.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Doubts"
+                ],
+                "summary": "Get doubt details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Doubt ID (UUID)",
+                        "name": "doubtId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Doubt details",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_progress.DoubtResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid doubt ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - access denied",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - doubt does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Permanently delete a doubt (mentor/admin only). Mentees cannot delete doubts for audit purposes.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Doubts"
+                ],
+                "summary": "Delete a doubt",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Doubt ID (UUID)",
+                        "name": "doubtId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Doubt deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_progress.GenericResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid doubt ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - only mentors/admins can delete doubts",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - doubt does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/doubts/{doubtId}/resolve": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mark a doubt as resolved by a mentor/admin with optional resolution note. Idempotent operation.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Doubts"
+                ],
+                "summary": "Resolve a doubt",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Doubt ID (UUID)",
+                        "name": "doubtId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Resolution details",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_progress.ResolveDoubtRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Doubt resolved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/internal_modules_progress.DoubtResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - validation error or invalid doubt ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - only mentors/admins can resolve doubts",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - doubt does not exist",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/v1/organizations": {
             "get": {
                 "security": [
@@ -5348,6 +5779,159 @@
                     "type": "string",
                     "maxLength": 80,
                     "minLength": 3
+                }
+            }
+        },
+        "internal_modules_progress.CreateDoubtRequest": {
+            "description": "Request body for creating a doubt on an assignment problem",
+            "type": "object",
+            "required": [
+                "assignmentProblemId",
+                "message"
+            ],
+            "properties": {
+                "assignmentProblemId": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "message": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "minLength": 10,
+                    "example": "I'm having trouble understanding the time complexity of this algorithm"
+                }
+            }
+        },
+        "internal_modules_progress.CursorPagination": {
+            "description": "Cursor-based pagination metadata for large datasets",
+            "type": "object",
+            "properties": {
+                "hasMore": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "nextCursor": {
+                    "type": "string",
+                    "example": "eyJpZCI6IjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCJ9"
+                }
+            }
+        },
+        "internal_modules_progress.DoubtData": {
+            "description": "Doubt details with resolution information",
+            "type": "object",
+            "properties": {
+                "assignmentProblemId": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440001"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2024-01-15T09:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "I'm having trouble understanding the time complexity"
+                },
+                "raisedBy": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440002"
+                },
+                "raisedByEmail": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "raisedByName": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "resolutionNote": {
+                    "type": "string",
+                    "example": "The time complexity is O(n log n)"
+                },
+                "resolved": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "resolvedAt": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "resolvedBy": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440003"
+                },
+                "resolvedByName": {
+                    "type": "string",
+                    "example": "Jane Smith"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                }
+            }
+        },
+        "internal_modules_progress.DoubtListResponse": {
+            "description": "Response containing a list of doubts with cursor-based pagination",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_modules_progress.DoubtData"
+                    }
+                },
+                "meta": {
+                    "$ref": "#/definitions/internal_modules_progress.CursorPagination"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_progress.DoubtResponse": {
+            "description": "Response containing a single doubt",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_modules_progress.DoubtData"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_progress.GenericResponse": {
+            "description": "Generic success response",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_modules_progress.ResolveDoubtRequest": {
+            "description": "Request body for resolving a doubt with optional resolution note",
+            "type": "object",
+            "properties": {
+                "resolutionNote": {
+                    "type": "string",
+                    "maxLength": 1000,
+                    "example": "The time complexity is O(n log n) because of the sorting step"
                 }
             }
         },

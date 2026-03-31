@@ -30,22 +30,22 @@ type GroupProblemInput struct {
 }
 
 type AssignmentGroupData struct {
-	ID           pgtype.UUID       `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	BootcampID   pgtype.UUID       `json:"bootcampId" example:"660e8400-e29b-41d4-a716-446655440000"`
-	CreatedBy    pgtype.UUID       `json:"createdBy" example:"770e8400-e29b-41d4-a716-446655440000"`
 	Title        string            `json:"title" example:"Week 1 - Arrays and Strings"`
 	Description  string            `json:"description,omitempty" example:"Introduction to fundamental data structures"`
-	DeadlineDays int32             `json:"deadlineDays" example:"7"`
 	CreatedAt    string            `json:"createdAt" example:"2024-01-01T10:00:00Z"`
 	UpdatedAt    string            `json:"updatedAt" example:"2024-01-01T10:00:00Z"`
 	Problems     []GroupProblemRef `json:"problems,omitempty"`
+	DeadlineDays int32             `json:"deadlineDays" example:"7"`
+	ID           pgtype.UUID       `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	BootcampID   pgtype.UUID       `json:"bootcampId" example:"660e8400-e29b-41d4-a716-446655440000"`
+	CreatedBy    pgtype.UUID       `json:"createdBy" example:"770e8400-e29b-41d4-a716-446655440000"`
 }
 
 type GroupProblemRef struct {
-	ProblemID  pgtype.UUID `json:"problemId" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Title      string      `json:"title" example:"Two Sum"`
 	Difficulty string      `json:"difficulty" example:"easy"`
 	Position   int32       `json:"position" example:"1"`
+	ProblemID  pgtype.UUID `json:"problemId" example:"550e8400-e29b-41d4-a716-446655440000"`
 }
 
 type AssignmentGroupResponse struct {
@@ -81,10 +81,6 @@ type UpdateAssignmentStatusRequest struct {
 }
 
 type AssignmentData struct {
-	ID                   pgtype.UUID             `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	AssignmentGroupID    pgtype.UUID             `json:"assignmentGroupId" example:"660e8400-e29b-41d4-a716-446655440000"`
-	BootcampEnrollmentID pgtype.UUID             `json:"bootcampEnrollmentId" example:"770e8400-e29b-41d4-a716-446655440000"`
-	AssignedBy           pgtype.UUID             `json:"assignedBy" example:"880e8400-e29b-41d4-a716-446655440000"`
 	AssignedAt           string                  `json:"assignedAt" example:"2024-01-01T10:00:00Z"`
 	DeadlineAt           string                  `json:"deadlineAt,omitempty" example:"2024-01-08T23:59:59Z"`
 	Status               string                  `json:"status" example:"active"`
@@ -92,6 +88,10 @@ type AssignmentData struct {
 	UpdatedAt            string                  `json:"updatedAt" example:"2024-01-01T10:00:00Z"`
 	GroupTitle           string                  `json:"groupTitle,omitempty" example:"Week 1 - Arrays and Strings"`
 	Problems             []AssignmentProblemData `json:"problems,omitempty"`
+	ID                   pgtype.UUID             `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	AssignmentGroupID    pgtype.UUID             `json:"assignmentGroupId" example:"660e8400-e29b-41d4-a716-446655440000"`
+	BootcampEnrollmentID pgtype.UUID             `json:"bootcampEnrollmentId" example:"770e8400-e29b-41d4-a716-446655440000"`
+	AssignedBy           pgtype.UUID             `json:"assignedBy" example:"880e8400-e29b-41d4-a716-446655440000"`
 }
 
 type AssignmentResponse struct {
@@ -114,9 +114,6 @@ type UpdateAssignmentProblemRequest struct {
 }
 
 type AssignmentProblemData struct {
-	ID           pgtype.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	AssignmentID pgtype.UUID `json:"assignmentId" example:"660e8400-e29b-41d4-a716-446655440000"`
-	ProblemID    pgtype.UUID `json:"problemId" example:"770e8400-e29b-41d4-a716-446655440000"`
 	Status       string      `json:"status" example:"pending"`
 	SolutionLink string      `json:"solutionLink,omitempty" example:"https://github.com/user/solution"`
 	Notes        string      `json:"notes,omitempty" example:"Used dynamic programming approach"`
@@ -125,6 +122,9 @@ type AssignmentProblemData struct {
 	UpdatedAt    string      `json:"updatedAt" example:"2024-01-05T14:30:00Z"`
 	Title        string      `json:"title,omitempty" example:"Two Sum"`
 	Difficulty   string      `json:"difficulty,omitempty" example:"easy"`
+	ID           pgtype.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	AssignmentID pgtype.UUID `json:"assignmentId" example:"660e8400-e29b-41d4-a716-446655440000"`
+	ProblemID    pgtype.UUID `json:"problemId" example:"770e8400-e29b-41d4-a716-446655440000"`
 }
 
 type AssignmentProblemResponse struct {
