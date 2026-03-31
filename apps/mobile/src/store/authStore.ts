@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppSession } from '../types';
+import { authMock as authService } from '../services/api/mock/authMock'; // ✅ ensure this import
 
 interface AuthStore {
   session: AppSession | null;
@@ -12,6 +13,9 @@ interface AuthStore {
   logout: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   bootstrapAuth: () => Promise<void>;
+
+  // ✅ NEW
+  changePassword: (params: { currentPassword: string; newPassword: string }) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -42,6 +46,20 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       // corrupted storage — start fresh
     } finally {
       set({ isBootstrapping: false });
+    }
+  },
+
+  // ✅ NEW ACTION
+  changePassword: async ({ currentPassword, newPassword }) => {
+    const { setLoading } = get();
+    setLoading(true);
+    try {
+      await authService.changePassword({ currentPassword, newPassword });
+      // success handled in UI
+    } catch (error: any) {
+      throw new Error(error.message || 'Password change failed');
+    } finally {
+      setLoading(false);
     }
   },
 }));

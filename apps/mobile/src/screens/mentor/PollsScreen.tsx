@@ -41,7 +41,7 @@ export default function PollsScreen() {
       return;
     }
     setCreating(true);
-    await new Promise((r) => setTimeout(r, 800));
+    await new Promise<void>((r) => setTimeout(() => r()));
     const newPoll: PollData = {
       id: `poll-${Date.now()}`,
       question,
