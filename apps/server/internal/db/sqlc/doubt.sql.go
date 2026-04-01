@@ -204,7 +204,7 @@ func (q *Queries) GetDoubtWithDetails(ctx context.Context, id pgtype.UUID) (GetD
 }
 
 const getEnrollmentByMemberID = `-- name: GetEnrollmentByMemberID :one
-SELECT be.id, be.bootcamp_id, be.organization_member_id, be.role, be.status, be.enrolled_at FROM bootcamp_enrollments be
+SELECT be.id, be.bootcamp_id, be.organization_member_id, be.role, be.status, be.enrolled_at, be.assigned_sheet_key FROM bootcamp_enrollments be
 WHERE be.organization_member_id = $1 AND be.bootcamp_id = $2
 LIMIT 1
 `
@@ -224,6 +224,7 @@ func (q *Queries) GetEnrollmentByMemberID(ctx context.Context, arg GetEnrollment
 		&i.Role,
 		&i.Status,
 		&i.EnrolledAt,
+		&i.AssignedSheetKey,
 	)
 	return i, err
 }
@@ -748,4 +749,28 @@ func (q *Queries) ValidateAssignmentProblemOwnership(ctx context.Context, arg Va
 	var is_owner bool
 	err := row.Scan(&is_owner)
 	return is_owner, err
+}
+
+const validateDoubtResolverOrg = `-- name: ValidateDoubtResolverOrg :one
+SELECT EXISTS(
+    SELECT 1 FROM doubts d
+    JOIN assignment_problems ap ON d.assignment_problem_id = ap.id
+    JOIN assignments a ON ap.assignment_id = a.id
+    JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
+    JOIN organization_members mentee_om ON be.organization_member_id = mentee_om.id
+    JOIN organization_members resolver_om ON resolver_om.id = $1
+    WHERE d.id = $2 AND mentee_om.organization_id = resolver_om.organization_id
+) as is_same_org
+`
+
+type ValidateDoubtResolverOrgParams struct {
+	ResolverMemberID pgtype.UUID `db:"resolver_member_id" json:"resolver_member_id"`
+	DoubtID          pgtype.UUID `db:"doubt_id" json:"doubt_id"`
+}
+
+func (q *Queries) ValidateDoubtResolverOrg(ctx context.Context, arg ValidateDoubtResolverOrgParams) (bool, error) {
+	row := q.db.QueryRow(ctx, validateDoubtResolverOrg, arg.ResolverMemberID, arg.DoubtID)
+	var is_same_org bool
+	err := row.Scan(&is_same_org)
+	return is_same_org, err
 }
