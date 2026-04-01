@@ -149,7 +149,7 @@ RETURNING *;
 INSERT INTO assignment_problems (
     assignment_id, problem_id, status
 )
-SELECT $1, unnest(sqlc.arg('problem_IDs')::uuid[]), 'pending';
+SELECT $1, unnest($2::uuid[]), 'pending';
 
 -- name: UpdateAssignmentProblemProgress :one
 UPDATE assignment_problems

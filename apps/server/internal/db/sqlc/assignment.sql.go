@@ -85,6 +85,23 @@ func (q *Queries) AssignGroupToMentee(ctx context.Context, arg AssignGroupToMent
 	return i, err
 }
 
+const initializeAssignmentProblems = `-- name: InitializeAssignmentProblems :exec
+INSERT INTO assignment_problems (
+    assignment_id, problem_id, status
+)
+SELECT $1, unnest($2::uuid[]), 'pending'
+`
+
+type InitializeAssignmentProblemsParams struct {
+	AssignmentID pgtype.UUID   `db:"assignment_id" json:"assignment_id"`
+	ProblemIDs   []pgtype.UUID `db:"problem_ids" json:"problem_ids"`
+}
+
+func (q *Queries) InitializeAssignmentProblems(ctx context.Context, arg InitializeAssignmentProblemsParams) error {
+	_, err := q.db.Exec(ctx, initializeAssignmentProblems, arg.AssignmentID, arg.ProblemIDs)
+	return err
+}
+
 const checkDuplicateActiveAssignment = `-- name: CheckDuplicateActiveAssignment :one
 SELECT COUNT(*) FROM assignments
 WHERE assignment_group_id = $1 
@@ -262,7 +279,7 @@ func (q *Queries) GetAssignmentGroup(ctx context.Context, id pgtype.UUID) (Assig
 }
 
 const getAssignmentProblem = `-- name: GetAssignmentProblem :one
-SELECT ap.id, ap.assignment_id, ap.problem_id, ap.status, ap.solution_link, ap.notes, ap.completed_at, ap.created_at, ap.updated_at, ap.resources, ap.app_progress_status, p.title, p.difficulty
+SELECT ap.id, ap.assignment_id, ap.problem_id, ap.status, ap.solution_link, ap.notes, ap.completed_at, ap.created_at, ap.updated_at, p.title, p.difficulty
 FROM assignment_problems ap
 JOIN problems p ON ap.problem_id = p.id
 WHERE ap.assignment_id = $1 AND ap.problem_id = $2
@@ -275,19 +292,17 @@ type GetAssignmentProblemParams struct {
 }
 
 type GetAssignmentProblemRow struct {
-	ID                pgtype.UUID             `db:"id" json:"id"`
-	AssignmentID      pgtype.UUID             `db:"assignment_id" json:"assignment_id"`
-	ProblemID         pgtype.UUID             `db:"problem_id" json:"problem_id"`
-	Status            AssignmentProblemStatus `db:"status" json:"status"`
-	SolutionLink      pgtype.Text             `db:"solution_link" json:"solution_link"`
-	Notes             pgtype.Text             `db:"notes" json:"notes"`
-	CompletedAt       pgtype.Timestamptz      `db:"completed_at" json:"completed_at"`
-	CreatedAt         pgtype.Timestamptz      `db:"created_at" json:"created_at"`
-	UpdatedAt         pgtype.Timestamptz      `db:"updated_at" json:"updated_at"`
-	Resources         pgtype.Text             `db:"resources" json:"resources"`
-	AppProgressStatus string                  `db:"app_progress_status" json:"app_progress_status"`
-	Title             string                  `db:"title" json:"title"`
-	Difficulty        DifficultyLevel         `db:"difficulty" json:"difficulty"`
+	ID           pgtype.UUID             `db:"id" json:"id"`
+	AssignmentID pgtype.UUID             `db:"assignment_id" json:"assignment_id"`
+	ProblemID    pgtype.UUID             `db:"problem_id" json:"problem_id"`
+	Status       AssignmentProblemStatus `db:"status" json:"status"`
+	SolutionLink pgtype.Text             `db:"solution_link" json:"solution_link"`
+	Notes        pgtype.Text             `db:"notes" json:"notes"`
+	CompletedAt  pgtype.Timestamptz      `db:"completed_at" json:"completed_at"`
+	CreatedAt    pgtype.Timestamptz      `db:"created_at" json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz      `db:"updated_at" json:"updated_at"`
+	Title        string                  `db:"title" json:"title"`
+	Difficulty   DifficultyLevel         `db:"difficulty" json:"difficulty"`
 }
 
 func (q *Queries) GetAssignmentProblem(ctx context.Context, arg GetAssignmentProblemParams) (GetAssignmentProblemRow, error) {
@@ -303,8 +318,6 @@ func (q *Queries) GetAssignmentProblem(ctx context.Context, arg GetAssignmentPro
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Resources,
-		&i.AppProgressStatus,
 		&i.Title,
 		&i.Difficulty,
 	)
@@ -420,7 +433,7 @@ INSERT INTO assignment_problems (
 ) VALUES (
     $1, $2, 'pending'
 )
-RETURNING id, assignment_id, problem_id, status, solution_link, notes, completed_at, created_at, updated_at, resources, app_progress_status
+RETURNING id, assignment_id, problem_id, status, solution_link, notes, completed_at, created_at, updated_at
 `
 
 type InitializeAssignmentProblemParams struct {
@@ -442,27 +455,8 @@ func (q *Queries) InitializeAssignmentProblem(ctx context.Context, arg Initializ
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Resources,
-		&i.AppProgressStatus,
 	)
 	return i, err
-}
-
-const initializeAssignmentProblems = `-- name: InitializeAssignmentProblems :exec
-INSERT INTO assignment_problems (
-    assignment_id, problem_id, status
-)
-SELECT $1, unnest($2::uuid[]), 'pending'
-`
-
-type InitializeAssignmentProblemsParams struct {
-	AssignmentID pgtype.UUID   `db:"assignment_id" json:"assignment_id"`
-	ProblemIDs   []pgtype.UUID `db:"problem_IDs" json:"problem_IDs"`
-}
-
-func (q *Queries) InitializeAssignmentProblems(ctx context.Context, arg InitializeAssignmentProblemsParams) error {
-	_, err := q.db.Exec(ctx, initializeAssignmentProblems, arg.AssignmentID, arg.ProblemIDs)
-	return err
 }
 
 const listAssignmentGroupProblems = `-- name: ListAssignmentGroupProblems :many
@@ -570,7 +564,7 @@ func (q *Queries) ListAssignmentGroupsByBootcamp(ctx context.Context, arg ListAs
 }
 
 const listAssignmentProblemsStatus = `-- name: ListAssignmentProblemsStatus :many
-SELECT ap.id, ap.assignment_id, ap.problem_id, ap.status, ap.solution_link, ap.notes, ap.completed_at, ap.created_at, ap.updated_at, ap.resources, ap.app_progress_status, p.title, p.difficulty
+SELECT ap.id, ap.assignment_id, ap.problem_id, ap.status, ap.solution_link, ap.notes, ap.completed_at, ap.created_at, ap.updated_at, p.title, p.difficulty
 FROM assignment_problems ap
 JOIN problems p ON ap.problem_id = p.id
 WHERE ap.assignment_id = $1
@@ -578,19 +572,17 @@ ORDER BY ap.created_at ASC
 `
 
 type ListAssignmentProblemsStatusRow struct {
-	ID                pgtype.UUID             `db:"id" json:"id"`
-	AssignmentID      pgtype.UUID             `db:"assignment_id" json:"assignment_id"`
-	ProblemID         pgtype.UUID             `db:"problem_id" json:"problem_id"`
-	Status            AssignmentProblemStatus `db:"status" json:"status"`
-	SolutionLink      pgtype.Text             `db:"solution_link" json:"solution_link"`
-	Notes             pgtype.Text             `db:"notes" json:"notes"`
-	CompletedAt       pgtype.Timestamptz      `db:"completed_at" json:"completed_at"`
-	CreatedAt         pgtype.Timestamptz      `db:"created_at" json:"created_at"`
-	UpdatedAt         pgtype.Timestamptz      `db:"updated_at" json:"updated_at"`
-	Resources         pgtype.Text             `db:"resources" json:"resources"`
-	AppProgressStatus string                  `db:"app_progress_status" json:"app_progress_status"`
-	Title             string                  `db:"title" json:"title"`
-	Difficulty        DifficultyLevel         `db:"difficulty" json:"difficulty"`
+	ID           pgtype.UUID             `db:"id" json:"id"`
+	AssignmentID pgtype.UUID             `db:"assignment_id" json:"assignment_id"`
+	ProblemID    pgtype.UUID             `db:"problem_id" json:"problem_id"`
+	Status       AssignmentProblemStatus `db:"status" json:"status"`
+	SolutionLink pgtype.Text             `db:"solution_link" json:"solution_link"`
+	Notes        pgtype.Text             `db:"notes" json:"notes"`
+	CompletedAt  pgtype.Timestamptz      `db:"completed_at" json:"completed_at"`
+	CreatedAt    pgtype.Timestamptz      `db:"created_at" json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz      `db:"updated_at" json:"updated_at"`
+	Title        string                  `db:"title" json:"title"`
+	Difficulty   DifficultyLevel         `db:"difficulty" json:"difficulty"`
 }
 
 func (q *Queries) ListAssignmentProblemsStatus(ctx context.Context, assignmentID pgtype.UUID) ([]ListAssignmentProblemsStatusRow, error) {
@@ -612,8 +604,6 @@ func (q *Queries) ListAssignmentProblemsStatus(ctx context.Context, assignmentID
 			&i.CompletedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Resources,
-			&i.AppProgressStatus,
 			&i.Title,
 			&i.Difficulty,
 		); err != nil {
@@ -848,7 +838,7 @@ SET
     completed_at = COALESCE($6, completed_at),
     updated_at = CURRENT_TIMESTAMP
 WHERE assignment_id = $1 AND problem_id = $2
-RETURNING id, assignment_id, problem_id, status, solution_link, notes, completed_at, created_at, updated_at, resources, app_progress_status
+RETURNING id, assignment_id, problem_id, status, solution_link, notes, completed_at, created_at, updated_at
 `
 
 type UpdateAssignmentProblemProgressParams struct {
@@ -880,8 +870,6 @@ func (q *Queries) UpdateAssignmentProblemProgress(ctx context.Context, arg Updat
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Resources,
-		&i.AppProgressStatus,
 	)
 	return i, err
 }
