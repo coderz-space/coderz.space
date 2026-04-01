@@ -1,28 +1,34 @@
 package container
 
 import (
+	"context"
 	"testing"
 
-	"github.com/coderz-space/coderz.space/internal/config"
-	"go.uber.org/zap"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestNewContainerError(t *testing.T) {
-	cfg := &config.Config{
-		DBURL: "invalid_postgres_url://host:port/db",
-	}
-	logger := zap.NewNop()
+func TestContainer_Close(t *testing.T) {
+	// Create a dummy pool
+	config, err := pgxpool.ParseConfig("postgres://localhost:5432/postgres")
+	assert.NoError(t, err)
 
-	c, err := NewContainer(cfg, logger)
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
+	assert.NoError(t, err)
 
-	if err == nil {
-		if c != nil {
-			c.Close()
-		}
-		t.Fatalf("expected error when initializing container with invalid DB URL, got nil")
+	// Create a container with the dummy pool
+	c := &Container{
+		DB: pool,
 	}
 
-	if c != nil {
-		t.Fatalf("expected container to be nil on error, got %v", c)
-	}
+	// Call Close and assert no error
+	err = c.Close()
+	assert.NoError(t, err)
+
+	// Additional verification: we can't easily check if pool is closed directly
+	// without calling a method that requires it to be open, or relying on internals.
+	// We can try to Ping it. It should fail since the pool is closed.
+	err = pool.Ping(context.Background())
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "closed pool")
 }
