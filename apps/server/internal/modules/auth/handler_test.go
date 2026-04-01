@@ -1,6 +1,11 @@
 package auth
 
 import (
+	"net/http"
+	"net/http/httptest"
+
+	"github.com/labstack/echo/v5"
+
 	"testing"
 )
 
@@ -742,4 +747,62 @@ func TestRoutePrefix(t *testing.T) {
 			t.Logf("Route: %s %s (public=%v)", route.method, route.path, route.public)
 		})
 	}
+}
+
+// TestClearAuthCookies verifies that auth cookies are properly cleared
+func TestClearAuthCookies(t *testing.T) {
+	t.Run("clears access and refresh cookies", func(t *testing.T) {
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		h := &Handler{}
+		h.clearAuthCookies(c)
+
+		cookies := rec.Result().Cookies()
+
+		var accessCookie, refreshCookie *http.Cookie
+		for _, cookie := range cookies {
+			if cookie.Name == "access_token" {
+				accessCookie = cookie
+			} else if cookie.Name == "refresh_token" {
+				refreshCookie = cookie
+			}
+		}
+
+		if accessCookie == nil {
+			t.Error("Expected access_token cookie to be set")
+		} else {
+			if accessCookie.Value != "" {
+				t.Errorf("Expected access_token value to be empty, got %q", accessCookie.Value)
+			}
+			if accessCookie.MaxAge != -1 {
+				t.Errorf("Expected access_token MaxAge to be -1, got %d", accessCookie.MaxAge)
+			}
+			if accessCookie.Path != "/" {
+				t.Errorf("Expected access_token Path to be '/', got %q", accessCookie.Path)
+			}
+			if !accessCookie.HttpOnly {
+				t.Error("Expected access_token to be HttpOnly")
+			}
+		}
+
+		if refreshCookie == nil {
+			t.Error("Expected refresh_token cookie to be set")
+		} else {
+			if refreshCookie.Value != "" {
+				t.Errorf("Expected refresh_token value to be empty, got %q", refreshCookie.Value)
+			}
+			if refreshCookie.MaxAge != -1 {
+				t.Errorf("Expected refresh_token MaxAge to be -1, got %d", refreshCookie.MaxAge)
+			}
+			if refreshCookie.Path != "/" {
+				t.Errorf("Expected refresh_token Path to be '/', got %q", refreshCookie.Path)
+			}
+			if !refreshCookie.HttpOnly {
+				t.Error("Expected refresh_token to be HttpOnly")
+			}
+		}
+	})
 }
