@@ -128,8 +128,14 @@ func (s *Service) UpdateProblem(ctx context.Context, req UpdateProblemRequest, p
 }
 
 func (s *Service) DeleteProblem(ctx context.Context, problemID pgtype.UUID) error {
-	// TODO: Check if problem is referenced by assignments (requires assignment queries)
-	// For now, just archive the problem
+	count, err := s.queries.CountProblemAssignments(ctx, problemID)
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return errors.New("PROBLEM_REFERENCED_BY_ASSIGNMENTS")
+	}
+
 	return s.queries.ArchiveProblem(ctx, problemID)
 }
 

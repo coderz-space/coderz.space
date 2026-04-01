@@ -135,3 +135,7 @@ LIMIT $1 OFFSET $2;
 -- name: CountAllProblems :one
 SELECT COUNT(*) FROM problems
 WHERE archived_at IS NULL;
+
+-- name: CountProblemAssignments :one
+SELECT COUNT(*) FROM assignment_group_problems
+WHERE problem_id = $1;

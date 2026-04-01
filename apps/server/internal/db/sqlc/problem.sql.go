@@ -643,3 +643,15 @@ func (q *Queries) UpdateTag(ctx context.Context, arg UpdateTagParams) (Tag, erro
 	)
 	return i, err
 }
+
+const countProblemAssignments = `-- name: CountProblemAssignments :one
+SELECT COUNT(*) FROM assignment_group_problems
+WHERE problem_id = $1
+`
+
+func (q *Queries) CountProblemAssignments(ctx context.Context, problemID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countProblemAssignments, problemID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
