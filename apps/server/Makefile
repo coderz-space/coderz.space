@@ -54,7 +54,6 @@ db-init:
 reset-db:
 	@echo "Dropping database schema..."
 	docker compose exec postgres psql -U coderz-space -d coderz -c "DROP SCHEMA IF EXISTS coderz CASCADE;"
-	docker compose run --rm migrate -path /migrations -database "${DB_DSN}" drop -f
 	@echo "Re-applying all migrations..."
 	$(MAKE) migrate-up
 	@echo "Database reset complete!"

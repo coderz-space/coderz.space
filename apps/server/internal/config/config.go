@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -73,7 +74,7 @@ func parseLevel(level string) zapcore.Level {
 }
 
 func LoadConfig() *Config {
-	if err := godotenv.Load(envFilePath); err != nil {
+	if err := godotenv.Load(envFilePath); err != nil && !errors.Is(err, os.ErrNotExist) {
 		panic(fmt.Errorf("failed to load environment variables: %v", err))
 	}
 
