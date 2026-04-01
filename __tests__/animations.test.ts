@@ -1,6 +1,11 @@
-import { SpringPresets, TimingPresets } from '../src/utils/animations';
+import { withDelay, withTiming } from 'react-native-reanimated';
+import { SpringPresets, TimingPresets, fadeInDelayed } from '../src/utils/animations';
 
 describe('Animation Presets', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   test('SpringPresets should have correct configurations', () => {
     expect(SpringPresets.snappy).toEqual({ damping: 18, stiffness: 200, mass: 0.8 });
     expect(SpringPresets.bouncy).toEqual({ damping: 10, stiffness: 120, mass: 1 });
@@ -16,5 +21,18 @@ describe('Animation Presets', () => {
     expect(TimingPresets.fast.easing).toBeDefined();
     expect(TimingPresets.normal.easing).toBeDefined();
     expect(TimingPresets.slow.easing).toBeDefined();
+  });
+
+  describe('fadeInDelayed', () => {
+    test('should call withDelay and withTiming with correct parameters', () => {
+      const targetValue = 1;
+      const delayMs = 300;
+
+      fadeInDelayed(targetValue, delayMs);
+
+      expect(withTiming).toHaveBeenCalledWith(targetValue, TimingPresets.normal);
+      // withTiming mock returns the value itself, so withDelay gets the targetValue as second arg
+      expect(withDelay).toHaveBeenCalledWith(delayMs, targetValue);
+    });
   });
 });
