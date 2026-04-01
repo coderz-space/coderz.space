@@ -51,4 +51,17 @@ describe('Animation Functions', () => {
       expect(result).toEqual({ type: 'spring', val: 50, config: SpringPresets.gentle });
     });
   });
+
+  describe('fadeInDelayed', () => {
+    test('should call withDelay and withTiming with correct parameters', () => {
+      const targetValue = 1;
+      const delayMs = 300;
+
+      fadeInDelayed(targetValue, delayMs);
+
+      expect(withTiming).toHaveBeenCalledWith(targetValue, TimingPresets.normal);
+      // withTiming mock returns the value itself, so withDelay gets the targetValue as second arg
+      expect(withDelay).toHaveBeenCalledWith(delayMs, targetValue);
+    });
+  });
 });
