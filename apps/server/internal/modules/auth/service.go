@@ -5,12 +5,15 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/coderz-space/coderz.space/internal/common/logger"
 	"github.com/coderz-space/coderz.space/internal/common/utils"
 	"github.com/coderz-space/coderz.space/internal/config"
 	db "github.com/coderz-space/coderz.space/internal/db/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -191,6 +194,12 @@ func (s *Service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 	// TODO: Send email with reset token
 	// For now, we just log it (in production, send via email service)
 	// Email would contain a link like: https://app.com/reset-password?token={resetToken}
+	logger.Info("Password reset requested",
+		zap.String("event", "password_reset_email_mock"),
+		zap.String("email", user.Email.String),
+		zap.String("reset_token", resetToken),
+		zap.String("reset_link", fmt.Sprintf("%s/reset-password?token=%s", s.config.FrontendOrigin, resetToken)),
+	)
 
 	return nil
 }
