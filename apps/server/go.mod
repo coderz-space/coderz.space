@@ -42,11 +42,8 @@ require (
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/swaggo/files/v2 v2.0.0 // indirect
 	github.com/swaggo/swag/v2 v2.0.0-rc4 // indirect
-	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasttemplate v1.2.2 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/mod v0.31.0 // indirect
-	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect

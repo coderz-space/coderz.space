@@ -176,13 +176,14 @@ JOIN users u ON om.user_id = u.id
 JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
 WHERE be.bootcamp_id = $1 AND d.resolved = FALSE
 ORDER BY d.created_at ASC;
--- name: ValidateDoubtResolverOrg :one
+
+-- name: CheckResolverInOrganization :one
 SELECT EXISTS(
-    SELECT 1 FROM doubts d
-    JOIN assignment_problems ap ON d.assignment_problem_id = ap.id
+    SELECT 1
+    FROM assignment_problems ap
     JOIN assignments a ON ap.assignment_id = a.id
     JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
-    JOIN organization_members mentee_om ON be.organization_member_id = mentee_om.id
-    JOIN organization_members resolver_om ON resolver_om.id = sqlc.arg('resolver_member_id')
-    WHERE d.id = sqlc.arg('doubt_id') AND mentee_om.organization_id = resolver_om.organization_id
-) as is_same_org;
+    JOIN bootcamps b ON be.bootcamp_id = b.id
+    JOIN organization_members om ON b.organization_id = om.organization_id
+    WHERE ap.id = sqlc.arg('assignment_problem_id') AND om.id = sqlc.arg('member_id')
+);
