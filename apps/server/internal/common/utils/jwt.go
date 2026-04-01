@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -15,7 +14,7 @@ type TokenPayload struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(payload TokenPayload, jwtExpiryTime string) (string, error) {
+func GenerateToken(payload TokenPayload, jwtExpiryTime string, jwtSecret string) (string, error) {
 
 	expiresAtTime, err := time.ParseDuration(jwtExpiryTime)
 	if err != nil {
@@ -28,5 +27,5 @@ func GenerateToken(payload TokenPayload, jwtExpiryTime string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
-	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	return token.SignedString([]byte(jwtSecret))
 }
