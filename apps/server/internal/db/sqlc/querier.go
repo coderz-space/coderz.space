@@ -160,6 +160,7 @@ type Querier interface {
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpsertLeaderboardEntry(ctx context.Context, arg UpsertLeaderboardEntryParams) (LeaderboardEntry, error)
 	ValidateAssignmentProblemOwnership(ctx context.Context, arg ValidateAssignmentProblemOwnershipParams) (bool, error)
+	ValidateDoubtResolverOrg(ctx context.Context, arg ValidateDoubtResolverOrgParams) (bool, error)
 }
 
 var _ Querier = (*Queries)(nil)
