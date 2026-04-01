@@ -85,6 +85,23 @@ func (q *Queries) AssignGroupToMentee(ctx context.Context, arg AssignGroupToMent
 	return i, err
 }
 
+const initializeAssignmentProblems = `-- name: InitializeAssignmentProblems :exec
+INSERT INTO assignment_problems (
+    assignment_id, problem_id, status
+)
+SELECT $1, unnest($2::uuid[]), 'pending'
+`
+
+type InitializeAssignmentProblemsParams struct {
+	AssignmentID pgtype.UUID   `db:"assignment_id" json:"assignment_id"`
+	ProblemIds   []pgtype.UUID `db:"problem_ids" json:"problem_ids"`
+}
+
+func (q *Queries) InitializeAssignmentProblems(ctx context.Context, arg InitializeAssignmentProblemsParams) error {
+	_, err := q.db.Exec(ctx, initializeAssignmentProblems, arg.AssignmentID, arg.ProblemIds)
+	return err
+}
+
 const checkDuplicateActiveAssignment = `-- name: CheckDuplicateActiveAssignment :one
 SELECT COUNT(*) FROM assignments
 WHERE assignment_group_id = $1 
