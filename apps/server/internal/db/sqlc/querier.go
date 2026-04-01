@@ -105,6 +105,7 @@ type Querier interface {
 	GetUserVoteForPoll(ctx context.Context, arg GetUserVoteForPollParams) (PollVote, error)
 	// Assignment Problems Progress
 	InitializeAssignmentProblem(ctx context.Context, arg InitializeAssignmentProblemParams) (AssignmentProblem, error)
+	InitializeAssignmentProblems(ctx context.Context, arg InitializeAssignmentProblemsParams) error
 	// Super Admin Queries
 	ListAllBootcamps(ctx context.Context, arg ListAllBootcampsParams) ([]ListAllBootcampsRow, error)
 	// Super Admin Queries
