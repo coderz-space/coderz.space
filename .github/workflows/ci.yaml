@@ -12,7 +12,7 @@ on:
             - dev
 
 env:
-    GO_VERSION: "1.24.x"
+    GO_VERSION: "1.25.x"
     NODE_VERSION: "24"
 
 jobs:
@@ -75,7 +75,7 @@ jobs:
             # ✅ Test env
             - name: Setup test environment
               run: |
-                  cp .env .env.test
+                  touch .env.test
                   echo "DB_URL=postgresql://coderz-space:coderz-space@localhost:5432/coderz?sslmode=disable" >> .env.test
                   echo "DB_DSN=postgresql://coderz-space:coderz-space@localhost:5432/coderz?sslmode=disable" >> .env.test
 
