@@ -514,15 +514,17 @@ type AssignmentGroupProblem struct {
 }
 
 type AssignmentProblem struct {
-	ID           pgtype.UUID             `db:"id" json:"id"`
-	AssignmentID pgtype.UUID             `db:"assignment_id" json:"assignment_id"`
-	ProblemID    pgtype.UUID             `db:"problem_id" json:"problem_id"`
-	Status       AssignmentProblemStatus `db:"status" json:"status"`
-	SolutionLink pgtype.Text             `db:"solution_link" json:"solution_link"`
-	Notes        pgtype.Text             `db:"notes" json:"notes"`
-	CompletedAt  pgtype.Timestamptz      `db:"completed_at" json:"completed_at"`
-	CreatedAt    pgtype.Timestamptz      `db:"created_at" json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz      `db:"updated_at" json:"updated_at"`
+	ID                pgtype.UUID             `db:"id" json:"id"`
+	AssignmentID      pgtype.UUID             `db:"assignment_id" json:"assignment_id"`
+	ProblemID         pgtype.UUID             `db:"problem_id" json:"problem_id"`
+	Status            AssignmentProblemStatus `db:"status" json:"status"`
+	SolutionLink      pgtype.Text             `db:"solution_link" json:"solution_link"`
+	Notes             pgtype.Text             `db:"notes" json:"notes"`
+	CompletedAt       pgtype.Timestamptz      `db:"completed_at" json:"completed_at"`
+	CreatedAt         pgtype.Timestamptz      `db:"created_at" json:"created_at"`
+	UpdatedAt         pgtype.Timestamptz      `db:"updated_at" json:"updated_at"`
+	Resources         pgtype.Text             `db:"resources" json:"resources"`
+	AppProgressStatus string                  `db:"app_progress_status" json:"app_progress_status"`
 }
 
 type Bootcamp struct {
@@ -546,6 +548,7 @@ type BootcampEnrollment struct {
 	Role                 BootcampEnrollmentRole `db:"role" json:"role"`
 	Status               EnrollmentStatus       `db:"status" json:"status"`
 	EnrolledAt           pgtype.Timestamptz     `db:"enrolled_at" json:"enrolled_at"`
+	AssignedSheetKey     pgtype.Text            `db:"assigned_sheet_key" json:"assigned_sheet_key"`
 }
 
 type Doubt struct {
@@ -572,6 +575,28 @@ type LeaderboardEntry struct {
 	Score                int32              `db:"score" json:"score"`
 	Rank                 int32              `db:"rank" json:"rank"`
 	CalculatedAt         pgtype.Timestamptz `db:"calculated_at" json:"calculated_at"`
+}
+
+type MenteeDayAssignment struct {
+	ID                   pgtype.UUID        `db:"id" json:"id"`
+	BootcampEnrollmentID pgtype.UUID        `db:"bootcamp_enrollment_id" json:"bootcamp_enrollment_id"`
+	Weekday              string             `db:"weekday" json:"weekday"`
+	CreatedBy            pgtype.UUID        `db:"created_by" json:"created_by"`
+	CreatedAt            pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt            pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+}
+
+type MenteeRequest struct {
+	ID             pgtype.UUID        `db:"id" json:"id"`
+	UserID         pgtype.UUID        `db:"user_id" json:"user_id"`
+	OrganizationID pgtype.UUID        `db:"organization_id" json:"organization_id"`
+	BootcampID     pgtype.UUID        `db:"bootcamp_id" json:"bootcamp_id"`
+	Status         string             `db:"status" json:"status"`
+	SheetKey       pgtype.Text        `db:"sheet_key" json:"sheet_key"`
+	ReviewedBy     pgtype.UUID        `db:"reviewed_by" json:"reviewed_by"`
+	ReviewedAt     pgtype.Timestamptz `db:"reviewed_at" json:"reviewed_at"`
+	CreatedAt      pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
 type Organization struct {
@@ -672,4 +697,8 @@ type User struct {
 	AvatarUrl     pgtype.Text        `db:"avatar_url" json:"avatar_url"`
 	CreatedAt     pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	UpdatedAt     pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	Username      string             `db:"username" json:"username"`
+	Bio           pgtype.Text        `db:"bio" json:"bio"`
+	GithubUrl     pgtype.Text        `db:"github_url" json:"github_url"`
+	LinkedinUrl   pgtype.Text        `db:"linkedin_url" json:"linkedin_url"`
 }
