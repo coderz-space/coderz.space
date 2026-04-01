@@ -407,14 +407,17 @@ func (s *Service) CreateAssignment(ctx context.Context, req CreateAssignmentRequ
 	}
 
 	// Initialize all problems with pending status (Requirement 28.6)
+	problemIds := make([]pgtype.UUID, len(problems))
 	for i := range problems {
-		_, err := qtx.InitializeAssignmentProblem(ctx, db.InitializeAssignmentProblemParams{
-			AssignmentID: assignment.ID,
-			ProblemID:    problems[i].ID,
-		})
-		if err != nil {
-			return nil, err
-		}
+		problemIds[i] = problems[i].ID
+	}
+
+	err = qtx.InitializeAssignmentProblems(ctx, db.InitializeAssignmentProblemsParams{
+		AssignmentID: assignment.ID,
+		ProblemIds:   problemIds,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {

@@ -145,6 +145,12 @@ INSERT INTO assignment_problems (
 )
 RETURNING *;
 
+-- name: InitializeAssignmentProblems :exec
+INSERT INTO assignment_problems (
+    assignment_id, problem_id, status
+)
+SELECT $1, unnest($2::uuid[]), 'pending';
+
 -- name: UpdateAssignmentProblemProgress :one
 UPDATE assignment_problems
 SET 

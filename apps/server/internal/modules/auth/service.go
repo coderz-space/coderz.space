@@ -112,7 +112,7 @@ func (s *Service) generateAuthData(ctx context.Context, user *db.User) (*AuthRes
 		UserName: user.Name,
 	}
 
-	accessToken, err := utils.GenerateToken(payload, s.config.JWTExpires)
+	accessToken, err := utils.GenerateToken(payload, s.config.JWTExpires, s.config.JWTSecret)
 	if err != nil {
 		return nil, err
 	}
