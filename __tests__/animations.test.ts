@@ -27,13 +27,9 @@ describe('Animation Presets', () => {
   });
 
   test('TimingPresets should have correct configurations', () => {
-    expect(TimingPresets.fast.duration).toBe(150);
-    expect(TimingPresets.normal.duration).toBe(250);
-    expect(TimingPresets.slow.duration).toBe(400);
-
-    expect(TimingPresets.fast.easing).toBeDefined();
-    expect(TimingPresets.normal.easing).toBeDefined();
-    expect(TimingPresets.slow.easing).toBeDefined();
+    expect(TimingPresets.fast).toEqual(expect.objectContaining({ duration: 150, easing: expect.any(Function) }));
+    expect(TimingPresets.normal).toEqual(expect.objectContaining({ duration: 250, easing: expect.any(Function) }));
+    expect(TimingPresets.slow).toEqual(expect.objectContaining({ duration: 400, easing: expect.any(Function) }));
   });
 });
 
