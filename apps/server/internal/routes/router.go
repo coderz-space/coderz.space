@@ -6,6 +6,7 @@ import (
 
 	"github.com/coderz-space/coderz.space/internal/container"
 	"github.com/coderz-space/coderz.space/internal/modules/analytics"
+	"github.com/coderz-space/coderz.space/internal/modules/app"
 	"github.com/coderz-space/coderz.space/internal/modules/assignment"
 	"github.com/coderz-space/coderz.space/internal/modules/auth"
 	"github.com/coderz-space/coderz.space/internal/modules/bootcamp"
@@ -22,6 +23,10 @@ func RegisterRoutes(e *echo.Group, di *container.Container) {
 	// Auth module routes (public and protected)
 	auth.RegisterPublicRoutes(e, di.AuthHandler)
 	auth.RegisterProtectedRoutes(e, di.AuthHandler, di.Config)
+
+	// App facade routes
+	app.RegisterPublicRoutes(e, di.AppHandler)
+	app.RegisterProtectedRoutes(e, di.AppHandler, di.Config)
 
 	// Organization module routes
 	organization.RegisterProtectedRoutes(e, di.OrganizationHandler, di.Config)

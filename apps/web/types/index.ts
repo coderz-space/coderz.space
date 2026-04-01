@@ -1,7 +1,11 @@
-// ─── Role ────────────────────────────────────────────────────────────────────
 export type Role = "mentor" | "mentee";
+export type SheetId = "gfg-dsa-360" | "strivers-dsa-sheet";
+export type QuestionProgressStatus =
+  | "not_started"
+  | "discussion_needed"
+  | "revision_needed"
+  | "completed";
 
-// ─── Backend Auth DTOs (matches /api/v1/auth/*) ──────────────────────────────
 export interface AuthUser {
   id: string;
   name: string;
@@ -20,35 +24,42 @@ export interface AuthResponse {
   data: AuthResponseData;
 }
 
-// ─── Backend Organization DTOs (matches /api/v1/organizations/*) ─────────────
-export interface OrganizationData {
+export interface AppUser {
   id: string;
   name: string;
-  slug: string;
-  description: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  bio?: string;
+  github?: string;
+  linkedin?: string;
 }
 
-export interface MemberData {
-  id: string;
-  organizationId: string;
-  userId: string;
-  role: string;
-  joinedAt: string;
-  name?: string;
-  email?: string;
-  avatarUrl?: string;
+export interface AppContext {
+  role: Role | "unknown";
+  accountStatus: string;
+  user: AppUser;
+  organization?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  bootcamp?: {
+    id: string;
+    name: string;
+  };
+  enrollment?: {
+    id?: string;
+    assignedSheet?: SheetId;
+  };
 }
 
-// ─── App UI State ─────────────────────────────────────────────────────────────
 export interface AppState {
   showRoleCard: boolean;
   selectedRole: Role | null;
 }
 
-// ─── Component Props ──────────────────────────────────────────────────────────
 export interface HeroSectionProps {
   onGetStarted: () => void;
 }
@@ -58,38 +69,47 @@ export interface RoleCardProps {
   onClose: () => void;
 }
 
-// ─── Mentee Request (UI type — TODO: needs backend endpoints) ─────────────────
-export type SheetId = "gfg-dsa-360" | "strivers-dsa-sheet";
-
 export interface MenteeRequest {
   id: string;
   firstName: string;
   lastName: string;
   username: string;
   email: string;
-  passwordHash: string;
   signedUpAt: string;
   status: "pending" | "approved" | "rejected";
   assignedSheet?: SheetId;
+  passwordHash?: string;
   bio?: string;
   github?: string;
   linkedin?: string;
 }
 
-// ─── Mentor Profile ───────────────────────────────────────────────────────────
-export interface MentorProfile {
+export interface SheetQuestion {
+  id: string;
+  title: string;
+  topic: string;
+  difficulty: "easy" | "medium" | "hard";
+}
+
+export interface Sheet {
+  key: SheetId;
+  name: string;
+  questions: SheetQuestion[];
+}
+
+export interface DayAssignmentMentee {
   firstName: string;
   lastName: string;
   username: string;
   email: string;
-  bio?: string;
-  github?: string;
-  linkedin?: string;
-  joinedAt: string;
+  assigned: boolean;
+  assignedSheet?: SheetId;
 }
 
-// ─── Question (UI type — TODO: needs backend endpoints) ──────────────────────
-export type QuestionProgressStatus = "not_started" | "discussion_needed" | "revision_needed" | "completed";
+export interface DayAssignments {
+  day: string;
+  mentees: DayAssignmentMentee[];
+}
 
 export interface Question {
   id: string;
@@ -97,11 +117,46 @@ export interface Question {
   description: string;
   difficulty: "easy" | "medium" | "hard";
   topic: string;
-  status: "pending" | "completed";          // overall bucket (pending/completed section)
-  progressStatus: QuestionProgressStatus;   // mentee's self-reported progress
-  assignedAt: string;       // ISO 8601
-  completedAt?: string;     // ISO 8601, present only when status === "completed"
-  solutionUrl?: string;     // link to solution submission
-  solution?: string;        // mentee's written solution notes
-  resources?: string;       // links / references used
+  status: "pending" | "completed";
+  progressStatus: QuestionProgressStatus;
+  assignedAt: string;
+  completedAt?: string;
+  solution?: string;
+  resources?: string;
+}
+
+export interface Profile {
+  firstName: string;
+  lastName: string;
+  username: string;
+  email?: string;
+  solved: number;
+  joinedAt: string;
+  bio?: string;
+  github?: string;
+  linkedin?: string;
+}
+
+export interface MentorProfile extends Profile {
+  email: string;
+}
+
+export interface LeaderboardEntry {
+  username: string;
+  firstName: string;
+  lastName: string;
+  solved: number;
+}
+
+export interface MenteeSignupInput {
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginResult {
+  auth: AuthResponseData;
+  context: AppContext;
 }

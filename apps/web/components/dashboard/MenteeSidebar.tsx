@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useParams } from "next/navigation";
-import { logout } from "@/services/authService";
+import { useParams, usePathname, useRouter } from "next/navigation";
+import { logout } from "@/services/auth";
 import { clearSelectedRole } from "@/services/roleService";
-import { clearCaches } from "@/services/menteeService";
 
 const navItems = (username: string) => [
   { label: "Pending Questions", href: `/mentee-dashboard/${username}/pending` },
   { label: "Completed Questions", href: `/mentee-dashboard/${username}/completed` },
-  { label: "🏆 Leaderboard", href: `/mentee-dashboard/${username}/leaderboard` },
-  { label: "👤 My Profile", href: `/mentee-dashboard/${username}/my-profile` },
+  { label: "Leaderboard", href: `/mentee-dashboard/${username}/leaderboard` },
+  { label: "My Profile", href: `/mentee-dashboard/${username}/my-profile` },
 ];
 
 export default function MenteeSidebar() {
@@ -22,27 +21,29 @@ export default function MenteeSidebar() {
   const handleLogout = async () => {
     await logout();
     clearSelectedRole();
-    clearCaches();
     router.push("/");
   };
 
   return (
-    <aside className="flex flex-col w-64 h-screen sticky top-0 bg-gray-100 dark:bg-gray-950 border-r border-purple-200 dark:border-purple-900 px-4 py-6 transition-colors">
+    <aside className="sticky top-0 flex h-screen w-64 flex-col border-r border-purple-200 bg-gray-100 px-4 py-6 transition-colors dark:border-purple-900 dark:bg-gray-950">
       <div className="mb-8 px-2">
-        <span className="text-purple-400 font-bold text-lg tracking-wide">Algo Buddy</span>
-        <p className="text-gray-500 dark:text-gray-500 text-xs mt-1">@{username}</p>
+        <span className="text-lg font-bold tracking-wide text-purple-400">Algo Buddy</span>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">@{username}</p>
       </div>
 
-      <nav className="flex flex-col gap-2 flex-1 overflow-y-auto">
+      <nav className="flex flex-1 flex-col gap-2 overflow-y-auto">
         {navItems(username).map((item) => {
           const active = pathname.startsWith(item.href);
           return (
-            <Link key={item.href} href={item.href}
-              className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
                 active
                   ? "bg-purple-700 text-white"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 hover:text-purple-900 dark:hover:text-white"
-              }`}>
+                  : "text-gray-600 hover:bg-purple-100 hover:text-purple-900 dark:text-gray-300 dark:hover:bg-purple-900/50 dark:hover:text-white"
+              }`}
+            >
               {item.label}
             </Link>
           );
@@ -50,8 +51,9 @@ export default function MenteeSidebar() {
       </nav>
 
       <button
+        type="button"
         onClick={handleLogout}
-        className="mt-auto px-4 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-900/30 hover:text-red-300 transition-colors text-left"
+        className="mt-auto rounded-lg px-4 py-2.5 text-left text-sm font-medium text-red-400 transition-colors hover:bg-red-900/30 hover:text-red-300"
       >
         Logout
       </button>

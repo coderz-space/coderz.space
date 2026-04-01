@@ -29,48 +29,48 @@ services:
                 condition: service_healthy
         restart: on-failure
 
-    # server:
-    #     build:
-    #         context: .
-    #         dockerfile: dockerfile
-    #     container_name: coderz-space-server
-    #     ports:
-    #         - "8080:8080"
-    #     environment:
-    #         PORT: 8080
-    #         DB_URL: postgresql://coderz-space:coderz-space@postgres:5432/coderz?sslmode=disable
-    #         DB_DSN: postgresql://coderz-space:coderz-space@postgres:5432/coderz?sslmode=disable
-    #         JWT_SECRET: ${JWT_SECRET}
-    #         FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
-    #         ENVIRONMENT: ${ENVIRONMENT:-development}
-    #         LOG_LEVEL: ${LOG_LEVEL:-info}
-    #         FILE_LOG_LEVEL: ${FILE_LOG_LEVEL:-info}
-    #         JWT_EXPIRES: ${JWT_EXPIRES:-1h}
-    #         APP_NAME: ${APP_NAME:-Coderz_Space}
-    #         MAX_DB_CONNS: ${MAX_DB_CONNS:-10}
-    #         MIN_DB_CONNS: ${MIN_DB_CONNS:-2}
-    #         MAX_DB_CONN_LIFETIME: ${MAX_DB_CONN_LIFETIME:-1h}
-    #         MAX_DB_CONN_IDLE_TIME: ${MAX_DB_CONN_IDLE_TIME:-30m}
-    #     depends_on:
-    #         postgres:
-    #             condition: service_healthy
-    #         migrate:
-    #             condition: service_completed_successfully
-    #     restart: unless-stopped
-    #     healthcheck:
-    #         test:
-    #             [
-    #                 "CMD",
-    #                 "wget",
-    #                 "--no-verbose",
-    #                 "--tries=1",
-    #                 "--spider",
-    #                 "http://localhost:8080/swagger/index.html",
-    #             ]
-    #         interval: 30s
-    #         timeout: 3s
-    #         start_period: 10s
-    #         retries: 3
+    api:
+        build:
+            context: .
+            dockerfile: dockerfile
+        container_name: coderz-space-server
+        ports:
+            - "8080:8080"
+        environment:
+            APP_NAME: ${APP_NAME:-Coderz_Space}
+            VERSION: ${VERSION:-0.1.0}
+            PORT: 8080
+            DB_URL: postgresql://coderz-space:coderz-space@postgres:5432/coderz?sslmode=disable
+            DB_DSN: postgresql://coderz-space:coderz-space@postgres:5432/coderz?sslmode=disable
+            JWT_SECRET: ${JWT_SECRET}
+            FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+            ENVIRONMENT: ${ENVIRONMENT:-development}
+            LOG_LEVEL: ${LOG_LEVEL:-info}
+            FILE_LOG_LEVEL: ${FILE_LOG_LEVEL:-info}
+            JWT_EXPIRES: ${JWT_EXPIRES:-1h}
+            REFRESH_TOKEN_EXPIRES: ${REFRESH_TOKEN_EXPIRES:-24h}
+            MAX_DB_CONNS: ${MAX_DB_CONNS:-10}
+            MIN_DB_CONNS: ${MIN_DB_CONNS:-2}
+            MAX_DB_CONN_LIFETIME: ${MAX_DB_CONN_LIFETIME:-1h}
+            MAX_DB_CONN_IDLE_TIME: ${MAX_DB_CONN_IDLE_TIME:-30m}
+        depends_on:
+            postgres:
+                condition: service_healthy
+        restart: unless-stopped
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "wget",
+                    "--no-verbose",
+                    "--tries=1",
+                    "--spider",
+                    "http://localhost:8080/swagger/index.html",
+                ]
+            interval: 30s
+            timeout: 3s
+            start_period: 10s
+            retries: 3
 
 volumes:
     coderz-space-postgres-data:

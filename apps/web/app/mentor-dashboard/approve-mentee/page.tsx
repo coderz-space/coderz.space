@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getMenteeRequests, updateMenteeStatus } from "@/services";
-import { deleteMentee } from "@/services";
 import Modal from "@/components/Modal";
+import { getMenteeRequests, updateMenteeStatus } from "@/services/mentor";
 import type { MenteeRequest, SheetId } from "@/types";
 
 const SHEETS: { id: SheetId; name: string; desc: string }[] = [
@@ -42,11 +41,6 @@ export default function ApproveMenteePage() {
 
   const handleReject = async (id: string) => {
     await updateMenteeStatus(id, "rejected");
-    await refresh();
-  };
-
-  const handleDelete = async (id: string) => {
-    await deleteMentee(id);
     await refresh();
   };
 
@@ -128,12 +122,6 @@ export default function ApproveMenteePage() {
                   >
                     {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                   </span>
-                  <button
-                    onClick={() => handleDelete(req.id)}
-                    className="px-3 py-1 rounded-lg bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-800 text-red-500 dark:text-red-400 text-xs font-medium transition-colors"
-                  >
-                    Delete
-                  </button>
                 </div>
               </div>
             ))}
