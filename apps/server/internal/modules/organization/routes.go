@@ -9,7 +9,7 @@ import (
 
 func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Config) {
 	orgRouter := e.Group("/v1/organizations")
-	orgRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	orgRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 
 	// Organization routes
 	orgRouter.POST("", core.WithBody(handler.CreateOrganization))
@@ -29,6 +29,6 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 
 	// Super admin cross-organization routes
 	superAdminRouter := e.Group("/v1/super-admin")
-	superAdminRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	superAdminRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 	superAdminRouter.GET("/organizations", handler.ListAllOrganizations)
 }

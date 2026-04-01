@@ -10,7 +10,7 @@ import (
 func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Config) {
 	// Problem routes
 	problemRouter := e.Group("/v1/organizations/:orgId/problems")
-	problemRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	problemRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 
 	problemRouter.POST("", core.WithBody(handler.CreateProblem))
 	problemRouter.GET("", handler.ListProblems)
@@ -20,7 +20,7 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 
 	// Tag routes
 	tagRouter := e.Group("/v1/organizations/:orgId/tags")
-	tagRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	tagRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 
 	tagRouter.POST("", core.WithBody(handler.CreateTag))
 	tagRouter.GET("", handler.ListTags)
@@ -29,14 +29,14 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 
 	// Problem-Tag association routes
 	problemTagRouter := e.Group("/v1/organizations/:orgId/problems/:problemId/tags")
-	problemTagRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	problemTagRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 
 	problemTagRouter.POST("", core.WithBody(handler.AttachTagsToProblem))
 	problemTagRouter.DELETE("/:tagId", handler.DetachTagFromProblem)
 
 	// Resource routes
 	resourceRouter := e.Group("/v1/organizations/:orgId/problems/:problemId/resources")
-	resourceRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	resourceRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 
 	resourceRouter.POST("", core.WithBody(handler.AddResource))
 	resourceRouter.GET("", handler.ListResources)
@@ -45,6 +45,6 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 
 	// Super admin cross-organization routes
 	superAdminRouter := e.Group("/v1/super-admin")
-	superAdminRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	superAdminRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 	superAdminRouter.GET("/problems", handler.ListAllProblems)
 }

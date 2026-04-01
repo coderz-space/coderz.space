@@ -59,7 +59,7 @@ type MemberData struct {
 	JoinedAt       string      `json:"joinedAt"`
 	Name           string      `json:"name,omitempty"`
 	Email          string      `json:"email,omitempty"`
-	AvatarUrl      string      `json:"avatarUrl,omitempty"`
+	AvatarURL      string      `json:"avatarUrl,omitempty"`
 	ID             pgtype.UUID `json:"id"`
 	OrganizationID pgtype.UUID `json:"organizationId"`
 	UserID         pgtype.UUID `json:"userId"`

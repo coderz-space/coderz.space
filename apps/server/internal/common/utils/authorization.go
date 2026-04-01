@@ -115,7 +115,7 @@ func (h *AuthorizationHelper) CheckAdmin(role string) error {
 }
 
 // ValidateOrgBoundary ensures that a resource belongs to the expected organization
-func (h *AuthorizationHelper) ValidateOrgBoundary(ctx context.Context, resourceOrgID, expectedOrgID pgtype.UUID) error {
+func (h *AuthorizationHelper) ValidateOrgBoundary(_ /* ctx */ context.Context, resourceOrgID, expectedOrgID pgtype.UUID) error {
 	if resourceOrgID != expectedOrgID {
 		return errors.New("CROSS_ORG_VIOLATION")
 	}
@@ -123,7 +123,7 @@ func (h *AuthorizationHelper) ValidateOrgBoundary(ctx context.Context, resourceO
 }
 
 // ValidateBootcampBoundary ensures that a resource belongs to the expected bootcamp
-func (h *AuthorizationHelper) ValidateBootcampBoundary(ctx context.Context, resourceBootcampID, expectedBootcampID pgtype.UUID) error {
+func (h *AuthorizationHelper) ValidateBootcampBoundary(_ /* ctx */ context.Context, resourceBootcampID, expectedBootcampID pgtype.UUID) error {
 	if resourceBootcampID != expectedBootcampID {
 		return errors.New("CROSS_BOOTCAMP_VIOLATION")
 	}

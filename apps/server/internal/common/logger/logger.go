@@ -43,8 +43,8 @@ func Initialize(config *config.Config) {
 	}
 
 	core := zapcore.NewTee(
-		zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), config.LOG_LEVEL),
-		zapcore.NewCore(fileEncoder, zapcore.AddSync(fileWriter), config.FILE_LOG_LEVEL),
+		zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), config.LogLevel),
+		zapcore.NewCore(fileEncoder, zapcore.AddSync(fileWriter), config.FileLogLevel),
 	)
 
 	Logger = zap.New(

@@ -10,14 +10,14 @@ import (
 func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Config) {
 	// Leaderboard routes
 	leaderboardRouter := e.Group("/v1/bootcamps/:bootcampId/leaderboard")
-	leaderboardRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	leaderboardRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 
 	leaderboardRouter.GET("", handler.GetBootcampLeaderboard)            // Get bootcamp leaderboard
 	leaderboardRouter.GET("/:enrollmentId", handler.GetLeaderboardEntry) // Get specific leaderboard entry
 
 	// Poll routes
 	pollRouter := e.Group("/v1/bootcamps/:bootcampId/polls")
-	pollRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	pollRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 
 	pollRouter.POST("", handler.CreatePoll)                    // Create poll (mentor/admin only)
 	pollRouter.GET("", handler.ListPolls)                      // List polls
@@ -28,7 +28,7 @@ func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Con
 
 	// Super admin cross-organization routes
 	superAdminRouter := e.Group("/v1/super-admin")
-	superAdminRouter.Use(auth.AuthMiddleware(config.JWT_SECRET, config.JWT_EXPIRES))
+	superAdminRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
 	superAdminRouter.GET("/leaderboards", handler.ViewAllLeaderboards) // View all leaderboards (super_admin only)
 	superAdminRouter.GET("/polls", handler.ViewAllPollResults)         // View all polls (super_admin only)
 }

@@ -29,7 +29,7 @@ func ZapLogger() echo.MiddlewareFunc {
 		LogURIPath:   true,
 		LogMethod:    true,
 		LogLatency:   true,
-		LogValuesFunc: func(c *echo.Context, v middleware.RequestLoggerValues) error {
+		LogValuesFunc: func(_ *echo.Context, v middleware.RequestLoggerValues) error {
 			logger.Info("Incoming request",
 				zap.Int("status", v.Status),
 				zap.String("method", v.Method),
