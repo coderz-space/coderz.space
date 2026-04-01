@@ -13,7 +13,7 @@ import (
 	_ "github.com/coderz-space/coderz.space/swagger" // Import generated docs
 	"github.com/labstack/echo/v5"
 	echoMiddleware "github.com/labstack/echo/v5/middleware"
-	echoSwagger "github.com/swaggo/echo-swagger"
+	echoSwagger "github.com/swaggo/echo-swagger/v2"
 	"go.uber.org/zap"
 )
 
@@ -76,7 +76,7 @@ func main() {
 	e.Use(timeout.TimeoutMiddleware(30 * time.Second)) // 30 second timeout to prevent resource exhaustion
 
 	// swagger docs
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
+	e.GET("/swagger/*", echoSwagger.EchoWrapHandler())
 
 	// register routes
 	router := e.Group("/api")
