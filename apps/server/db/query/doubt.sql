@@ -176,3 +176,15 @@ JOIN users u ON om.user_id = u.id
 JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
 WHERE be.bootcamp_id = $1 AND d.resolved = FALSE
 ORDER BY d.created_at ASC;
+
+-- name: CheckResolverSameOrganization :one
+SELECT EXISTS(
+    SELECT 1
+    FROM doubts d
+    JOIN assignment_problems ap ON d.assignment_problem_id = ap.id
+    JOIN assignments a ON ap.assignment_id = a.id
+    JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
+    JOIN bootcamps b ON be.bootcamp_id = b.id
+    JOIN organization_members resolver ON resolver.id = $2
+    WHERE d.id = $1 AND b.organization_id = resolver.organization_id
+) AS is_same_org;

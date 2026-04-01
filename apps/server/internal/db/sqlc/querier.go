@@ -159,6 +159,7 @@ type Querier interface {
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpsertLeaderboardEntry(ctx context.Context, arg UpsertLeaderboardEntryParams) (LeaderboardEntry, error)
+	CheckResolverSameOrganization(ctx context.Context, arg CheckResolverSameOrganizationParams) (bool, error)
 	ValidateAssignmentProblemOwnership(ctx context.Context, arg ValidateAssignmentProblemOwnershipParams) (bool, error)
 }
 

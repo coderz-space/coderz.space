@@ -749,3 +749,28 @@ func (q *Queries) ValidateAssignmentProblemOwnership(ctx context.Context, arg Va
 	err := row.Scan(&is_owner)
 	return is_owner, err
 }
+
+const checkResolverSameOrganization = `-- name: CheckResolverSameOrganization :one
+SELECT EXISTS(
+    SELECT 1
+    FROM doubts d
+    JOIN assignment_problems ap ON d.assignment_problem_id = ap.id
+    JOIN assignments a ON ap.assignment_id = a.id
+    JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
+    JOIN bootcamps b ON be.bootcamp_id = b.id
+    JOIN organization_members resolver ON resolver.id = $2
+    WHERE d.id = $1 AND b.organization_id = resolver.organization_id
+) AS is_same_org
+`
+
+type CheckResolverSameOrganizationParams struct {
+	ID pgtype.UUID `db:"id" json:"id"`
+	ID_2 pgtype.UUID `db:"id_2" json:"id_2"`
+}
+
+func (q *Queries) CheckResolverSameOrganization(ctx context.Context, arg CheckResolverSameOrganizationParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkResolverSameOrganization, arg.ID, arg.ID_2)
+	var is_same_org bool
+	err := row.Scan(&is_same_org)
+	return is_same_org, err
+}
