@@ -94,11 +94,11 @@ SELECT $1, unnest($2::uuid[]), 'pending'
 
 type InitializeAssignmentProblemsParams struct {
 	AssignmentID pgtype.UUID   `db:"assignment_id" json:"assignment_id"`
-	ProblemIds   []pgtype.UUID `db:"problem_ids" json:"problem_ids"`
+	ProblemIDs   []pgtype.UUID `db:"problem_ids" json:"problem_ids"`
 }
 
 func (q *Queries) InitializeAssignmentProblems(ctx context.Context, arg InitializeAssignmentProblemsParams) error {
-	_, err := q.db.Exec(ctx, initializeAssignmentProblems, arg.AssignmentID, arg.ProblemIds)
+	_, err := q.db.Exec(ctx, initializeAssignmentProblems, arg.AssignmentID, arg.ProblemIDs)
 	return err
 }
 
