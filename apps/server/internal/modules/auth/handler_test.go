@@ -743,3 +743,16 @@ func TestRoutePrefix(t *testing.T) {
 		})
 	}
 }
+
+// TestNewHandler verifies the handler constructor
+func TestNewHandler(t *testing.T) {
+	service := &Service{}
+	handler := NewHandler(service)
+
+	if handler == nil {
+		t.Fatal("Expected non-nil Handler")
+	}
+	if handler.service != service {
+		t.Errorf("Expected service to match the provided service instance")
+	}
+}
