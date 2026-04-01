@@ -414,7 +414,7 @@ func (s *Service) CreateAssignment(ctx context.Context, req CreateAssignmentRequ
 
 	err = qtx.InitializeAssignmentProblems(ctx, db.InitializeAssignmentProblemsParams{
 		AssignmentID: assignment.ID,
-		ProblemIDs:   problemIDs,
+		ProblemIds:   problemIDs,
 	})
 	if err != nil {
 		return nil, err
