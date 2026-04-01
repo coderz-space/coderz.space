@@ -414,7 +414,7 @@ func (s *Service) CreateAssignment(ctx context.Context, req CreateAssignmentRequ
 
 	err = qtx.InitializeAssignmentProblems(ctx, db.InitializeAssignmentProblemsParams{
 		AssignmentID: assignment.ID,
-		ProblemIDs:   problemIDs,
+		ProblemIds:   problemIDs,
 	})
 	if err != nil {
 		return nil, err
@@ -659,15 +659,22 @@ func (s *Service) UpdateAssignmentStatus(ctx context.Context, assignmentID pgtyp
 
 // Assignment Problem Progress Methods
 
-func (s *Service) UpdateAssignmentProblemProgress(ctx context.Context, assignmentID, problemID pgtype.UUID, req UpdateAssignmentProblemRequest, _ /* userID */ pgtype.UUID) (*AssignmentProblemResponse, error) {
+func (s *Service) UpdateAssignmentProblemProgress(ctx context.Context, assignmentID, problemID pgtype.UUID, req UpdateAssignmentProblemRequest, userID pgtype.UUID) (*AssignmentProblemResponse, error) {
 	// Get assignment with enrollment to verify ownership
-	_, err := s.queries.GetAssignmentWithEnrollment(ctx, assignmentID)
+	assignment, err := s.queries.GetAssignmentWithEnrollment(ctx, assignmentID)
 	if err != nil {
 		return nil, fmt.Errorf("assignment not found")
 	}
 
-	// TODO: Verify mentee owns the assignment by checking organization_member_id matches user
-	// This requires additional query to map user_id to organization_member_id
+	// Verify mentee owns the assignment by checking organization_member_id matches user
+	orgMember, err := s.queries.GetOrganizationMemberById(ctx, assignment.OrganizationMemberID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization member")
+	}
+
+	if orgMember.UserID != userID {
+		return nil, fmt.Errorf("user does not own this assignment")
+	}
 
 	// Get current problem status to check for regression
 	currentProblem, err := s.queries.GetAssignmentProblem(ctx, db.GetAssignmentProblemParams{

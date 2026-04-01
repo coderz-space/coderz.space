@@ -128,8 +128,24 @@ func (s *Service) UpdateProblem(ctx context.Context, req UpdateProblemRequest, p
 }
 
 func (s *Service) DeleteProblem(ctx context.Context, problemID pgtype.UUID) error {
-	// TODO: Check if problem is referenced by assignments (requires assignment queries)
-	// For now, just archive the problem
+	// Check if problem is referenced by active assignments
+	activeCount, err := s.queries.CheckProblemInActiveAssignments(ctx, problemID)
+	if err != nil {
+		return err
+	}
+	if activeCount > 0 {
+		return errors.New("cannot delete problem: referenced by active assignments")
+	}
+
+	// Check if problem is referenced by assignment groups
+	groupCount, err := s.queries.CheckProblemInAssignmentGroups(ctx, problemID)
+	if err != nil {
+		return err
+	}
+	if groupCount > 0 {
+		return errors.New("cannot delete problem: referenced by assignment groups")
+	}
+
 	return s.queries.ArchiveProblem(ctx, problemID)
 }
 

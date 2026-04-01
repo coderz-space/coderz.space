@@ -126,7 +126,7 @@ INSERT INTO bootcamp_enrollments (
 ) VALUES (
     $1, $2, $3, $4
 )
-RETURNING id, bootcamp_id, organization_member_id, role, status, enrolled_at
+RETURNING id, bootcamp_id, organization_member_id, role, status, enrolled_at, assigned_sheet_key
 `
 
 type EnrollInBootcampParams struct {
@@ -152,6 +152,7 @@ func (q *Queries) EnrollInBootcamp(ctx context.Context, arg EnrollInBootcampPara
 		&i.Role,
 		&i.Status,
 		&i.EnrolledAt,
+		&i.AssignedSheetKey,
 	)
 	return i, err
 }
@@ -181,7 +182,7 @@ func (q *Queries) GetBootcamp(ctx context.Context, id pgtype.UUID) (Bootcamp, er
 }
 
 const getEnrollment = `-- name: GetEnrollment :one
-SELECT id, bootcamp_id, organization_member_id, role, status, enrolled_at FROM bootcamp_enrollments
+SELECT id, bootcamp_id, organization_member_id, role, status, enrolled_at, assigned_sheet_key FROM bootcamp_enrollments
 WHERE id = $1 LIMIT 1
 `
 
@@ -195,12 +196,13 @@ func (q *Queries) GetEnrollment(ctx context.Context, id pgtype.UUID) (BootcampEn
 		&i.Role,
 		&i.Status,
 		&i.EnrolledAt,
+		&i.AssignedSheetKey,
 	)
 	return i, err
 }
 
 const getEnrollmentByMember = `-- name: GetEnrollmentByMember :one
-SELECT id, bootcamp_id, organization_member_id, role, status, enrolled_at FROM bootcamp_enrollments
+SELECT id, bootcamp_id, organization_member_id, role, status, enrolled_at, assigned_sheet_key FROM bootcamp_enrollments
 WHERE bootcamp_id = $1 AND organization_member_id = $2 LIMIT 1
 `
 
@@ -219,6 +221,7 @@ func (q *Queries) GetEnrollmentByMember(ctx context.Context, arg GetEnrollmentBy
 		&i.Role,
 		&i.Status,
 		&i.EnrolledAt,
+		&i.AssignedSheetKey,
 	)
 	return i, err
 }
@@ -309,7 +312,7 @@ func (q *Queries) ListAllBootcamps(ctx context.Context, arg ListAllBootcampsPara
 }
 
 const listBootcampEnrollments = `-- name: ListBootcampEnrollments :many
-SELECT be.id, be.bootcamp_id, be.organization_member_id, be.role, be.status, be.enrolled_at, u.name, u.email, u.avatar_url, om.role as org_role
+SELECT be.id, be.bootcamp_id, be.organization_member_id, be.role, be.status, be.enrolled_at, be.assigned_sheet_key, u.name, u.email, u.avatar_url, om.role as org_role
 FROM bootcamp_enrollments be
 JOIN organization_members om ON be.organization_member_id = om.id
 JOIN users u ON om.user_id = u.id
@@ -324,6 +327,7 @@ type ListBootcampEnrollmentsRow struct {
 	Role                 BootcampEnrollmentRole `db:"role" json:"role"`
 	Status               EnrollmentStatus       `db:"status" json:"status"`
 	EnrolledAt           pgtype.Timestamptz     `db:"enrolled_at" json:"enrolled_at"`
+	AssignedSheetKey     pgtype.Text            `db:"assigned_sheet_key" json:"assigned_sheet_key"`
 	Name                 string                 `db:"name" json:"name"`
 	Email                pgtype.Text            `db:"email" json:"email"`
 	AvatarUrl            pgtype.Text            `db:"avatar_url" json:"avatar_url"`
@@ -346,6 +350,7 @@ func (q *Queries) ListBootcampEnrollments(ctx context.Context, bootcampID pgtype
 			&i.Role,
 			&i.Status,
 			&i.EnrolledAt,
+			&i.AssignedSheetKey,
 			&i.Name,
 			&i.Email,
 			&i.AvatarUrl,
@@ -568,7 +573,7 @@ const updateEnrollmentRole = `-- name: UpdateEnrollmentRole :one
 UPDATE bootcamp_enrollments
 SET role = $2
 WHERE id = $1
-RETURNING id, bootcamp_id, organization_member_id, role, status, enrolled_at
+RETURNING id, bootcamp_id, organization_member_id, role, status, enrolled_at, assigned_sheet_key
 `
 
 type UpdateEnrollmentRoleParams struct {
@@ -586,6 +591,7 @@ func (q *Queries) UpdateEnrollmentRole(ctx context.Context, arg UpdateEnrollment
 		&i.Role,
 		&i.Status,
 		&i.EnrolledAt,
+		&i.AssignedSheetKey,
 	)
 	return i, err
 }
@@ -594,7 +600,7 @@ const updateEnrollmentStatus = `-- name: UpdateEnrollmentStatus :one
 UPDATE bootcamp_enrollments
 SET status = $2
 WHERE id = $1
-RETURNING id, bootcamp_id, organization_member_id, role, status, enrolled_at
+RETURNING id, bootcamp_id, organization_member_id, role, status, enrolled_at, assigned_sheet_key
 `
 
 type UpdateEnrollmentStatusParams struct {
@@ -612,6 +618,7 @@ func (q *Queries) UpdateEnrollmentStatus(ctx context.Context, arg UpdateEnrollme
 		&i.Role,
 		&i.Status,
 		&i.EnrolledAt,
+		&i.AssignedSheetKey,
 	)
 	return i, err
 }
