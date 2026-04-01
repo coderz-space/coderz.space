@@ -3,9 +3,11 @@ package auth
 import (
 	"net/http"
 	"net/http/httptest"
+	"time"
 
+	"github.com/coderz-space/coderz.space/internal/config"
 	"github.com/labstack/echo/v5"
-
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -749,60 +751,65 @@ func TestRoutePrefix(t *testing.T) {
 	}
 }
 
-// TestClearAuthCookies verifies that auth cookies are properly cleared
-func TestClearAuthCookies(t *testing.T) {
-	t.Run("clears access and refresh cookies", func(t *testing.T) {
-		e := echo.New()
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		rec := httptest.NewRecorder()
-		c := e.NewContext(req, rec)
+func TestSetAuthCookies(t *testing.T) {
+	e := echo.New()
 
-		h := &Handler{}
-		h.clearAuthCookies(c)
+	tests := []struct {
+		name         string
+		scheme       string
+		expectSecure bool
+	}{
+		{
+			name:         "HTTPS scheme sets secure=true",
+			scheme:       "https",
+			expectSecure: true,
+		},
+	}
 
-		cookies := rec.Result().Cookies()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set("X-Forwarded-Proto", tt.scheme)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
 
-		var accessCookie, refreshCookie *http.Cookie
-		for _, cookie := range cookies {
-			if cookie.Name == "access_token" {
-				accessCookie = cookie
-			} else if cookie.Name == "refresh_token" {
-				refreshCookie = cookie
+			// We need a dummy config to test the maxage calculation
+			svc := &Service{
+				config: &config.Config{
+					RefreshTokenExpires: 24 * time.Hour,
+				},
 			}
-		}
+			h := &Handler{service: svc}
 
-		if accessCookie == nil {
-			t.Error("Expected access_token cookie to be set")
-		} else {
-			if accessCookie.Value != "" {
-				t.Errorf("Expected access_token value to be empty, got %q", accessCookie.Value)
-			}
-			if accessCookie.MaxAge != -1 {
-				t.Errorf("Expected access_token MaxAge to be -1, got %d", accessCookie.MaxAge)
-			}
-			if accessCookie.Path != "/" {
-				t.Errorf("Expected access_token Path to be '/', got %q", accessCookie.Path)
-			}
-			if !accessCookie.HttpOnly {
-				t.Error("Expected access_token to be HttpOnly")
-			}
-		}
+			h.setAuthCookies(c, "access_token_123", "refresh_token_456")
 
-		if refreshCookie == nil {
-			t.Error("Expected refresh_token cookie to be set")
-		} else {
-			if refreshCookie.Value != "" {
-				t.Errorf("Expected refresh_token value to be empty, got %q", refreshCookie.Value)
+			cookies := rec.Result().Cookies()
+			assert.Len(t, cookies, 2)
+
+			var accessCookie, refreshCookie *http.Cookie
+			for _, cookie := range cookies {
+				if cookie.Name == "access_token" {
+					accessCookie = cookie
+				} else if cookie.Name == "refresh_token" {
+					refreshCookie = cookie
+				}
 			}
-			if refreshCookie.MaxAge != -1 {
-				t.Errorf("Expected refresh_token MaxAge to be -1, got %d", refreshCookie.MaxAge)
-			}
-			if refreshCookie.Path != "/" {
-				t.Errorf("Expected refresh_token Path to be '/', got %q", refreshCookie.Path)
-			}
-			if !refreshCookie.HttpOnly {
-				t.Error("Expected refresh_token to be HttpOnly")
-			}
-		}
-	})
+
+			assert.NotNil(t, accessCookie)
+			assert.Equal(t, "access_token_123", accessCookie.Value)
+			assert.Equal(t, "/", accessCookie.Path)
+			assert.True(t, accessCookie.HttpOnly)
+			assert.Equal(t, tt.expectSecure, accessCookie.Secure)
+			assert.Equal(t, http.SameSiteStrictMode, accessCookie.SameSite)
+			assert.Equal(t, 900, accessCookie.MaxAge)
+
+			assert.NotNil(t, refreshCookie)
+			assert.Equal(t, "refresh_token_456", refreshCookie.Value)
+			assert.Equal(t, "/", refreshCookie.Path)
+			assert.True(t, refreshCookie.HttpOnly)
+			assert.Equal(t, tt.expectSecure, refreshCookie.Secure)
+			assert.Equal(t, http.SameSiteStrictMode, refreshCookie.SameSite)
+			assert.Equal(t, int((24 * time.Hour).Seconds()), refreshCookie.MaxAge)
+		})
+	}
 }
