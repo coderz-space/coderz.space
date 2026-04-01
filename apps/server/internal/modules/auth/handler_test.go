@@ -1,6 +1,13 @@
 package auth
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"time"
+
+	"github.com/coderz-space/coderz.space/internal/config"
+	"github.com/labstack/echo/v5"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -740,6 +747,69 @@ func TestRoutePrefix(t *testing.T) {
 			// - Match pattern used by other modules
 			// - Separate public and protected routes
 			t.Logf("Route: %s %s (public=%v)", route.method, route.path, route.public)
+		})
+	}
+}
+
+func TestSetAuthCookies(t *testing.T) {
+	e := echo.New()
+
+	tests := []struct {
+		name         string
+		scheme       string
+		expectSecure bool
+	}{
+		{
+			name:         "HTTPS scheme sets secure=true",
+			scheme:       "https",
+			expectSecure: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set("X-Forwarded-Proto", tt.scheme)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+
+			// We need a dummy config to test the maxage calculation
+			svc := &Service{
+				config: &config.Config{
+					RefreshTokenExpires: 24 * time.Hour,
+				},
+			}
+			h := &Handler{service: svc}
+
+			h.setAuthCookies(c, "access_token_123", "refresh_token_456")
+
+			cookies := rec.Result().Cookies()
+			assert.Len(t, cookies, 2)
+
+			var accessCookie, refreshCookie *http.Cookie
+			for _, cookie := range cookies {
+				if cookie.Name == "access_token" {
+					accessCookie = cookie
+				} else if cookie.Name == "refresh_token" {
+					refreshCookie = cookie
+				}
+			}
+
+			assert.NotNil(t, accessCookie)
+			assert.Equal(t, "access_token_123", accessCookie.Value)
+			assert.Equal(t, "/", accessCookie.Path)
+			assert.True(t, accessCookie.HttpOnly)
+			assert.Equal(t, tt.expectSecure, accessCookie.Secure)
+			assert.Equal(t, http.SameSiteStrictMode, accessCookie.SameSite)
+			assert.Equal(t, 900, accessCookie.MaxAge)
+
+			assert.NotNil(t, refreshCookie)
+			assert.Equal(t, "refresh_token_456", refreshCookie.Value)
+			assert.Equal(t, "/", refreshCookie.Path)
+			assert.True(t, refreshCookie.HttpOnly)
+			assert.Equal(t, tt.expectSecure, refreshCookie.Secure)
+			assert.Equal(t, http.SameSiteStrictMode, refreshCookie.SameSite)
+			assert.Equal(t, int((24 * time.Hour).Seconds()), refreshCookie.MaxAge)
 		})
 	}
 }
