@@ -644,13 +644,30 @@ func (q *Queries) UpdateTag(ctx context.Context, arg UpdateTagParams) (Tag, erro
 	return i, err
 }
 
-const countProblemAssignments = `-- name: CountProblemAssignments :one
-SELECT COUNT(*) FROM assignment_group_problems
+const checkProblemInActiveAssignments = `-- name: CheckProblemInActiveAssignments :one
+SELECT COUNT(*)
+FROM assignment_problems ap
+JOIN assignments a ON ap.assignment_id = a.id
+WHERE ap.problem_id = $1
+  AND a.status = 'active'
+  AND a.archived_at IS NULL
+`
+
+func (q *Queries) CheckProblemInActiveAssignments(ctx context.Context, problemID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, checkProblemInActiveAssignments, problemID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const checkProblemInAssignmentGroups = `-- name: CheckProblemInAssignmentGroups :one
+SELECT COUNT(*)
+FROM assignment_group_problems
 WHERE problem_id = $1
 `
 
-func (q *Queries) CountProblemAssignments(ctx context.Context, problemID pgtype.UUID) (int64, error) {
-	row := q.db.QueryRow(ctx, countProblemAssignments, problemID)
+func (q *Queries) CheckProblemInAssignmentGroups(ctx context.Context, problemID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, checkProblemInAssignmentGroups, problemID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
