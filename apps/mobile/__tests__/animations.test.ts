@@ -1,8 +1,21 @@
-import { withDelay, withTiming } from 'react-native-reanimated';
-import { SpringPresets, TimingPresets, fadeInDelayed } from '../src/utils/animations';
+import { withSpring, withTiming, withDelay, withSequence } from 'react-native-reanimated';
+import { SpringPresets, TimingPresets, springIn } from '../src/utils/animations';
+
+jest.mock('react-native-reanimated', () => ({
+  withSpring: jest.fn((val, config) => ({ type: 'spring', val, config })),
+  withTiming: jest.fn((val, config) => ({ type: 'timing', val, config })),
+  withDelay: jest.fn((delay, anim) => ({ type: 'delay', delay, anim })),
+  withSequence: jest.fn((...anims) => ({ type: 'sequence', anims })),
+  Easing: {
+    out: jest.fn((e) => `out(${e})`),
+    inOut: jest.fn((e) => `inOut(${e})`),
+    quad: 'quad',
+    cubic: 'cubic',
+  },
+}));
 
 describe('Animation Presets', () => {
-  beforeEach(() => {
+  afterEach(() => {
     jest.clearAllMocks();
   });
 
@@ -14,13 +27,29 @@ describe('Animation Presets', () => {
   });
 
   test('TimingPresets should have correct configurations', () => {
-    expect(TimingPresets.fast.duration).toBe(150);
-    expect(TimingPresets.normal.duration).toBe(250);
-    expect(TimingPresets.slow.duration).toBe(400);
+    expect(TimingPresets.fast).toEqual(expect.objectContaining({ duration: 150, easing: expect.any(Function) }));
+    expect(TimingPresets.normal).toEqual(expect.objectContaining({ duration: 250, easing: expect.any(Function) }));
+    expect(TimingPresets.slow).toEqual(expect.objectContaining({ duration: 400, easing: expect.any(Function) }));
+  });
+});
 
-    expect(TimingPresets.fast.easing).toBeDefined();
-    expect(TimingPresets.normal.easing).toBeDefined();
-    expect(TimingPresets.slow.easing).toBeDefined();
+describe('Animation Functions', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('springIn', () => {
+    test('should call withSpring with default snappy preset', () => {
+      const result = springIn(100);
+      expect(withSpring).toHaveBeenCalledWith(100, SpringPresets.snappy);
+      expect(result).toEqual({ type: 'spring', val: 100, config: SpringPresets.snappy });
+    });
+
+    test('should call withSpring with provided config', () => {
+      const result = springIn(50, SpringPresets.gentle);
+      expect(withSpring).toHaveBeenCalledWith(50, SpringPresets.gentle);
+      expect(result).toEqual({ type: 'spring', val: 50, config: SpringPresets.gentle });
+    });
   });
 
   describe('fadeInDelayed', () => {
