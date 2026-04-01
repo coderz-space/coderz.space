@@ -1,0 +1,30 @@
+package bootcamp
+
+import (
+	"github.com/coderz-space/coderz.space/internal/common/middleware/auth"
+	"github.com/coderz-space/coderz.space/internal/config"
+	"github.com/labstack/echo/v5"
+)
+
+func RegisterProtectedRoutes(e *echo.Group, handler *Handler, config *config.Config) {
+	bootcampRouter := e.Group("/v1/organizations/:orgId/bootcamps")
+	bootcampRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
+
+	// Bootcamp routes
+	bootcampRouter.POST("", handler.CreateBootcamp)
+	bootcampRouter.GET("", handler.ListBootcamps)
+	bootcampRouter.GET("/:bootcampId", handler.GetBootcamp)
+	bootcampRouter.PATCH("/:bootcampId", handler.UpdateBootcamp)
+	bootcampRouter.DELETE("/:bootcampId", handler.DeactivateBootcamp)
+
+	// Enrollment routes
+	bootcampRouter.POST("/:bootcampId/enrollments", handler.EnrollMember)
+	bootcampRouter.GET("/:bootcampId/enrollments", handler.ListEnrollments)
+	bootcampRouter.PATCH("/:bootcampId/enrollments/:enrollmentId", handler.UpdateEnrollmentRole)
+	bootcampRouter.DELETE("/:bootcampId/enrollments/:enrollmentId", handler.RemoveEnrollment)
+
+	// Super admin cross-organization routes
+	superAdminRouter := e.Group("/v1/super-admin")
+	superAdminRouter.Use(auth.AuthMiddleware(config.JWTSecret, config.JWTExpires))
+	superAdminRouter.GET("/bootcamps", handler.ListAllBootcamps)
+}

@@ -1,0 +1,5371 @@
+basePath: /api
+definitions:
+  internal_modules_analytics.CreatePollRequest:
+    description: Request body for creating a poll on a problem
+    properties:
+      problemId:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      question:
+        example: How difficult did you find this problem?
+        maxLength: 240
+        minLength: 10
+        type: string
+    required:
+    - problemId
+    - question
+    type: object
+  internal_modules_analytics.LeaderboardEntryData:
+    description: Leaderboard entry with user details and performance metrics
+    properties:
+      avatarUrl:
+        example: https://example.com/avatar.jpg
+        type: string
+      bootcampEnrollmentId:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+      bootcampId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      calculatedAt:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      completionRate:
+        example: "83.33"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: John Doe
+        type: string
+      problemsAttempted:
+        example: 30
+        type: integer
+      problemsCompleted:
+        example: 25
+        type: integer
+      rank:
+        example: 1
+        type: integer
+      score:
+        example: 850
+        type: integer
+      streakDays:
+        example: 7
+        type: integer
+    type: object
+  internal_modules_analytics.LeaderboardEntryResponse:
+    description: Response containing a single leaderboard entry
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_analytics.LeaderboardEntryData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.LeaderboardResponse:
+    description: Response containing leaderboard entries with pagination
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_analytics.LeaderboardEntryData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_analytics.OffsetPagination'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.OffsetPagination:
+    description: Offset-based pagination metadata
+    properties:
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+    type: object
+  internal_modules_analytics.PollData:
+    description: Poll details with problem information
+    properties:
+      bootcampId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      createdAt:
+        example: "2024-01-15T09:00:00Z"
+        type: string
+      createdBy:
+        example: 880e8400-e29b-41d4-a716-446655440000
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      myVote:
+        example: medium
+        type: string
+      problemId:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+      problemTitle:
+        example: Two Sum
+        type: string
+      question:
+        example: How difficult did you find this problem?
+        type: string
+    type: object
+  internal_modules_analytics.PollListResponse:
+    description: Response containing a list of polls with pagination
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_analytics.PollData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_analytics.OffsetPagination'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.PollResponse:
+    description: Response containing a single poll
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_analytics.PollData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.PollResultsData:
+    description: Aggregated poll results with vote counts and percentages
+    properties:
+      easyCount:
+        example: 20
+        type: integer
+      easyPercent:
+        example: 20
+        type: number
+      hardCount:
+        example: 30
+        type: integer
+      hardPercent:
+        example: 30
+        type: number
+      mediumCount:
+        example: 50
+        type: integer
+      mediumPercent:
+        example: 50
+        type: number
+      percentBreakup:
+        additionalProperties:
+          format: float64
+          type: number
+        type: object
+      totalVotes:
+        example: 100
+        type: integer
+      voteBreakdown:
+        additionalProperties:
+          format: int32
+          type: integer
+        type: object
+    type: object
+  internal_modules_analytics.PollResultsResponse:
+    description: Response containing aggregated poll results
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_analytics.PollResultsData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.PollVotesResponse:
+    description: Response containing individual poll votes with pagination
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_analytics.VoteData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_analytics.OffsetPagination'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.SuperAdminLeaderboardData:
+    description: Leaderboard entry with organization and bootcamp context for super
+      admin
+    properties:
+      bootcampEnrollmentId:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+      bootcampId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      bootcampName:
+        example: Full Stack Bootcamp 2024
+        type: string
+      calculatedAt:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      completionRate:
+        example: "83.33"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      organizationName:
+        example: Tech Academy
+        type: string
+      problemsAttempted:
+        example: 30
+        type: integer
+      problemsCompleted:
+        example: 25
+        type: integer
+      rank:
+        example: 1
+        type: integer
+      score:
+        example: 850
+        type: integer
+      streakDays:
+        example: 7
+        type: integer
+      userName:
+        example: John Doe
+        type: string
+    type: object
+  internal_modules_analytics.SuperAdminLeaderboardResponse:
+    description: Response containing leaderboard entries across all organizations
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_analytics.SuperAdminLeaderboardData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_analytics.OffsetPagination'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.SuperAdminPollData:
+    description: Poll details with organization and bootcamp context for super admin
+    properties:
+      bootcampId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      bootcampName:
+        example: Full Stack Bootcamp 2024
+        type: string
+      createdAt:
+        example: "2024-01-15T09:00:00Z"
+        type: string
+      createdBy:
+        example: 880e8400-e29b-41d4-a716-446655440000
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      organizationName:
+        example: Tech Academy
+        type: string
+      problemId:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+      problemTitle:
+        example: Two Sum
+        type: string
+      question:
+        example: How difficult did you find this problem?
+        type: string
+    type: object
+  internal_modules_analytics.SuperAdminPollResultsResponse:
+    description: Response containing polls across all organizations
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_analytics.SuperAdminPollData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_analytics.OffsetPagination'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_analytics.VoteData:
+    description: Poll vote details
+    properties:
+      createdAt:
+        example: "2024-01-15T09:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      pollId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      vote:
+        example: medium
+        type: string
+      voterId:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+    type: object
+  internal_modules_analytics.VotePollRequest:
+    description: Request body for casting or updating a vote on a poll
+    properties:
+      vote:
+        enum:
+        - easy
+        - medium
+        - hard
+        example: medium
+        type: string
+    required:
+    - vote
+    type: object
+  internal_modules_analytics.VoteResponse:
+    description: Response containing a single vote
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_analytics.VoteData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_assignment.AddProblemsToGroupRequest:
+    properties:
+      problems:
+        items:
+          $ref: '#/definitions/internal_modules_assignment.GroupProblemInput'
+        minItems: 1
+        type: array
+    required:
+    - problems
+    type: object
+  internal_modules_assignment.AssignmentData:
+    properties:
+      assignedAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+      assignedBy:
+        example: 880e8400-e29b-41d4-a716-446655440000
+        type: string
+      assignmentGroupId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      bootcampEnrollmentId:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+      createdAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+      deadlineAt:
+        example: "2024-01-08T23:59:59Z"
+        type: string
+      groupTitle:
+        example: Week 1 - Arrays and Strings
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      problems:
+        items:
+          $ref: '#/definitions/internal_modules_assignment.AssignmentProblemData'
+        type: array
+      status:
+        example: active
+        type: string
+      updatedAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+    type: object
+  internal_modules_assignment.AssignmentGroupData:
+    properties:
+      bootcampId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      createdAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+      createdBy:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+      deadlineDays:
+        example: 7
+        type: integer
+      description:
+        example: Introduction to fundamental data structures
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      problems:
+        items:
+          $ref: '#/definitions/internal_modules_assignment.GroupProblemRef'
+        type: array
+      title:
+        example: Week 1 - Arrays and Strings
+        type: string
+      updatedAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+    type: object
+  internal_modules_assignment.AssignmentGroupListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_assignment.AssignmentGroupData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_assignment.PaginationMeta'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_assignment.AssignmentGroupResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_assignment.AssignmentGroupData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_assignment.AssignmentListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_assignment.AssignmentData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_assignment.PaginationMeta'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_assignment.AssignmentProblemData:
+    properties:
+      assignmentId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      completedAt:
+        example: "2024-01-05T14:30:00Z"
+        type: string
+      createdAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+      difficulty:
+        example: easy
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      notes:
+        example: Used dynamic programming approach
+        type: string
+      problemId:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+      solutionLink:
+        example: https://github.com/user/solution
+        type: string
+      status:
+        example: pending
+        type: string
+      title:
+        example: Two Sum
+        type: string
+      updatedAt:
+        example: "2024-01-05T14:30:00Z"
+        type: string
+    type: object
+  internal_modules_assignment.AssignmentProblemListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_assignment.AssignmentProblemData'
+        type: array
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_assignment.AssignmentProblemResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_assignment.AssignmentProblemData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_assignment.AssignmentResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_assignment.AssignmentData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_assignment.CreateAssignmentGroupRequest:
+    properties:
+      deadlineDays:
+        example: 7
+        minimum: 1
+        type: integer
+      description:
+        example: Introduction to fundamental data structures
+        maxLength: 1000
+        type: string
+      title:
+        example: Week 1 - Arrays and Strings
+        maxLength: 150
+        minLength: 3
+        type: string
+    required:
+    - deadlineDays
+    - title
+    type: object
+  internal_modules_assignment.CreateAssignmentRequest:
+    properties:
+      assignmentGroupId:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      bootcampEnrollmentId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      deadlineAt:
+        example: "2024-01-15T23:59:59Z"
+        type: string
+    required:
+    - assignmentGroupId
+    - bootcampEnrollmentId
+    type: object
+  internal_modules_assignment.GenericResponse:
+    properties:
+      data:
+        additionalProperties: {}
+        type: object
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_assignment.GroupProblemInput:
+    properties:
+      position:
+        example: 1
+        minimum: 1
+        type: integer
+      problemId:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - position
+    - problemId
+    type: object
+  internal_modules_assignment.GroupProblemRef:
+    properties:
+      difficulty:
+        example: easy
+        type: string
+      position:
+        example: 1
+        type: integer
+      problemId:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      title:
+        example: Two Sum
+        type: string
+    type: object
+  internal_modules_assignment.PaginationMeta:
+    properties:
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+    type: object
+  internal_modules_assignment.ReplaceGroupProblemsRequest:
+    properties:
+      problems:
+        items:
+          $ref: '#/definitions/internal_modules_assignment.GroupProblemInput'
+        minItems: 1
+        type: array
+    required:
+    - problems
+    type: object
+  internal_modules_assignment.UpdateAssignmentDeadlineRequest:
+    properties:
+      deadlineAt:
+        example: "2024-01-20T23:59:59Z"
+        type: string
+    required:
+    - deadlineAt
+    type: object
+  internal_modules_assignment.UpdateAssignmentGroupRequest:
+    properties:
+      deadlineDays:
+        example: 10
+        minimum: 1
+        type: integer
+      description:
+        example: Updated description
+        maxLength: 1000
+        type: string
+      title:
+        example: Week 1 - Arrays and Strings (Updated)
+        maxLength: 150
+        minLength: 3
+        type: string
+    type: object
+  internal_modules_assignment.UpdateAssignmentProblemRequest:
+    properties:
+      notes:
+        example: Used dynamic programming approach
+        maxLength: 2000
+        type: string
+      solutionLink:
+        example: https://github.com/user/solution
+        type: string
+      status:
+        enum:
+        - pending
+        - attempted
+        - completed
+        example: completed
+        type: string
+    type: object
+  internal_modules_assignment.UpdateAssignmentRequest:
+    properties:
+      deadlineAt:
+        example: "2024-01-20T23:59:59Z"
+        type: string
+      status:
+        enum:
+        - active
+        - completed
+        - expired
+        example: completed
+        type: string
+    type: object
+  internal_modules_assignment.UpdateAssignmentStatusRequest:
+    properties:
+      status:
+        enum:
+        - active
+        - completed
+        - expired
+        example: completed
+        type: string
+    required:
+    - status
+    type: object
+  internal_modules_auth.AuthResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_auth.AuthResponseData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_auth.AuthResponseData:
+    properties:
+      accessToken:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      refreshToken:
+        example: a1b2c3d4e5f6...
+        type: string
+      user:
+        $ref: '#/definitions/internal_modules_auth.AuthUser'
+    type: object
+  internal_modules_auth.AuthUser:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      emailVerified:
+        example: false
+        type: boolean
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: John Doe
+        type: string
+    type: object
+  internal_modules_auth.ForgotPasswordRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+    required:
+    - email
+    type: object
+  internal_modules_auth.GenericResponse:
+    properties:
+      data:
+        additionalProperties: {}
+        type: object
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_auth.LoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: Password123
+        maxLength: 50
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_modules_auth.RefreshResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_auth.RefreshResponseData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_auth.RefreshResponseData:
+    properties:
+      accessToken:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  internal_modules_auth.ResetPasswordRequest:
+    properties:
+      newPassword:
+        example: NewPassword123
+        maxLength: 50
+        minLength: 8
+        type: string
+      token:
+        example: a1b2c3d4e5f6g7h8i9j0
+        type: string
+    required:
+    - newPassword
+    - token
+    type: object
+  internal_modules_auth.SignupRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      name:
+        example: John Doe
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        example: Password123
+        maxLength: 50
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  internal_modules_auth.UserProfileResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_auth.AuthUser'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_bootcamp.BootcampData:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      description:
+        type: string
+      endDate:
+        type: string
+      id:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        type: string
+      organizationId:
+        type: string
+      startDate:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  internal_modules_bootcamp.BootcampListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_bootcamp.BootcampData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_bootcamp.PaginationMeta'
+      success:
+        type: boolean
+    type: object
+  internal_modules_bootcamp.BootcampResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_bootcamp.BootcampData'
+      success:
+        type: boolean
+    type: object
+  internal_modules_bootcamp.CreateBootcampRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      endDate:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        maxLength: 120
+        minLength: 3
+        type: string
+      startDate:
+        type: string
+    required:
+    - name
+    type: object
+  internal_modules_bootcamp.EnrollMemberRequest:
+    properties:
+      organizationMemberId:
+        type: string
+      role:
+        enum:
+        - mentor
+        - mentee
+        type: string
+    required:
+    - organizationMemberId
+    - role
+    type: object
+  internal_modules_bootcamp.EnrollmentData:
+    properties:
+      avatarUrl:
+        type: string
+      bootcampId:
+        type: string
+      email:
+        type: string
+      enrolledAt:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      orgRole:
+        type: string
+      organizationMemberId:
+        type: string
+      role:
+        type: string
+      status:
+        type: string
+    type: object
+  internal_modules_bootcamp.EnrollmentListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_bootcamp.EnrollmentData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_bootcamp.PaginationMeta'
+      success:
+        type: boolean
+    type: object
+  internal_modules_bootcamp.EnrollmentResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_bootcamp.EnrollmentData'
+      success:
+        type: boolean
+    type: object
+  internal_modules_bootcamp.GenericResponse:
+    properties:
+      data:
+        additionalProperties: {}
+        type: object
+      success:
+        type: boolean
+    type: object
+  internal_modules_bootcamp.PaginationMeta:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  internal_modules_bootcamp.UpdateBootcampRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      endDate:
+        type: string
+      isActive:
+        type: boolean
+      name:
+        maxLength: 120
+        minLength: 3
+        type: string
+      startDate:
+        type: string
+    type: object
+  internal_modules_bootcamp.UpdateEnrollmentRoleRequest:
+    properties:
+      role:
+        enum:
+        - mentor
+        - mentee
+        type: string
+    required:
+    - role
+    type: object
+  internal_modules_organization.AddMemberRequest:
+    properties:
+      role:
+        enum:
+        - admin
+        - mentor
+        - mentee
+        type: string
+      userId:
+        type: string
+    required:
+    - role
+    - userId
+    type: object
+  internal_modules_organization.CreateOrganizationRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      name:
+        maxLength: 120
+        minLength: 3
+        type: string
+      slug:
+        maxLength: 80
+        minLength: 3
+        type: string
+    required:
+    - name
+    - slug
+    type: object
+  internal_modules_organization.GenericResponse:
+    properties:
+      data:
+        additionalProperties: {}
+        type: object
+      success:
+        type: boolean
+    type: object
+  internal_modules_organization.MemberData:
+    properties:
+      avatarUrl:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      joinedAt:
+        type: string
+      name:
+        type: string
+      organizationId:
+        type: string
+      role:
+        type: string
+      userId:
+        type: string
+    type: object
+  internal_modules_organization.MemberListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_organization.MemberData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_organization.PaginationMeta'
+      success:
+        type: boolean
+    type: object
+  internal_modules_organization.MemberResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_organization.MemberData'
+      success:
+        type: boolean
+    type: object
+  internal_modules_organization.OrganizationData:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      slug:
+        type: string
+      status:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  internal_modules_organization.OrganizationListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_organization.OrganizationData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_organization.PaginationMeta'
+      success:
+        type: boolean
+    type: object
+  internal_modules_organization.OrganizationResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_organization.OrganizationData'
+      success:
+        type: boolean
+    type: object
+  internal_modules_organization.PaginationMeta:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  internal_modules_organization.UpdateMemberRoleRequest:
+    properties:
+      role:
+        enum:
+        - admin
+        - mentor
+        - mentee
+        type: string
+    required:
+    - role
+    type: object
+  internal_modules_organization.UpdateOrganizationRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      name:
+        maxLength: 120
+        minLength: 3
+        type: string
+      slug:
+        maxLength: 80
+        minLength: 3
+        type: string
+    type: object
+  internal_modules_problem.AttachTagsRequest:
+    properties:
+      tagIds:
+        example:
+        - 550e8400-e29b-41d4-a716-446655440000
+        - 660e8400-e29b-41d4-a716-446655440000
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - tagIds
+    type: object
+  internal_modules_problem.CreateProblemRequest:
+    properties:
+      description:
+        example: Given an array of integers, return indices of the two numbers that
+          add up to a specific target.
+        minLength: 10
+        type: string
+      difficulty:
+        enum:
+        - easy
+        - medium
+        - hard
+        example: easy
+        type: string
+      externalLink:
+        example: https://leetcode.com/problems/two-sum/
+        type: string
+      title:
+        example: Two Sum
+        maxLength: 200
+        minLength: 3
+        type: string
+    required:
+    - description
+    - difficulty
+    - title
+    type: object
+  internal_modules_problem.CreateResourceRequest:
+    properties:
+      title:
+        example: Two Sum Solution Explanation
+        maxLength: 150
+        minLength: 2
+        type: string
+      url:
+        example: https://www.youtube.com/watch?v=example
+        type: string
+    required:
+    - title
+    - url
+    type: object
+  internal_modules_problem.CreateTagRequest:
+    properties:
+      name:
+        example: arrays
+        maxLength: 80
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  internal_modules_problem.GenericResponse:
+    properties:
+      data:
+        additionalProperties: {}
+        type: object
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_problem.PaginationMeta:
+    properties:
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 100
+        type: integer
+    type: object
+  internal_modules_problem.ProblemData:
+    properties:
+      archivedAt:
+        example: ""
+        type: string
+      createdAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+      createdBy:
+        example: 770e8400-e29b-41d4-a716-446655440000
+        type: string
+      description:
+        example: Given an array of integers, return indices of the two numbers that
+          add up to a specific target.
+        type: string
+      difficulty:
+        example: easy
+        type: string
+      externalLink:
+        example: https://leetcode.com/problems/two-sum/
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      organizationId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      resources:
+        items:
+          $ref: '#/definitions/internal_modules_problem.ResourceData'
+        type: array
+      tags:
+        items:
+          $ref: '#/definitions/internal_modules_problem.TagData'
+        type: array
+      title:
+        example: Two Sum
+        type: string
+      updatedAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+    type: object
+  internal_modules_problem.ProblemListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_problem.ProblemData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_problem.PaginationMeta'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_problem.ProblemResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_problem.ProblemData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_problem.ResourceData:
+    properties:
+      createdAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      problemId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      title:
+        example: Two Sum Solution Explanation
+        type: string
+      url:
+        example: https://www.youtube.com/watch?v=example
+        type: string
+    type: object
+  internal_modules_problem.ResourceListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_problem.ResourceData'
+        type: array
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_problem.ResourceResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_problem.ResourceData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_problem.TagData:
+    properties:
+      createdAt:
+        example: "2024-01-01T10:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: arrays
+        type: string
+      organizationId:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+    type: object
+  internal_modules_problem.TagListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_problem.TagData'
+        type: array
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_problem.TagResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_problem.TagData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_problem.UpdateProblemRequest:
+    properties:
+      description:
+        example: Updated description
+        minLength: 10
+        type: string
+      difficulty:
+        enum:
+        - easy
+        - medium
+        - hard
+        example: medium
+        type: string
+      externalLink:
+        example: https://leetcode.com/problems/two-sum/
+        type: string
+      title:
+        example: Two Sum Updated
+        maxLength: 200
+        minLength: 3
+        type: string
+    type: object
+  internal_modules_problem.UpdateResourceRequest:
+    properties:
+      title:
+        example: Updated Resource Title
+        maxLength: 150
+        minLength: 2
+        type: string
+      url:
+        example: https://www.youtube.com/watch?v=updated
+        type: string
+    type: object
+  internal_modules_problem.UpdateTagRequest:
+    properties:
+      name:
+        example: dynamic-programming
+        maxLength: 80
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  internal_modules_progress.CreateDoubtRequest:
+    description: Request body for creating a doubt on an assignment problem
+    properties:
+      assignmentProblemId:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      message:
+        example: I'm having trouble understanding the time complexity of this algorithm
+        maxLength: 2000
+        minLength: 10
+        type: string
+    required:
+    - assignmentProblemId
+    - message
+    type: object
+  internal_modules_progress.CursorPagination:
+    description: Cursor-based pagination metadata for large datasets
+    properties:
+      hasMore:
+        example: true
+        type: boolean
+      limit:
+        example: 20
+        type: integer
+      nextCursor:
+        example: eyJpZCI6IjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCJ9
+        type: string
+    type: object
+  internal_modules_progress.DoubtData:
+    description: Doubt details with resolution information
+    properties:
+      assignmentProblemId:
+        example: 550e8400-e29b-41d4-a716-446655440001
+        type: string
+      createdAt:
+        example: "2024-01-15T09:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      message:
+        example: I'm having trouble understanding the time complexity
+        type: string
+      raisedBy:
+        example: 550e8400-e29b-41d4-a716-446655440002
+        type: string
+      raisedByEmail:
+        example: john@example.com
+        type: string
+      raisedByName:
+        example: John Doe
+        type: string
+      resolutionNote:
+        example: The time complexity is O(n log n)
+        type: string
+      resolved:
+        example: false
+        type: boolean
+      resolvedAt:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      resolvedBy:
+        example: 550e8400-e29b-41d4-a716-446655440003
+        type: string
+      resolvedByName:
+        example: Jane Smith
+        type: string
+      updatedAt:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+    type: object
+  internal_modules_progress.DoubtListResponse:
+    description: Response containing a list of doubts with cursor-based pagination
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_modules_progress.DoubtData'
+        type: array
+      meta:
+        $ref: '#/definitions/internal_modules_progress.CursorPagination'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_progress.DoubtResponse:
+    description: Response containing a single doubt
+    properties:
+      data:
+        $ref: '#/definitions/internal_modules_progress.DoubtData'
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_progress.GenericResponse:
+    description: Generic success response
+    properties:
+      data:
+        additionalProperties: {}
+        type: object
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_modules_progress.ResolveDoubtRequest:
+    description: Request body for resolving a doubt with optional resolution note
+    properties:
+      resolutionNote:
+        example: The time complexity is O(n log n) because of the sorting step
+        maxLength: 1000
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@coderz.space
+    name: API Support
+  description: Comprehensive bootcamp management platform API with multi-tenant architecture
+    and role-based access control
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Coderz.space Bootcamp Management API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: Check if the server is running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - health
+  /v1/auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Send password reset token (always returns success to prevent email
+        enumeration)
+      parameters:
+      - description: Email address
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_auth.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password reset email sent (if email exists)
+          schema:
+            $ref: '#/definitions/internal_modules_auth.GenericResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Request password reset
+      tags:
+      - Auth
+  /v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with email and password to receive authentication tokens
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            $ref: '#/definitions/internal_modules_auth.AuthResponse'
+        "401":
+          description: Unauthorized - invalid credentials
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Authenticate user
+      tags:
+      - Auth
+  /v1/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout user and revoke refresh token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logout successful
+          schema:
+            $ref: '#/definitions/internal_modules_auth.GenericResponse'
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - Auth
+  /v1/auth/me:
+    get:
+      consumes:
+      - application/json
+      description: Get the profile of the currently authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile retrieved successfully
+          schema:
+            $ref: '#/definitions/internal_modules_auth.UserProfileResponse'
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - user does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user profile
+      tags:
+      - Auth
+  /v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Generate a new access token using refresh token from cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token refreshed successfully
+          schema:
+            $ref: '#/definitions/internal_modules_auth.RefreshResponse'
+        "401":
+          description: Unauthorized - missing or invalid refresh token
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Refresh access token
+      tags:
+      - Auth
+  /v1/auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Reset user password using a valid reset token
+      parameters:
+      - description: Reset token and new password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_auth.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password reset successful
+          schema:
+            $ref: '#/definitions/internal_modules_auth.GenericResponse'
+        "400":
+          description: Bad request - validation error or invalid/expired token
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Reset password with token
+      tags:
+      - Auth
+  /v1/auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account with email and password
+      parameters:
+      - description: User registration details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_auth.SignupRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            $ref: '#/definitions/internal_modules_auth.AuthResponse'
+        "400":
+          description: Bad request - validation error or email already exists
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Register a new user
+      tags:
+      - Auth
+  /v1/bootcamps/{bootcampId}/enrollments:
+    get:
+      consumes:
+      - application/json
+      description: Get all enrollments for a bootcamp
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of enrollments
+          schema:
+            $ref: '#/definitions/internal_modules_bootcamp.EnrollmentListResponse'
+        "400":
+          description: Bad request - invalid bootcamp ID
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List bootcamp enrollments
+      tags:
+      - Bootcamp Enrollments
+  /v1/bootcamps/{bootcampId}/leaderboard:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve pre-calculated leaderboard rankings for a bootcamp. Returns
+        snapshot data without real-time recalculation. User must be enrolled in the
+        bootcamp.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Leaderboard entries with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.LeaderboardResponse'
+        "400":
+          description: Bad request - invalid bootcamp ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not enrolled in bootcamp
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - bootcamp does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get bootcamp leaderboard
+      tags:
+      - Leaderboards
+  /v1/bootcamps/{bootcampId}/leaderboard/{enrollmentId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific leaderboard entry by enrollment ID. Mentees
+        can only view their own entry.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Bootcamp Enrollment ID (UUID)
+        in: path
+        name: enrollmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Leaderboard entry details
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.LeaderboardEntryResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - access denied
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - entry does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get leaderboard entry
+      tags:
+      - Leaderboards
+  /v1/bootcamps/{bootcampId}/polls:
+    get:
+      consumes:
+      - application/json
+      description: List polls for a bootcamp with optional problem filtering. Includes
+        user's vote if they have voted. User must be enrolled in bootcamp.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Filter by problem ID (UUID)
+        in: query
+        name: problemId
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of polls with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.PollListResponse'
+        "400":
+          description: Bad request - invalid bootcamp ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not enrolled in bootcamp
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List polls
+      tags:
+      - Polls
+    post:
+      consumes:
+      - application/json
+      description: Create a difficulty poll for a problem in a bootcamp (mentor/admin
+        only). Supports idempotency via Idempotency-Key header.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Poll details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_analytics.CreatePollRequest'
+      - description: Idempotency key for safe retries
+        in: header
+        name: Idempotency-Key
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Poll created successfully
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.PollResponse'
+        "400":
+          description: Bad request - validation error or invalid problem ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor/admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a poll
+      tags:
+      - Polls
+  /v1/bootcamps/{bootcampId}/polls/{pollId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve full details of a specific poll including user's vote
+        state. User must be enrolled in bootcamp.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Poll ID (UUID)
+        in: path
+        name: pollId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Poll details
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.PollResponse'
+        "400":
+          description: Bad request - invalid poll ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not enrolled in bootcamp
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - poll does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get poll details
+      tags:
+      - Polls
+  /v1/bootcamps/{bootcampId}/polls/{pollId}/results:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve aggregated poll results with vote counts and percentages
+        (mentor/admin/super_admin only). Mentees cannot access results.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Poll ID (UUID)
+        in: path
+        name: pollId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Aggregated poll results
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.PollResultsResponse'
+        "400":
+          description: Bad request - invalid poll ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor/admin/super_admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - poll does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get poll results
+      tags:
+      - Polls
+  /v1/bootcamps/{bootcampId}/polls/{pollId}/vote:
+    put:
+      consumes:
+      - application/json
+      description: Cast or update a vote on a poll (mentee only). Uses PUT method
+        for idempotent vote creation/update. Returns 201 for first vote, 200 for updates.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Poll ID (UUID)
+        in: path
+        name: pollId
+        required: true
+        type: string
+      - description: Vote details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_analytics.VotePollRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Vote updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.VoteResponse'
+        "201":
+          description: Vote created successfully
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.VoteResponse'
+        "400":
+          description: Bad request - validation error or invalid poll ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - only mentees can vote
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - poll does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Vote on a poll
+      tags:
+      - Polls
+  /v1/bootcamps/{bootcampId}/polls/{pollId}/votes:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve individual vote records with optional filtering by vote
+        value (mentor/admin/super_admin only). Includes voter enrollment ID but not
+        internal user identifiers.
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Poll ID (UUID)
+        in: path
+        name: pollId
+        required: true
+        type: string
+      - description: Filter by vote value (easy, medium, hard)
+        in: query
+        name: vote
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of individual votes with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.PollVotesResponse'
+        "400":
+          description: Bad request - invalid poll ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor/admin/super_admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - poll does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get individual poll votes
+      tags:
+      - Polls
+  /v1/doubts:
+    get:
+      consumes:
+      - application/json
+      description: List doubts with filtering and cursor-based pagination. Mentees
+        see only their own doubts, mentors/admins see all organization doubts.
+      parameters:
+      - description: Filter by bootcamp ID (UUID) - required for mentors/admins
+        in: query
+        name: bootcampId
+        type: string
+      - description: Filter by assignment problem ID (UUID)
+        in: query
+        name: assignmentProblemId
+        type: string
+      - description: Filter by resolved status
+        in: query
+        name: resolved
+        type: boolean
+      - description: Cursor for pagination
+        in: query
+        name: cursor
+        type: string
+      - description: 'Number of items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of doubts with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_progress.DoubtListResponse'
+        "400":
+          description: Bad request - invalid query parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - insufficient permissions
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List doubts
+      tags:
+      - Doubts
+    post:
+      consumes:
+      - application/json
+      description: Create a doubt for an assignment problem (mentee only). Rate limited
+        to prevent spam.
+      parameters:
+      - description: Doubt details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_progress.CreateDoubtRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Doubt created successfully
+          schema:
+            $ref: '#/definitions/internal_modules_progress.DoubtResponse'
+        "400":
+          description: Bad request - validation error or invalid assignment problem
+            ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not a mentee or problem not assigned to you
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - assignment problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "429":
+          description: Too many requests - rate limit exceeded
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new doubt
+      tags:
+      - Doubts
+  /v1/doubts/{doubtId}:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently delete a doubt (mentor/admin only). Mentees cannot
+        delete doubts for audit purposes.
+      parameters:
+      - description: Doubt ID (UUID)
+        in: path
+        name: doubtId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Doubt deleted successfully
+          schema:
+            $ref: '#/definitions/internal_modules_progress.GenericResponse'
+        "400":
+          description: Bad request - invalid doubt ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - only mentors/admins can delete doubts
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - doubt does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a doubt
+      tags:
+      - Doubts
+    get:
+      consumes:
+      - application/json
+      description: Retrieve full details of a specific doubt. Mentees can only view
+        their own doubts, mentors/admins can view all organization doubts.
+      parameters:
+      - description: Doubt ID (UUID)
+        in: path
+        name: doubtId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Doubt details
+          schema:
+            $ref: '#/definitions/internal_modules_progress.DoubtResponse'
+        "400":
+          description: Bad request - invalid doubt ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - access denied
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - doubt does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get doubt details
+      tags:
+      - Doubts
+  /v1/doubts/{doubtId}/resolve:
+    patch:
+      consumes:
+      - application/json
+      description: Mark a doubt as resolved by a mentor/admin with optional resolution
+        note. Idempotent operation.
+      parameters:
+      - description: Doubt ID (UUID)
+        in: path
+        name: doubtId
+        required: true
+        type: string
+      - description: Resolution details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_progress.ResolveDoubtRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Doubt resolved successfully
+          schema:
+            $ref: '#/definitions/internal_modules_progress.DoubtResponse'
+        "400":
+          description: Bad request - validation error or invalid doubt ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - only mentors/admins can resolve doubts
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - doubt does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Resolve a doubt
+      tags:
+      - Doubts
+  /v1/doubts/me:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all doubts raised by the authenticated mentee with cursor-based
+        pagination
+      parameters:
+      - description: Bootcamp ID (UUID)
+        in: query
+        name: bootcampId
+        required: true
+        type: string
+      - description: Filter by resolved status
+        in: query
+        name: resolved
+        type: boolean
+      - description: Cursor for pagination
+        in: query
+        name: cursor
+        type: string
+      - description: 'Number of items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of my doubts with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_progress.DoubtListResponse'
+        "400":
+          description: Bad request - invalid query parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - only mentees can access this endpoint
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my doubts
+      tags:
+      - Doubts
+  /v1/organizations:
+    get:
+      consumes:
+      - application/json
+      description: Get all organizations where the authenticated user is a member
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of organizations with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_organization.OrganizationListResponse'
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List user's organizations
+      tags:
+      - Organizations
+    post:
+      consumes:
+      - application/json
+      description: Create a new organization with PENDING_APPROVAL status and auto-assign
+        creator as admin
+      parameters:
+      - description: Organization details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_organization.CreateOrganizationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Organization created successfully
+          schema:
+            $ref: '#/definitions/internal_modules_organization.OrganizationResponse'
+        "400":
+          description: Bad request - validation error or invalid slug format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - slug already exists
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new organization
+      tags:
+      - Organizations
+  /v1/organizations/{orgId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve organization details by organization ID
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization details
+          schema:
+            $ref: '#/definitions/internal_modules_organization.OrganizationResponse'
+        "400":
+          description: Bad request - invalid organization ID
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - organization does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get organization by ID
+      tags:
+      - Organizations
+    patch:
+      consumes:
+      - application/json
+      description: Update organization information (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Updated organization details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_organization.UpdateOrganizationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_organization.OrganizationResponse'
+        "400":
+          description: Bad request - validation error or no fields provided
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - slug already exists
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update organization details
+      tags:
+      - Organizations
+  /v1/organizations/{orgId}/approve:
+    post:
+      consumes:
+      - application/json
+      description: Change organization status from PENDING_APPROVAL to APPROVED
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization approved successfully
+          schema:
+            $ref: '#/definitions/internal_modules_organization.OrganizationResponse'
+        "400":
+          description: Bad request - invalid organization ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - super admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - organization does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - organization not in pending status
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Approve organization (super admin only)
+      tags:
+      - Organizations
+  /v1/organizations/{orgId}/bootcamps:
+    get:
+      consumes:
+      - application/json
+      description: Get bootcamps with role-based filtering (mentees see only enrolled
+        bootcamps)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by active status
+        in: query
+        name: is_active
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of bootcamps with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_bootcamp.BootcampListResponse'
+        "400":
+          description: Bad request - invalid organization ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not an organization member
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List bootcamps
+      tags:
+      - Bootcamps
+    post:
+      consumes:
+      - application/json
+      description: Create a new bootcamp within an organization (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_bootcamp.CreateBootcampRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Bootcamp created successfully
+          schema:
+            $ref: '#/definitions/internal_modules_bootcamp.BootcampResponse'
+        "400":
+          description: Bad request - validation error or invalid date range
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not an organization member
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - organization does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - organization not approved
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new bootcamp
+      tags:
+      - Bootcamps
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve bootcamp details by ID with role-based access control
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bootcamp details
+          schema:
+            $ref: '#/definitions/internal_modules_bootcamp.BootcampResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not an organization member
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - bootcamp does not exist or not enrolled
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get bootcamp by ID
+      tags:
+      - Bootcamps
+    patch:
+      consumes:
+      - application/json
+      description: Update bootcamp information (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Updated bootcamp details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_bootcamp.UpdateBootcampRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bootcamp updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_bootcamp.BootcampResponse'
+        "400":
+          description: Bad request - validation error or no fields provided
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - bootcamp does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update bootcamp details
+      tags:
+      - Bootcamps
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignment-groups:
+    get:
+      consumes:
+      - application/json
+      description: Get all assignment groups for a bootcamp with optional filtering
+        and pagination
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Filter by creator user ID (UUID)
+        in: query
+        name: created_by
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of assignment groups with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.AssignmentGroupListResponse'
+        "400":
+          description: Bad request - invalid bootcamp ID or query parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not a bootcamp member
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List assignment groups
+      tags:
+      - Assignment Groups
+    post:
+      consumes:
+      - application/json
+      description: Create a reusable assignment template within a bootcamp (mentor
+        only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment group details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_assignment.CreateAssignmentGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Assignment group created successfully
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.AssignmentGroupResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - bootcamp does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new assignment group
+      tags:
+      - Assignment Groups
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignment-groups/{groupId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an assignment group if no assignments exist (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment Group ID (UUID)
+        in: path
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assignment group deleted successfully
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.GenericResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - assignment group does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - assignment group has existing assignments
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete assignment group
+      tags:
+      - Assignment Groups
+    get:
+      consumes:
+      - application/json
+      description: Retrieve assignment group with associated problems
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment Group ID (UUID)
+        in: path
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assignment group details
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.AssignmentGroupResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not a bootcamp member
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - assignment group does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get assignment group details
+      tags:
+      - Assignment Groups
+    patch:
+      consumes:
+      - application/json
+      description: Update assignment group details (title, description, deadline_days).
+        Cannot change bootcamp_id. Does not affect existing assignment instances.
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment Group ID (UUID)
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: Updated assignment group details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_assignment.UpdateAssignmentGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assignment group updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.AssignmentGroupResponse'
+        "400":
+          description: Bad request - validation error or no fields provided
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - assignment group does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update assignment group
+      tags:
+      - Assignment Groups
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignment-groups/{groupId}/problems:
+    post:
+      consumes:
+      - application/json
+      description: Add or update problems in an assignment group with positions (mentor
+        only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment Group ID (UUID)
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: Problems to add with positions
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_assignment.AddProblemsToGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Problems added successfully
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.GenericResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - group or problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add problems to assignment group
+      tags:
+      - Assignment Groups
+    put:
+      consumes:
+      - application/json
+      description: Atomically replace all problems in an assignment group with a new
+        set (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment Group ID (UUID)
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: New problems with positions
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_assignment.ReplaceGroupProblemsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Problems replaced successfully
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.GenericResponse'
+        "400":
+          description: Bad request - validation error, duplicate problem IDs, or duplicate
+            positions
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - group or problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Replace all problems in assignment group
+      tags:
+      - Assignment Groups
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignment-groups/{groupId}/problems/{problemId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a problem from an assignment group (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment Group ID (UUID)
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Problem removed successfully
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.GenericResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - group or problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove problem from assignment group
+      tags:
+      - Assignment Groups
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments:
+    get:
+      consumes:
+      - application/json
+      description: Get all assignments for a bootcamp with filtering by assignment_group_id
+        and status. Supports pagination. Mentees see only their own assignments, mentors
+        see all.
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Filter by assignment group ID (UUID)
+        in: query
+        name: assignment_group_id
+        type: string
+      - description: Filter by status (active, completed, expired)
+        in: query
+        name: status
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of assignments with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.AssignmentListResponse'
+        "400":
+          description: Bad request - invalid bootcamp ID or query parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not a bootcamp member
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List assignments
+      tags:
+      - Assignments
+    post:
+      consumes:
+      - application/json
+      description: Assign a problem set to a mentee with deadline (mentor only). Snapshots
+        problems from group atomically. Prevents duplicate active assignments. Supports
+        Idempotency-Key header.
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Idempotency key for safe retries
+        in: header
+        name: Idempotency-Key
+        type: string
+      - description: Assignment details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_assignment.CreateAssignmentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Assignment created successfully
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.AssignmentResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - group or enrollment does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - duplicate active assignment or enrollment bootcamp
+            mismatch
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create assignment instance
+      tags:
+      - Assignments
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve assignment with problem progress and assignment group
+        metadata
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment ID (UUID)
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assignment details with problems
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.AssignmentResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not authorized to view this assignment
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - assignment does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get assignment details
+      tags:
+      - Assignments
+    patch:
+      consumes:
+      - application/json
+      description: Update assignment status or deadline (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment ID (UUID)
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: Updated assignment details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_assignment.UpdateAssignmentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assignment updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.AssignmentResponse'
+        "400":
+          description: Bad request - validation error or no fields provided
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - assignment does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update assignment
+      tags:
+      - Assignments
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/deadline:
+    patch:
+      consumes:
+      - application/json
+      description: Update the deadline of an assignment (mentor only). Mentees cannot
+        update deadlines.
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment ID (UUID)
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: New deadline
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_assignment.UpdateAssignmentDeadlineRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assignment deadline updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.AssignmentResponse'
+        "400":
+          description: Bad request - invalid deadline format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - assignment does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update assignment deadline
+      tags:
+      - Assignments
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/problems:
+    get:
+      consumes:
+      - application/json
+      description: Get all problems with progress for an assignment
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment ID (UUID)
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of assignment problems with progress
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.AssignmentProblemListResponse'
+        "400":
+          description: Bad request - invalid assignment ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not authorized to view this assignment
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List assignment problems
+      tags:
+      - Assignment Progress
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/problems/{problemId}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific problem in an assignment
+        including notes
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment ID (UUID)
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assignment problem details
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.AssignmentProblemResponse'
+        "400":
+          description: Bad request - invalid IDs
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not authorized to view this problem
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - problem not found in assignment
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get assignment problem details
+      tags:
+      - Assignment Progress
+    patch:
+      consumes:
+      - application/json
+      - application/json
+      description: |-
+        Update status, solution link, or notes for an assigned problem (mentee)
+        Update progress status, solution link, and notes for an assignment problem (mentee only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment ID (UUID)
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      - description: Progress update details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_assignment.UpdateAssignmentProblemRequest'
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment ID (UUID)
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      - description: Progress update details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_assignment.UpdateAssignmentProblemRequest'
+      produces:
+      - application/json
+      - application/json
+      responses:
+        "200":
+          description: Progress updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.AssignmentProblemResponse'
+        "400":
+          description: Bad request - invalid IDs or validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not the assignment owner or status regression
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - assignment or problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      - BearerAuth: []
+      summary: Update assignment problem progress
+      tags:
+      - Assignment Progress
+      - Assignment Progress
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/assignments/{assignmentId}/status:
+    patch:
+      consumes:
+      - application/json
+      description: 'Update the status of an assignment (mentor only). Valid transitions:
+        active, completed, expired. Mentees cannot update status.'
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Assignment ID (UUID)
+        in: path
+        name: assignmentId
+        required: true
+        type: string
+      - description: New status
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_assignment.UpdateAssignmentStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assignment status updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.AssignmentResponse'
+        "400":
+          description: Bad request - invalid status
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - assignment does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update assignment status
+      tags:
+      - Assignments
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/deactivate:
+    post:
+      consumes:
+      - application/json
+      description: Set bootcamp is_active to false (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bootcamp deactivated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_bootcamp.GenericResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - bootcamp does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Deactivate bootcamp
+      tags:
+      - Bootcamps
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/enrollments:
+    post:
+      consumes:
+      - application/json
+      description: Enroll an organization member into a bootcamp with specified role
+        (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Enrollment details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_bootcamp.EnrollMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Member enrolled successfully
+          schema:
+            $ref: '#/definitions/internal_modules_bootcamp.EnrollmentResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - bootcamp does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - bootcamp inactive or cross-org violation
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Enroll member in bootcamp
+      tags:
+      - Bootcamp Enrollments
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/enrollments/{enrollmentId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a member's enrollment from a bootcamp (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Enrollment ID (UUID)
+        in: path
+        name: enrollmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Enrollment removed successfully
+          schema:
+            $ref: '#/definitions/internal_modules_bootcamp.GenericResponse'
+        "400":
+          description: Bad request - invalid enrollment ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - enrollment does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove enrollment
+      tags:
+      - Bootcamp Enrollments
+    patch:
+      consumes:
+      - application/json
+      description: Update the role of a bootcamp enrollment (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Enrollment ID (UUID)
+        in: path
+        name: enrollmentId
+        required: true
+        type: string
+      - description: New role
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_bootcamp.UpdateEnrollmentRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Enrollment role updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_bootcamp.EnrollmentResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update enrollment role
+      tags:
+      - Bootcamp Enrollments
+  /v1/organizations/{orgId}/bootcamps/{bootcampId}/enrollments/{enrollmentId}/assignments:
+    get:
+      consumes:
+      - application/json
+      description: Get all assignments for a specific mentee enrollment
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Bootcamp ID (UUID)
+        in: path
+        name: bootcampId
+        required: true
+        type: string
+      - description: Bootcamp Enrollment ID (UUID)
+        in: path
+        name: enrollmentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of assignments
+          schema:
+            $ref: '#/definitions/internal_modules_assignment.AssignmentListResponse'
+        "400":
+          description: Bad request - invalid enrollment ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not authorized to view these assignments
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List assignments for mentee
+      tags:
+      - Assignments
+  /v1/organizations/{orgId}/members:
+    get:
+      consumes:
+      - application/json
+      description: Get all members of an organization with pagination
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of members with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_organization.MemberListResponse'
+        "400":
+          description: Bad request - invalid organization ID
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List organization members
+      tags:
+      - Organization Members
+    post:
+      consumes:
+      - application/json
+      description: Add a new member to the organization with specified role (admin
+        only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Member details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_organization.AddMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Member added successfully
+          schema:
+            $ref: '#/definitions/internal_modules_organization.MemberResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add member to organization
+      tags:
+      - Organization Members
+  /v1/organizations/{orgId}/members/{userId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a member from the organization (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Member removed successfully
+          schema:
+            $ref: '#/definitions/internal_modules_organization.GenericResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - member does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - cannot remove last admin
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove member from organization
+      tags:
+      - Organization Members
+    patch:
+      consumes:
+      - application/json
+      description: Update the role of an organization member (admin only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: New role
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_organization.UpdateMemberRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Member role updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_organization.MemberResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - member does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - cannot remove last admin
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update member role
+      tags:
+      - Organization Members
+  /v1/organizations/{orgId}/problems:
+    get:
+      consumes:
+      - application/json
+      description: Get problems with filtering by difficulty, tags, and search query
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by difficulty (easy, medium, hard)
+        in: query
+        name: difficulty
+        type: string
+      - description: Filter by tag ID (UUID)
+        in: query
+        name: tag_id
+        type: string
+      - description: Search by title
+        in: query
+        name: q
+        type: string
+      - description: Sort field (created_at, title, difficulty)
+        in: query
+        name: sort_by
+        type: string
+      - description: Sort order (asc, desc)
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of problems with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_problem.ProblemListResponse'
+        "400":
+          description: Bad request - invalid organization ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not an organization member
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List problems
+      tags:
+      - Problems
+    post:
+      consumes:
+      - application/json
+      description: Create a new coding problem within an organization (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Problem details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_problem.CreateProblemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Problem created successfully
+          schema:
+            $ref: '#/definitions/internal_modules_problem.ProblemResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - organization does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new problem
+      tags:
+      - Problems
+  /v1/organizations/{orgId}/problems/{problemId}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete a problem using archived_at timestamp (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Problem archived successfully
+          schema:
+            $ref: '#/definitions/internal_modules_problem.GenericResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - problem is referenced by assignments
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete (archive) problem
+      tags:
+      - Problems
+    get:
+      consumes:
+      - application/json
+      description: Retrieve problem details including tags and resources
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Problem details
+          schema:
+            $ref: '#/definitions/internal_modules_problem.ProblemResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not an organization member
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get problem by ID
+      tags:
+      - Problems
+    patch:
+      consumes:
+      - application/json
+      description: Update problem information (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      - description: Updated problem details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_problem.UpdateProblemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Problem updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_problem.ProblemResponse'
+        "400":
+          description: Bad request - validation error or no fields provided
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update problem details
+      tags:
+      - Problems
+  /v1/organizations/{orgId}/problems/{problemId}/resources:
+    get:
+      consumes:
+      - application/json
+      description: Get all resources for a specific problem
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of resources
+          schema:
+            $ref: '#/definitions/internal_modules_problem.ResourceListResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not an organization member
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List problem resources
+      tags:
+      - Resources
+    post:
+      consumes:
+      - application/json
+      description: Add a learning resource to a problem (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      - description: Resource details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_problem.CreateResourceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Resource added successfully
+          schema:
+            $ref: '#/definitions/internal_modules_problem.ResourceResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - problem does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add resource to problem
+      tags:
+      - Resources
+  /v1/organizations/{orgId}/problems/{problemId}/resources/{resourceId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a problem resource (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      - description: Resource ID (UUID)
+        in: path
+        name: resourceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Resource deleted successfully
+          schema:
+            $ref: '#/definitions/internal_modules_problem.GenericResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - resource does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete resource
+      tags:
+      - Resources
+    patch:
+      consumes:
+      - application/json
+      description: Update a problem resource (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      - description: Resource ID (UUID)
+        in: path
+        name: resourceId
+        required: true
+        type: string
+      - description: Updated resource details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_problem.UpdateResourceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Resource updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_problem.ResourceResponse'
+        "400":
+          description: Bad request - validation error or no fields provided
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - resource does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update resource
+      tags:
+      - Resources
+  /v1/organizations/{orgId}/problems/{problemId}/tags:
+    post:
+      consumes:
+      - application/json
+      description: Attach one or more tags to a problem (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      - description: Tag IDs to attach
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_problem.AttachTagsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tags attached successfully
+          schema:
+            $ref: '#/definitions/internal_modules_problem.GenericResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - problem or tags do not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - tags belong to different organization
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Attach tags to problem
+      tags:
+      - Tags
+  /v1/organizations/{orgId}/problems/{problemId}/tags/{tagId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a tag from a problem (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Problem ID (UUID)
+        in: path
+        name: problemId
+        required: true
+        type: string
+      - description: Tag ID (UUID)
+        in: path
+        name: tagId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tag detached successfully
+          schema:
+            $ref: '#/definitions/internal_modules_problem.GenericResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - problem or tag does not exist
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Detach tag from problem
+      tags:
+      - Tags
+  /v1/organizations/{orgId}/tags:
+    get:
+      consumes:
+      - application/json
+      description: Get all tags for an organization with optional search
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Search by tag name
+        in: query
+        name: q
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of tags
+          schema:
+            $ref: '#/definitions/internal_modules_problem.TagListResponse'
+        "400":
+          description: Bad request - invalid organization ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not an organization member
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List tags
+      tags:
+      - Tags
+    post:
+      consumes:
+      - application/json
+      description: Create a new tag for categorizing problems (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Tag details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_problem.CreateTagRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Tag created successfully
+          schema:
+            $ref: '#/definitions/internal_modules_problem.TagResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - tag name already exists in organization
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new tag
+      tags:
+      - Tags
+  /v1/organizations/{orgId}/tags/{tagId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a tag if not attached to any problems (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Tag ID (UUID)
+        in: path
+        name: tagId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tag deleted successfully
+          schema:
+            $ref: '#/definitions/internal_modules_problem.GenericResponse'
+        "400":
+          description: Bad request - invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - tag does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - tag is attached to problems
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete tag
+      tags:
+      - Tags
+    patch:
+      consumes:
+      - application/json
+      description: Update tag name (mentor only)
+      parameters:
+      - description: Organization ID (UUID)
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Tag ID (UUID)
+        in: path
+        name: tagId
+        required: true
+        type: string
+      - description: Updated tag details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_problem.UpdateTagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tag updated successfully
+          schema:
+            $ref: '#/definitions/internal_modules_problem.TagResponse'
+        "400":
+          description: Bad request - validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - mentor role required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not found - tag does not exist
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict - tag name already exists
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update tag name
+      tags:
+      - Tags
+  /v1/organizations/pending:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all organizations with PENDING_APPROVAL status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of pending organizations
+          schema:
+            $ref: '#/definitions/internal_modules_organization.OrganizationListResponse'
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - super admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get pending organizations (super admin only)
+      tags:
+      - Organizations
+  /v1/super-admin/bootcamps:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all bootcamps across all organizations with pagination
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all bootcamps with pagination
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - super admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all bootcamps (super admin only)
+      tags:
+      - Bootcamps
+  /v1/super-admin/leaderboards:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve leaderboard entries across all organizations and bootcamps.
+        Super admin read-only access.
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Leaderboard entries with organization and bootcamp context
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.SuperAdminLeaderboardResponse'
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - super_admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: View all leaderboards (super admin only)
+      tags:
+      - Leaderboards
+  /v1/super-admin/organizations:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all organizations across the platform with pagination
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all organizations with pagination
+          schema:
+            $ref: '#/definitions/internal_modules_organization.OrganizationListResponse'
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - super admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all organizations (super admin only)
+      tags:
+      - Organizations
+  /v1/super-admin/polls:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve aggregated poll results across all organizations and bootcamps.
+        Super admin read-only access.
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Poll results with organization and bootcamp context
+          schema:
+            $ref: '#/definitions/internal_modules_analytics.SuperAdminPollResultsResponse'
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - super_admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: View all poll results (super admin only)
+      tags:
+      - Polls
+  /v1/super-admin/problems:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all problems across all organizations with pagination
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all problems with pagination
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - invalid or missing token
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - super admin role required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all problems (super admin only)
+      tags:
+      - Problems
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
+tags:
+- description: Organization management endpoints
+  name: Organizations
+- description: Organization member management endpoints
+  name: Organization Members
+- description: Bootcamp lifecycle management endpoints
+  name: Bootcamps
+- description: Bootcamp enrollment management endpoints
+  name: Bootcamp Enrollments
