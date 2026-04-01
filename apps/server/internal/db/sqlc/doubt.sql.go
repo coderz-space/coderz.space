@@ -11,6 +11,30 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const checkResolverInOrganization = `-- name: CheckResolverInOrganization :one
+SELECT EXISTS(
+    SELECT 1
+    FROM assignment_problems ap
+    JOIN assignments a ON ap.assignment_id = a.id
+    JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
+    JOIN bootcamps b ON be.bootcamp_id = b.id
+    JOIN organization_members om ON b.organization_id = om.organization_id
+    WHERE ap.id = $1 AND om.id = $2
+)
+`
+
+type CheckResolverInOrganizationParams struct {
+	AssignmentProblemID pgtype.UUID `db:"assignment_problem_id" json:"assignment_problem_id"`
+	MemberID            pgtype.UUID `db:"member_id" json:"member_id"`
+}
+
+func (q *Queries) CheckResolverInOrganization(ctx context.Context, arg CheckResolverInOrganizationParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkResolverInOrganization, arg.AssignmentProblemID, arg.MemberID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const countDoubtsByBootcamp = `-- name: CountDoubtsByBootcamp :one
 SELECT COUNT(*) FROM doubts d
 JOIN assignment_problems ap ON d.assignment_problem_id = ap.id
@@ -204,7 +228,7 @@ func (q *Queries) GetDoubtWithDetails(ctx context.Context, id pgtype.UUID) (GetD
 }
 
 const getEnrollmentByMemberID = `-- name: GetEnrollmentByMemberID :one
-SELECT be.id, be.bootcamp_id, be.organization_member_id, be.role, be.status, be.enrolled_at FROM bootcamp_enrollments be
+SELECT be.id, be.bootcamp_id, be.organization_member_id, be.role, be.status, be.enrolled_at, be.assigned_sheet_key FROM bootcamp_enrollments be
 WHERE be.organization_member_id = $1 AND be.bootcamp_id = $2
 LIMIT 1
 `
@@ -224,6 +248,7 @@ func (q *Queries) GetEnrollmentByMemberID(ctx context.Context, arg GetEnrollment
 		&i.Role,
 		&i.Status,
 		&i.EnrolledAt,
+		&i.AssignedSheetKey,
 	)
 	return i, err
 }
