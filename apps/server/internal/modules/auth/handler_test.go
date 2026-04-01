@@ -376,30 +376,42 @@ func TestRefreshResponseStructure(t *testing.T) {
 //
 // Requirements: 0.7
 func TestLogoutTokenRevocation(t *testing.T) {
-	tests := []struct {
-		name     string
-		scenario string
-	}{
-		{
-			name:     "logout with refresh token deletes token",
-			scenario: "refresh_token cookie present",
-		},
-		{
-			name:     "logout without refresh token succeeds",
-			scenario: "no refresh_token cookie",
-		},
-	}
+	t.Run("logout without refresh token clears cookies", func(t *testing.T) {
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodPost, "/v1/auth/logout", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// This test documents that Logout:
-			// - Deletes refresh token from database if present
-			// - Clears access_token and refresh_token cookies (MaxAge=-1)
-			// - Always returns success (idempotent)
-			// - Returns HTTP 200 status
-			t.Logf("Scenario: %s", tt.scenario)
-		})
-	}
+		h := &Handler{} // No service needed when no refresh_token cookie exists
+
+		err := h.Logout(c)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+		}
+
+		cookies := rec.Result().Cookies()
+		accessCleared := false
+		refreshCleared := false
+		for _, cookie := range cookies {
+			if cookie.Name == "access_token" && cookie.MaxAge == -1 {
+				accessCleared = true
+			}
+			if cookie.Name == "refresh_token" && cookie.MaxAge == -1 {
+				refreshCleared = true
+			}
+		}
+
+		if !accessCleared {
+			t.Error("access_token cookie was not cleared")
+		}
+		if !refreshCleared {
+			t.Error("refresh_token cookie was not cleared")
+		}
+	})
 }
 
 // TestLogoutResponseStructure verifies response format
@@ -407,11 +419,26 @@ func TestLogoutTokenRevocation(t *testing.T) {
 // Requirements: 0.7
 func TestLogoutResponseStructure(t *testing.T) {
 	t.Run("response indicates success", func(t *testing.T) {
-		// This test documents that Logout returns:
-		// - success: true
-		// - data: {} (empty object)
-		// - HTTP 200 status
-		t.Log("Response follows GenericResponse structure")
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodPost, "/v1/auth/logout", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		h := &Handler{} // No service needed when no refresh_token cookie exists
+
+		err := h.Logout(c)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+		}
+
+		body := rec.Body.String()
+		if !strings.Contains(body, "\"success\":true") {
+			t.Errorf("expected response to contain success:true, got %s", body)
+		}
 	})
 }
 
