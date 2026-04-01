@@ -218,9 +218,17 @@ func (s *Service) ResolveDoubt(ctx context.Context, doubtID, resolvedByMemberID 
 		return mapDoubtWithDetailsToData(&doubtWithDetails), nil
 	}
 
-	// TODO: Validate resolver belongs to same organization
-	// This would require joining through assignment_problems -> assignments -> bootcamp_enrollments
-	// For now, we trust the handler to enforce this through role checks
+	// Validate resolver belongs to same organization
+	inOrg, err := s.queries.CheckResolverInOrganization(ctx, db.CheckResolverInOrganizationParams{
+		AssignmentProblemID: existingDoubt.AssignmentProblemID,
+		MemberID:            resolvedByMemberID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !inOrg {
+		return nil, errors.New("RESOLVER_NOT_IN_ORGANIZATION")
+	}
 
 	// Set resolved to true, resolved_by, resolved_at
 	doubt, err := s.queries.ResolveDoubt(ctx, db.ResolveDoubtParams{

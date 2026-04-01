@@ -11,8 +11,6 @@ WORKDIR /app
 # Copy go mod files
 COPY go.mod go.sum ./
 
-# Tidy dependencies (ensures go.sum is up to date)
-RUN go mod tidy
 # Download dependencies
 RUN go mod download
 
@@ -20,6 +18,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
+RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go
 
 # Stage 2: Runtime stage

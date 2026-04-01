@@ -84,7 +84,7 @@ INSERT INTO users (
 ) VALUES (
     $1, $2, $3, $4, $5, $6
 )
-RETURNING id, name, email, email_verified, password_hash, role, google_id, avatar_url, created_at, updated_at
+RETURNING id, name, email, email_verified, password_hash, role, google_id, avatar_url, created_at, updated_at, username, bio, github_url, linkedin_url
 `
 
 type CreateUserParams struct {
@@ -117,6 +117,10 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.AvatarUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Username,
+		&i.Bio,
+		&i.GithubUrl,
+		&i.LinkedinUrl,
 	)
 	return i, err
 }
@@ -220,7 +224,7 @@ func (q *Queries) GetRefreshToken(ctx context.Context, tokenHash string) (Refres
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, email, email_verified, password_hash, role, google_id, avatar_url, created_at, updated_at FROM users
+SELECT id, name, email, email_verified, password_hash, role, google_id, avatar_url, created_at, updated_at, username, bio, github_url, linkedin_url FROM users
 WHERE email = $1 LIMIT 1
 `
 
@@ -238,12 +242,16 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email pgtype.Text) (User, 
 		&i.AvatarUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Username,
+		&i.Bio,
+		&i.GithubUrl,
+		&i.LinkedinUrl,
 	)
 	return i, err
 }
 
 const getUserByGoogleId = `-- name: GetUserByGoogleId :one
-SELECT id, name, email, email_verified, password_hash, role, google_id, avatar_url, created_at, updated_at FROM users
+SELECT id, name, email, email_verified, password_hash, role, google_id, avatar_url, created_at, updated_at, username, bio, github_url, linkedin_url FROM users
 WHERE google_id = $1 LIMIT 1
 `
 
@@ -261,12 +269,16 @@ func (q *Queries) GetUserByGoogleId(ctx context.Context, googleID pgtype.Text) (
 		&i.AvatarUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Username,
+		&i.Bio,
+		&i.GithubUrl,
+		&i.LinkedinUrl,
 	)
 	return i, err
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, name, email, email_verified, password_hash, role, google_id, avatar_url, created_at, updated_at FROM users
+SELECT id, name, email, email_verified, password_hash, role, google_id, avatar_url, created_at, updated_at, username, bio, github_url, linkedin_url FROM users
 WHERE id = $1 LIMIT 1
 `
 
@@ -284,6 +296,10 @@ func (q *Queries) GetUserById(ctx context.Context, id pgtype.UUID) (User, error)
 		&i.AvatarUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Username,
+		&i.Bio,
+		&i.GithubUrl,
+		&i.LinkedinUrl,
 	)
 	return i, err
 }
@@ -298,7 +314,7 @@ SET
     email_verified = COALESCE($6, email_verified),
     updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
-RETURNING id, name, email, email_verified, password_hash, role, google_id, avatar_url, created_at, updated_at
+RETURNING id, name, email, email_verified, password_hash, role, google_id, avatar_url, created_at, updated_at, username, bio, github_url, linkedin_url
 `
 
 type UpdateUserParams struct {
@@ -331,6 +347,10 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.AvatarUrl,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Username,
+		&i.Bio,
+		&i.GithubUrl,
+		&i.LinkedinUrl,
 	)
 	return i, err
 }
