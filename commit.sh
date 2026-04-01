@@ -1,0 +1,1 @@
+git commit -m "🧪 Add test for auth Refresh handler" -m "🎯 What: The Refresh handler inside apps/server/internal/modules/auth/handler.go was lacking test coverage. Added a new unit test TestRefresh inside handler_test.go." -m "📊 Coverage: Tested the missing refresh token edge case which returns 401 Unauthorized." -m "✨ Result: Improved coverage for the Refresh handler."

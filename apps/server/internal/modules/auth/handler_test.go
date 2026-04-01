@@ -1,6 +1,9 @@
 package auth
 
 import (
+	"github.com/labstack/echo/v5"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -741,5 +744,23 @@ func TestRoutePrefix(t *testing.T) {
 			// - Separate public and protected routes
 			t.Logf("Route: %s %s (public=%v)", route.method, route.path, route.public)
 		})
+	}
+}
+
+func TestRefresh(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/v1/auth/refresh", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	h := NewHandler(nil)
+
+	err := h.Refresh(c)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("expected status %d, got %d", http.StatusUnauthorized, rec.Code)
 	}
 }
