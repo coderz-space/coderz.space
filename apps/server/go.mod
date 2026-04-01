@@ -1,14 +1,14 @@
 module github.com/coderz-space/coderz.space
 
-go 1.24.3
+go 1.25.0
 
 require (
 	github.com/go-playground/validator/v10 v10.30.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/joho/godotenv v1.5.1
-	github.com/labstack/echo-jwt/v5 v5.0.1
-	github.com/labstack/echo/v5 v5.0.4
+	github.com/labstack/echo-jwt/v5 v5.0.0
+	github.com/labstack/echo/v5 v5.0.3
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/echo-swagger v1.5.0
 	github.com/swaggo/swag v1.16.6
