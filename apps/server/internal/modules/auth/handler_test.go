@@ -1,13 +1,37 @@
 package auth
 
 import (
-	"strings"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
+	"github.com/coderz-space/coderz.space/internal/config"
 	"github.com/labstack/echo/v5"
+	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/coderz-space/coderz.space/internal/common/middleware/auth"
+	"github.com/coderz-space/coderz.space/internal/common/utils"
+	"github.com/coderz-space/coderz.space/internal/config"
+	db "github.com/coderz-space/coderz.space/internal/db/sqlc"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/labstack/echo/v5"
+	"github.com/stretchr/testify/assert"
 )
+
+// MockQuerier implements db.Querier for testing
+type MockQuerier struct {
+	db.Querier
+	GetUserByIdFunc func(ctx context.Context, id pgtype.UUID) (db.User, error)
+}
+
+func (m *MockQuerier) GetUserById(ctx context.Context, id pgtype.UUID) (db.User, error) {
+	if m.GetUserByIdFunc != nil {
+		return m.GetUserByIdFunc(ctx, id)
+	}
+	return db.User{}, nil
+}
+
 
 // TestSignupPasswordComplexity verifies password validation requirements
 //
@@ -422,45 +446,89 @@ func TestLogoutResponseStructure(t *testing.T) {
 //
 // Requirements: 0.7, 18.1-18.5
 func TestMeAuthentication(t *testing.T) {
+	e := echo.New()
+
+	validUUIDStr := "550e8400-e29b-41d4-a716-446655440000"
+
 	tests := []struct {
 		name           string
 		scenario       string
+		setupContext   func(c echo.Context)
 		expectedError  string
 		expectedStatus int
 	}{
 		{
+			name:           "missing claims fails",
+			scenario:       "no claims in context",
+			setupContext:   func(c echo.Context) {},
+			expectedStatus: http.StatusUnauthorized,
+			expectedError:  "INVALID_TOKEN_CLAIMS",
+		},
+		{
+			name:           "invalid type for claims fails",
+			scenario:       "claims is not *utils.TokenPayload",
+			setupContext:   func(c echo.Context) {
+				c.Set(auth.ClaimsKey, "invalid claims")
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedError:  "INVALID_TOKEN_CLAIMS",
+		},
+		{
+			name:           "invalid user ID in claims fails",
+			scenario:       "claims has invalid UUID format",
+			setupContext:   func(c echo.Context) {
+				payload := &utils.TokenPayload{UserID: "invalid-uuid"}
+				c.Set(auth.ClaimsKey, payload)
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedError:  "INVALID_USER_ID",
+		},
+		{
 			name:           "authenticated user can get profile",
 			scenario:       "valid JWT token with claims",
-			expectedStatus: 200,
+			setupContext:   func(c echo.Context) {
+				payload := &utils.TokenPayload{UserID: validUUIDStr}
+				c.Set(auth.ClaimsKey, payload)
+			},
+			expectedStatus: http.StatusOK,
 			expectedError:  "",
-		},
-		{
-			name:           "missing token fails",
-			scenario:       "no Authorization header or cookie",
-			expectedStatus: 401,
-			expectedError:  "UNAUTHORIZED",
-		},
-		{
-			name:           "invalid token fails",
-			scenario:       "malformed or expired JWT token",
-			expectedStatus: 401,
-			expectedError:  "UNAUTHORIZED",
-		},
-		{
-			name:           "invalid claims fails",
-			scenario:       "token valid but claims missing",
-			expectedStatus: 401,
-			expectedError:  "INVALID_TOKEN_CLAIMS",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// This test documents that Me:
-			// - Requires valid JWT authentication
-			// - Extracts user claims from auth context
-			// - Returns 401 UNAUTHORIZED for missing/invalid auth
-			t.Logf("Scenario: %s expects status %d", tt.scenario, tt.expectedStatus)
+			req := httptest.NewRequest(http.MethodGet, "/v1/auth/me", nil)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+
+			tt.setupContext(*c)
+
+			mockQuerier := &MockQuerier{
+				GetUserByIdFunc: func(ctx context.Context, id pgtype.UUID) (db.User, error) {
+					return db.User{
+						ID:            id,
+						Name:          "Test User",
+						Email:         pgtype.Text{String: "test@example.com", Valid: true},
+						EmailVerified: true,
+					}, nil
+				},
+			}
+			service := NewService(mockQuerier, &config.Config{})
+			handler := NewHandler(service)
+
+			err := handler.Me(c)
+			if err != nil {
+				// if Echo error handling returns an error
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+
+			if tt.expectedError != "" {
+				var resp map[string]interface{}
+				json.Unmarshal(rec.Body.Bytes(), &resp)
+				assert.Equal(t, tt.expectedError, resp["message"])
+			}
 		})
 	}
 }
@@ -469,32 +537,68 @@ func TestMeAuthentication(t *testing.T) {
 //
 // Requirements: 0.7
 func TestMeUserNotFound(t *testing.T) {
+	e := echo.New()
+	validUUIDStr := "550e8400-e29b-41d4-a716-446655440000"
+
 	tests := []struct {
 		name           string
 		scenario       string
+		setupQuerier   func(m *MockQuerier)
 		expectedError  string
 		expectedStatus int
 	}{
 		{
 			name:           "existing user returns profile",
 			scenario:       "user_id from token exists in database",
-			expectedStatus: 200,
+			setupQuerier: func(m *MockQuerier) {
+				m.GetUserByIdFunc = func(ctx context.Context, id pgtype.UUID) (db.User, error) {
+					return db.User{
+						ID:            id,
+						Name:          "Test User",
+						Email:         pgtype.Text{String: "test@example.com", Valid: true},
+					}, nil
+				}
+			},
+			expectedStatus: http.StatusOK,
 			expectedError:  "",
 		},
 		{
 			name:           "deleted user returns 404",
 			scenario:       "user_id from token does not exist",
-			expectedStatus: 404,
+			setupQuerier: func(m *MockQuerier) {
+				m.GetUserByIdFunc = func(ctx context.Context, id pgtype.UUID) (db.User, error) {
+					return db.User{}, errors.New("not found")
+				}
+			},
+			expectedStatus: http.StatusNotFound,
 			expectedError:  "USER_NOT_FOUND",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// This test documents that Me:
-			// - Looks up user by ID from token claims
-			// - Returns 404 USER_NOT_FOUND if user deleted
-			t.Logf("Scenario: %s expects status %d", tt.scenario, tt.expectedStatus)
+			req := httptest.NewRequest(http.MethodGet, "/v1/auth/me", nil)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+
+			payload := &utils.TokenPayload{UserID: validUUIDStr}
+			c.Set(auth.ClaimsKey, payload)
+
+			mockQuerier := &MockQuerier{}
+			tt.setupQuerier(mockQuerier)
+
+			service := NewService(mockQuerier, &config.Config{})
+			handler := NewHandler(service)
+
+			err := handler.Me(c)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+
+			if tt.expectedError != "" {
+				var resp map[string]interface{}
+				json.Unmarshal(rec.Body.Bytes(), &resp)
+				assert.Equal(t, tt.expectedError, resp["message"])
+			}
 		})
 	}
 }
@@ -504,42 +608,46 @@ func TestMeUserNotFound(t *testing.T) {
 // Requirements: 0.7
 func TestMeResponseStructure(t *testing.T) {
 	t.Run("response includes user profile", func(t *testing.T) {
-		// This test documents that Me returns:
-		// - success: true
-		// - data: user object with id, name, email, emailVerified
-		// - HTTP 200 status
-		t.Log("Response follows UserProfileResponse structure")
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/v1/auth/me", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+
+		validUUIDStr := "550e8400-e29b-41d4-a716-446655440000"
+		validUUID, _ := utils.StringToUUID(validUUIDStr)
+		payload := &utils.TokenPayload{UserID: validUUIDStr}
+		c.Set(auth.ClaimsKey, payload)
+
+		mockQuerier := &MockQuerier{
+			GetUserByIdFunc: func(ctx context.Context, id pgtype.UUID) (db.User, error) {
+				return db.User{
+					ID:            id,
+					Name:          "Test User",
+					Email:         pgtype.Text{String: "test@example.com", Valid: true},
+					EmailVerified: true,
+				}, nil
+			},
+		}
+
+		service := NewService(mockQuerier, &config.Config{})
+		handler := NewHandler(service)
+
+		err := handler.Me(c)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		var resp UserProfileResponse
+		err = json.Unmarshal(rec.Body.Bytes(), &resp)
+		assert.NoError(t, err)
+
+		assert.True(t, resp.Success)
+		assert.Equal(t, "Test User", resp.Data.Name)
+		assert.Equal(t, "test@example.com", resp.Data.Email)
+		assert.True(t, resp.Data.EmailVerified)
+
+		// Assert ID matches
+		assert.Equal(t, validUUID.Bytes, resp.Data.ID.Bytes)
 	})
-}
-
-// TestForgotPasswordEmailEnumeration verifies security behavior
-//
-// Requirements: 0.2
-func TestForgotPasswordEmailEnumeration(t *testing.T) {
-	tests := []struct {
-		name     string
-		scenario string
-	}{
-		{
-			name:     "existing email returns success",
-			scenario: "email exists in database",
-		},
-		{
-			name:     "non-existent email returns success",
-			scenario: "email does not exist in database",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// This test documents that ForgotPassword:
-			// - Always returns success (HTTP 200)
-			// - Does not reveal whether email exists
-			// - Prevents email enumeration attacks
-			// - Only sends reset token if email exists
-			t.Logf("Scenario: %s always returns success", tt.scenario)
-		})
-	}
 }
 
 // TestForgotPasswordTokenGeneration verifies token creation
@@ -772,6 +880,69 @@ func TestRoutePrefix(t *testing.T) {
 			// - Match pattern used by other modules
 			// - Separate public and protected routes
 			t.Logf("Route: %s %s (public=%v)", route.method, route.path, route.public)
+		})
+	}
+}
+
+func TestSetAuthCookies(t *testing.T) {
+	e := echo.New()
+
+	tests := []struct {
+		name         string
+		scheme       string
+		expectSecure bool
+	}{
+		{
+			name:         "HTTPS scheme sets secure=true",
+			scheme:       "https",
+			expectSecure: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set("X-Forwarded-Proto", tt.scheme)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+
+			// We need a dummy config to test the maxage calculation
+			svc := &Service{
+				config: &config.Config{
+					RefreshTokenExpires: 24 * time.Hour,
+				},
+			}
+			h := &Handler{service: svc}
+
+			h.setAuthCookies(c, "access_token_123", "refresh_token_456")
+
+			cookies := rec.Result().Cookies()
+			assert.Len(t, cookies, 2)
+
+			var accessCookie, refreshCookie *http.Cookie
+			for _, cookie := range cookies {
+				if cookie.Name == "access_token" {
+					accessCookie = cookie
+				} else if cookie.Name == "refresh_token" {
+					refreshCookie = cookie
+				}
+			}
+
+			assert.NotNil(t, accessCookie)
+			assert.Equal(t, "access_token_123", accessCookie.Value)
+			assert.Equal(t, "/", accessCookie.Path)
+			assert.True(t, accessCookie.HttpOnly)
+			assert.Equal(t, tt.expectSecure, accessCookie.Secure)
+			assert.Equal(t, http.SameSiteStrictMode, accessCookie.SameSite)
+			assert.Equal(t, 900, accessCookie.MaxAge)
+
+			assert.NotNil(t, refreshCookie)
+			assert.Equal(t, "refresh_token_456", refreshCookie.Value)
+			assert.Equal(t, "/", refreshCookie.Path)
+			assert.True(t, refreshCookie.HttpOnly)
+			assert.Equal(t, tt.expectSecure, refreshCookie.Secure)
+			assert.Equal(t, http.SameSiteStrictMode, refreshCookie.SameSite)
+			assert.Equal(t, int((24 * time.Hour).Seconds()), refreshCookie.MaxAge)
 		})
 	}
 }
