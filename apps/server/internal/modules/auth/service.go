@@ -18,11 +18,11 @@ import (
 )
 
 type Service struct {
-	queries *db.Queries
+	queries db.Querier
 	config  *config.Config
 }
 
-func NewService(queries *db.Queries, config *config.Config) *Service {
+func NewService(queries db.Querier, config *config.Config) *Service {
 	return &Service{queries: queries, config: config}
 }
 
