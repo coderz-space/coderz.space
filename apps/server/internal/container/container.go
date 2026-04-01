@@ -5,6 +5,7 @@ import (
 	"github.com/coderz-space/coderz.space/internal/db"
 	db_sqlc "github.com/coderz-space/coderz.space/internal/db/sqlc"
 	"github.com/coderz-space/coderz.space/internal/modules/analytics"
+	"github.com/coderz-space/coderz.space/internal/modules/app"
 	"github.com/coderz-space/coderz.space/internal/modules/assignment"
 	"github.com/coderz-space/coderz.space/internal/modules/auth"
 	"github.com/coderz-space/coderz.space/internal/modules/bootcamp"
@@ -49,6 +50,10 @@ type Container struct {
 	AnalyticsHandler *analytics.Handler
 	AnalyticsService *analytics.Service
 
+	// app facade
+	AppHandler *app.Handler
+	AppService *app.Service
+
 	// DB
 	DB *pgxpool.Pool
 }
@@ -90,6 +95,10 @@ func NewContainer(config *config.Config, logger *zap.Logger) (*Container, error)
 	analyticsService := analytics.NewService(pool)
 	analyticsHandler := analytics.NewHandler(analyticsService)
 
+	// Initialize app facade module
+	appService := app.NewService(pool)
+	appHandler := app.NewHandler(appService)
+
 	container := &Container{
 		Config:              config,
 		Logger:              logger,
@@ -107,6 +116,8 @@ func NewContainer(config *config.Config, logger *zap.Logger) (*Container, error)
 		ProgressService:     progressService,
 		AnalyticsHandler:    analyticsHandler,
 		AnalyticsService:    analyticsService,
+		AppHandler:          appHandler,
+		AppService:          appService,
 		DB:                  pool,
 	}
 	return container, nil

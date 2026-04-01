@@ -111,6 +111,30 @@ func (v *validator) registerCustomValidators() {
 	if err != nil {
 		panic(err)
 	}
+
+	// Register password complexity validator
+	err = v.validator.RegisterValidation("password_complexity", func(fl go_validator.FieldLevel) bool {
+		value := fl.Field().String()
+		hasLetter := false
+		hasNumber := false
+
+		for _, char := range value {
+			if (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') {
+				hasLetter = true
+			}
+			if char >= '0' && char <= '9' {
+				hasNumber = true
+			}
+			if hasLetter && hasNumber {
+				return true
+			}
+		}
+
+		return false
+	})
+	if err != nil {
+		panic(err)
+	}
 }
 
 // you can register your custom validation

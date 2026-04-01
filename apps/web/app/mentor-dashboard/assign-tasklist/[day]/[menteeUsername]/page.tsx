@@ -1,17 +1,12 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getMenteeRequests } from "@/services";
-import type { MenteeRequest } from "@/types";
+import { getMenteeRequests, getSheets } from "@/services/mentor";
+import type { MenteeRequest, Sheet } from "@/types";
 
-const TASKLISTS = [
-  { id: "gfg-dsa-360", name: "GFG DSA 360" },
-  { id: "strivers-dsa-sheet", name: "Striver's DSA Sheet" },
-];
-
-function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 export default function MenteeSheetSelectorPage({
@@ -21,54 +16,47 @@ export default function MenteeSheetSelectorPage({
 }) {
   const { day, menteeUsername } = use(params);
   const router = useRouter();
-
   const [mentee, setMentee] = useState<MenteeRequest | null>(null);
+  const [sheets, setSheets] = useState<Sheet[]>([]);
 
   useEffect(() => {
-    const loadMentee = async () => {
-      const requests = await getMenteeRequests();
-      const found = requests.find(
-        (r) => r.username === menteeUsername && r.status === "approved"
-      );
-      setMentee(found || null);
+    const loadPage = async () => {
+      const [requests, availableSheets] = await Promise.all([getMenteeRequests(), getSheets()]);
+      setMentee(requests.find((request) => request.username === menteeUsername) ?? null);
+      setSheets(availableSheets);
     };
-    loadMentee();
+
+    void loadPage();
   }, [menteeUsername]);
 
   return (
     <div className="max-w-2xl">
-      <button
-        onClick={() => router.back()}
-        className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 mb-4 flex items-center gap-1 transition-colors"
-      >
+      <button onClick={() => router.back()} className="mb-4 flex items-center gap-1 text-xs text-gray-500 transition-colors hover:text-gray-700 dark:hover:text-gray-300">
         ← Back
       </button>
 
-      <h1 className="text-2xl font-bold text-purple-400 mb-1">Assign Questions</h1>
-      <p className="text-gray-500 text-sm mb-8">
+      <h1 className="mb-1 text-2xl font-bold text-purple-400">Assign Questions</h1>
+      <p className="mb-8 text-sm text-gray-500">
         To:{" "}
-        <span className="text-gray-700 dark:text-gray-300 font-medium">
+        <span className="font-medium text-gray-700 dark:text-gray-300">
           {mentee ? `${mentee.firstName} ${mentee.lastName}` : menteeUsername}
         </span>{" "}
         · {capitalize(day)}
       </p>
 
       <div className="flex flex-col gap-4">
-        {TASKLISTS.map((list) => (
+        {sheets.map((sheet) => (
           <div
-            key={list.id}
-            className="flex items-center justify-between gap-4 border border-gray-200 dark:border-gray-700 rounded-xl px-6 py-5 bg-white dark:bg-gray-900"
+            key={sheet.key}
+            className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white px-6 py-5 dark:border-gray-700 dark:bg-gray-900"
           >
-            <span className="text-gray-800 dark:text-gray-100 font-semibold text-base">
-              {list.name}
-            </span>
+            <div>
+              <span className="text-base font-semibold text-gray-800 dark:text-gray-100">{sheet.name}</span>
+              <p className="mt-1 text-xs text-gray-500">{sheet.questions.length} questions</p>
+            </div>
             <button
-              onClick={() =>
-                router.push(
-                  `/mentor-dashboard/assign-tasklist/${day}/${menteeUsername}/${list.id}`
-                )
-              }
-              className="text-sm font-semibold px-4 py-2 rounded-lg bg-purple-700 hover:bg-purple-600 text-white transition-colors shrink-0"
+              onClick={() => router.push(`/mentor-dashboard/assign-tasklist/${day}/${menteeUsername}/${sheet.key}`)}
+              className="shrink-0 rounded-lg bg-purple-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-600"
             >
               Assign Questions
             </button>

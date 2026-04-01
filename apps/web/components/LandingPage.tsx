@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import type { Role } from "@/types";
-import { selectRole } from "@/services";
 import HeroSection from "@/components/HeroSection";
 import RoleCard from "@/components/RoleCard";
 import MenteeLoginCard from "@/components/MenteeLoginCard";
 import MenteeSignUpCard from "@/components/MenteeSignUpCard";
+import { selectRole } from "@/services/roleService";
 
 type View = "none" | "roleSelect" | "login" | "signUp";
 

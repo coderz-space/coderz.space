@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/coderz-space/coderz.space/internal/common/middleware/auth"
@@ -36,20 +35,15 @@ func (h *Handler) Signup(c *echo.Context) error {
 	if err := (&echo.DefaultBinder{}).Bind(c, &body); err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", "INVALID_REQUEST_BODY", nil, err)
 	}
-	fmt.Println("hello world😅 1")
 
 	if err := validator.NewValidator().ValidateStruct(body); err != nil {
-		fmt.Println("hello world😅 2")
-
 		return response.NewResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "VALIDATION_FAILED", nil, err)
 	}
-	fmt.Println("hello world😅 x")
 
 	data, err := h.service.Signup(c.Request().Context(), body)
 	if err != nil {
 		return response.NewResponse(c, http.StatusBadRequest, "BAD_REQUEST", err.Error(), nil, nil)
 	}
-	fmt.Println("hello world😅 3")
 
 	h.setAuthCookies(c, data.AccessToken, data.RefreshToken)
 
@@ -240,12 +234,14 @@ func (h *Handler) ResetPassword(c *echo.Context) error {
 }
 
 func (h *Handler) setAuthCookies(c *echo.Context, accessToken, refreshToken string) {
+	secure := c.Scheme() == "https"
+
 	accessCookie := &http.Cookie{
 		Name:     "access_token",
 		Value:    accessToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   secure,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   900, // 15 minutes
 	}
@@ -256,7 +252,7 @@ func (h *Handler) setAuthCookies(c *echo.Context, accessToken, refreshToken stri
 		Value:    refreshToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   secure,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   int(h.service.config.RefreshTokenExpires.Seconds()),
 	}

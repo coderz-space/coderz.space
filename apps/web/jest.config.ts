@@ -9,6 +9,15 @@ const config: Config = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   setupFilesAfterEnv: ['@testing-library/jest-dom'],
+  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
+  modulePathIgnorePatterns: ['<rootDir>/.next/'],
+  maxWorkers: 1,
+  collectCoverageFrom: [
+    'components/**/*.{ts,tsx}',
+    'services/**/*.{ts,tsx}',
+    'app/**/*.{ts,tsx}',
+    '!**/*.d.ts',
+  ],
 };
 
 export default config;
