@@ -24,6 +24,8 @@ type Querier interface {
 	AssignGroupToMentee(ctx context.Context, arg AssignGroupToMenteeParams) (Assignment, error)
 	CastPollVote(ctx context.Context, arg CastPollVoteParams) (PollVote, error)
 	CheckDuplicateActiveAssignment(ctx context.Context, arg CheckDuplicateActiveAssignmentParams) (int64, error)
+	CheckProblemInActiveAssignments(ctx context.Context, problemID pgtype.UUID) (int64, error)
+	CheckProblemInAssignmentGroups(ctx context.Context, problemID pgtype.UUID) (int64, error)
 	CheckVoteExists(ctx context.Context, arg CheckVoteExistsParams) (bool, error)
 	ClearAssignmentGroupProblems(ctx context.Context, assignmentGroupID pgtype.UUID) error
 	ClearExpiredRefreshTokens(ctx context.Context) error
