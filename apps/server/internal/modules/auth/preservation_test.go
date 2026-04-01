@@ -294,3 +294,53 @@ func isValidEmail(email string) bool {
 	}
 	return true
 }
+
+// TestResetPasswordPreservation_InvalidRequests verifies that invalid reset password requests
+// produce validation errors with status 400.
+//
+// **Validates: Requirements 0.4, 0.5**
+func TestResetPasswordPreservation_InvalidRequests(t *testing.T) {
+	testCases := []struct {
+		name        string
+		requestBody map[string]interface{}
+		description string
+	}{
+		{
+			name:        "missing_token",
+			requestBody: map[string]interface{}{"newPassword": "NewPassword123"},
+			description: "Missing required token field",
+		},
+		{
+			name:        "missing_password",
+			requestBody: map[string]interface{}{"token": "valid-token-123"},
+			description: "Missing required password field",
+		},
+		{
+			name:        "password_too_short",
+			requestBody: map[string]interface{}{"token": "valid-token-123", "newPassword": "Pass1"},
+			description: "Password is too short",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			bodyBytes, _ := json.Marshal(tc.requestBody)
+			e := echo.New()
+			req := httptest.NewRequest(http.MethodPost, "/v1/auth/reset-password", bytes.NewReader(bodyBytes))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+
+			handler := NewHandler(&Service{})
+			err := handler.ResetPassword(c)
+
+			// Note: This test verifies that we return a Bad Request early without calling the service
+			if err != nil {
+				t.Logf("Expected no generic error (handled by NewResponse), but err=%v", err)
+			}
+			if rec.Code != http.StatusBadRequest {
+				t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, rec.Code)
+			}
+		})
+	}
+}
