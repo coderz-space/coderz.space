@@ -31,7 +31,6 @@ type Querier interface {
 	CountAllLeaderboards(ctx context.Context) (int64, error)
 	CountAllOrganizations(ctx context.Context) (int64, error)
 	CountAllPolls(ctx context.Context) (int64, error)
-	CountProblemAssignments(ctx context.Context, problemID pgtype.UUID) (int64, error)
 	CountAllProblems(ctx context.Context) (int64, error)
 	CountAssignmentGroupsByBootcamp(ctx context.Context, arg CountAssignmentGroupsByBootcampParams) (int64, error)
 	CountAssignments(ctx context.Context, arg CountAssignmentsParams) (int64, error)
@@ -160,7 +159,6 @@ type Querier interface {
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpsertLeaderboardEntry(ctx context.Context, arg UpsertLeaderboardEntryParams) (LeaderboardEntry, error)
-	CheckResolverSameOrganization(ctx context.Context, arg CheckResolverSameOrganizationParams) (bool, error)
 	ValidateAssignmentProblemOwnership(ctx context.Context, arg ValidateAssignmentProblemOwnershipParams) (bool, error)
 	ValidateDoubtResolverOrg(ctx context.Context, arg ValidateDoubtResolverOrgParams) (bool, error)
 }
