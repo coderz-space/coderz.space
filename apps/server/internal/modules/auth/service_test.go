@@ -3,6 +3,7 @@ package auth
 import (
 	"testing"
 
+	"github.com/coderz-space/coderz.space/internal/common/email"
 	"github.com/coderz-space/coderz.space/internal/config"
 	db "github.com/coderz-space/coderz.space/internal/db/sqlc"
 )
@@ -11,7 +12,7 @@ func TestNewService(t *testing.T) {
 	queries := &db.Queries{}
 	cfg := &config.Config{}
 
-	service := NewService(queries, cfg)
+	service := NewService(queries, cfg, email.NewService(cfg))
 
 	if service == nil {
 		t.Fatal("Expected NewService to return a non-nil Service instance")

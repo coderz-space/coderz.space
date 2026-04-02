@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coderz-space/coderz.space/internal/common/email"
 	"github.com/coderz-space/coderz.space/internal/config"
 	db "github.com/coderz-space/coderz.space/internal/db/sqlc"
 	"github.com/jackc/pgx/v5"
@@ -167,7 +168,7 @@ func TestHandler_Signup(t *testing.T) {
 			// Setup dependencies
 			mockDB := tt.setupMockDB()
 			queries := db.New(mockDB)
-			service := NewService(queries, cfg)
+			service := NewService(queries, cfg, email.NewService(cfg))
 			handler := NewHandler(service)
 
 			// Setup Echo

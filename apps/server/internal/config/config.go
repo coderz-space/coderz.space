@@ -50,6 +50,11 @@ type Config struct {
 	MinDBConns          int
 	LogLevel            zapcore.Level
 	FileLogLevel        zapcore.Level
+	SMTPHost            string
+	SMTPPort            int
+	SMTPUser            string
+	SMTPPass            string
+	SMTPFrom            string
 }
 
 func parseLevel(level string) zapcore.Level {
@@ -99,6 +104,10 @@ func LoadConfig() *Config {
 	if err != nil {
 		panic(fmt.Errorf("failed to parse REFRESH_TOKEN_EXPIRES: %v", err))
 	}
+	smtpPort, _ := strconv.Atoi(os.Getenv("SMTP_PORT")) // Optional, defaults to 0 if not set or invalid
+	if smtpPort == 0 {
+		smtpPort = 587 // Default SMTP port
+	}
 
 	config := &Config{
 
@@ -117,6 +126,11 @@ func LoadConfig() *Config {
 		MaxDBConnLifetime:   maxDBConnLifetime,
 		MaxDBConnIdleTime:   maxDBConnIdleTime,
 		RefreshTokenExpires: refreshTokenExpires,
+		SMTPHost:            os.Getenv("SMTP_HOST"),
+		SMTPPort:            smtpPort,
+		SMTPUser:            os.Getenv("SMTP_USER"),
+		SMTPPass:            os.Getenv("SMTP_PASS"),
+		SMTPFrom:            os.Getenv("SMTP_FROM"),
 	}
 
 	if !config.Environment.isValid() {
