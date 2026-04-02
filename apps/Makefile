@@ -7,21 +7,15 @@ WEB_IMAGE := coderz-space-web
 WEB_CONTAINER := coderz-space-web
 SERVER_NETWORK := coderz-space-bootcamp_default
 
-.PHONY: help server-dev server-prod web-dev web-prod
+.PHONY: help server web-dev web-prod
 
 help:
 	@echo "Available targets:"
-	@echo "  make server-dev   Run the Go API locally with Dockerized Postgres"
-	@echo "  make server-prod  Run the API as a Docker Compose service"
+	@echo "  make server       Run the API as a Docker Compose service"
 	@echo "  make web-dev      Run the Next.js app locally in dev mode"
 	@echo "  make web-prod     Run the Next.js app as a Docker container"
 
-server-dev:
-	@$(MAKE) -C $(SERVER_DIR) docker-up
-	@$(MAKE) -C $(SERVER_DIR) migrate-up
-	@$(MAKE) -C $(SERVER_DIR) run
-
-server-prod:
+server:
 	@$(SERVER_COMPOSE) up -d postgres
 	@$(MAKE) -C $(SERVER_DIR) migrate-up
 	@$(SERVER_COMPOSE) up --build api

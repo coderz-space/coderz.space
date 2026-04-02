@@ -77,6 +77,10 @@ migrate-force:
 # Docker : 
 docker-up:
 	@echo "Starting docker containers..."
+	@docker compose up -d postgres
+
+docker-up-all:
+	@echo "Starting all docker containers..."
 	@docker compose up -d
 
 

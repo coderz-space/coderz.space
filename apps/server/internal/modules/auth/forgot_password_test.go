@@ -17,12 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type mockRow struct{}
-
-func (m mockRow) Scan(dest ...any) error {
-	return errors.New("user not found")
-}
-
 type MockDBTX struct{}
 
 func (m *MockDBTX) Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error) {
@@ -32,7 +26,7 @@ func (m *MockDBTX) Query(context.Context, string, ...interface{}) (pgx.Rows, err
 	return nil, nil
 }
 func (m *MockDBTX) QueryRow(context.Context, string, ...interface{}) pgx.Row {
-	return mockRow{}
+	return &mockRow{scanFn: func(dest ...any) error { return errors.New("user not found") }}
 }
 
 func TestForgotPasswordHandler(t *testing.T) {

@@ -40,8 +40,8 @@ services:
             APP_NAME: ${APP_NAME:-Coderz_Space}
             VERSION: ${VERSION:-0.1.0}
             PORT: 8080
-            DB_URL: postgresql://coderz-space:coderz-space@postgres:5432/coderz?sslmode=disable
-            DB_DSN: postgresql://coderz-space:coderz-space@postgres:5432/coderz?sslmode=disable
+            DB_URL: postgresql://coderz-space:coderz-space@postgres:5432/coderz?sslmode=disable&search_path=coderz
+            DB_DSN: postgresql://coderz-space:coderz-space@postgres:5432/coderz?sslmode=disable&search_path=coderz
             JWT_SECRET: ${JWT_SECRET}
             FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
             ENVIRONMENT: ${ENVIRONMENT:-development}

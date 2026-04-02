@@ -1,14 +1,14 @@
 package auth
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
-	"time"
-
-	"github.com/coderz-space/coderz.space/internal/config"
-	"github.com/labstack/echo/v5"
-	"github.com/stretchr/testify/assert"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/coderz-space/coderz.space/internal/common/middleware/auth"
 	"github.com/coderz-space/coderz.space/internal/common/utils"
@@ -18,19 +18,6 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/stretchr/testify/assert"
 )
-
-// MockQuerier implements db.Querier for testing
-type MockQuerier struct {
-	db.Querier
-	GetUserByIdFunc func(ctx context.Context, id pgtype.UUID) (db.User, error)
-}
-
-func (m *MockQuerier) GetUserById(ctx context.Context, id pgtype.UUID) (db.User, error) {
-	if m.GetUserByIdFunc != nil {
-		return m.GetUserByIdFunc(ctx, id)
-	}
-	return db.User{}, nil
-}
 
 
 // TestSignupPasswordComplexity verifies password validation requirements
@@ -453,21 +440,21 @@ func TestMeAuthentication(t *testing.T) {
 	tests := []struct {
 		name           string
 		scenario       string
-		setupContext   func(c echo.Context)
+		setupContext   func(c *echo.Context)
 		expectedError  string
 		expectedStatus int
 	}{
 		{
 			name:           "missing claims fails",
 			scenario:       "no claims in context",
-			setupContext:   func(c echo.Context) {},
+			setupContext:   func(c *echo.Context) {},
 			expectedStatus: http.StatusUnauthorized,
 			expectedError:  "INVALID_TOKEN_CLAIMS",
 		},
 		{
 			name:           "invalid type for claims fails",
 			scenario:       "claims is not *utils.TokenPayload",
-			setupContext:   func(c echo.Context) {
+			setupContext:   func(c *echo.Context) {
 				c.Set(auth.ClaimsKey, "invalid claims")
 			},
 			expectedStatus: http.StatusUnauthorized,
@@ -476,7 +463,7 @@ func TestMeAuthentication(t *testing.T) {
 		{
 			name:           "invalid user ID in claims fails",
 			scenario:       "claims has invalid UUID format",
-			setupContext:   func(c echo.Context) {
+			setupContext:   func(c *echo.Context) {
 				payload := &utils.TokenPayload{UserID: "invalid-uuid"}
 				c.Set(auth.ClaimsKey, payload)
 			},
@@ -486,7 +473,7 @@ func TestMeAuthentication(t *testing.T) {
 		{
 			name:           "authenticated user can get profile",
 			scenario:       "valid JWT token with claims",
-			setupContext:   func(c echo.Context) {
+			setupContext:   func(c *echo.Context) {
 				payload := &utils.TokenPayload{UserID: validUUIDStr}
 				c.Set(auth.ClaimsKey, payload)
 			},
@@ -501,7 +488,7 @@ func TestMeAuthentication(t *testing.T) {
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 
-			tt.setupContext(*c)
+			tt.setupContext(c)
 
 			mockQuerier := &MockQuerier{
 				GetUserByIdFunc: func(ctx context.Context, id pgtype.UUID) (db.User, error) {
