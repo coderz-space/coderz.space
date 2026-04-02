@@ -19,13 +19,13 @@ import (
 )
 
 type Service struct {
-	queries db.Querier
+	queries *db.Queries
 	config  *config.Config
 	emailService email.Service
 }
 
-func NewService(queries db.Querier, config *config.Config) *Service {
-	return &Service{queries: queries, config: config}
+func NewService(queries *db.Queries, config *config.Config, emailService email.Service) *Service {
+	return &Service{queries: queries, config: config, emailService: emailService}
 }
 
 func (s *Service) Signup(ctx context.Context, req SignupRequest) (*AuthResponseData, error) {

@@ -24,9 +24,6 @@ type Querier interface {
 	AssignGroupToMentee(ctx context.Context, arg AssignGroupToMenteeParams) (Assignment, error)
 	CastPollVote(ctx context.Context, arg CastPollVoteParams) (PollVote, error)
 	CheckDuplicateActiveAssignment(ctx context.Context, arg CheckDuplicateActiveAssignmentParams) (int64, error)
-	CheckProblemInActiveAssignments(ctx context.Context, problemID pgtype.UUID) (int64, error)
-	CheckProblemInAssignmentGroups(ctx context.Context, problemID pgtype.UUID) (int64, error)
-	CheckResolverInOrganization(ctx context.Context, arg CheckResolverInOrganizationParams) (bool, error)
 	CheckVoteExists(ctx context.Context, arg CheckVoteExistsParams) (bool, error)
 	ClearAssignmentGroupProblems(ctx context.Context, assignmentGroupID pgtype.UUID) error
 	ClearExpiredRefreshTokens(ctx context.Context) error
@@ -163,6 +160,7 @@ type Querier interface {
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpsertLeaderboardEntry(ctx context.Context, arg UpsertLeaderboardEntryParams) (LeaderboardEntry, error)
 	ValidateAssignmentProblemOwnership(ctx context.Context, arg ValidateAssignmentProblemOwnershipParams) (bool, error)
+	ValidateDoubtResolverOrg(ctx context.Context, arg ValidateDoubtResolverOrgParams) (bool, error)
 }
 
 var _ Querier = (*Queries)(nil)

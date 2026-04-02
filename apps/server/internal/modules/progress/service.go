@@ -219,15 +219,15 @@ func (s *Service) ResolveDoubt(ctx context.Context, doubtID, resolvedByMemberID 
 	}
 
 	// Validate resolver belongs to same organization
-	inOrg, err := s.queries.CheckResolverInOrganization(ctx, db.CheckResolverInOrganizationParams{
-		AssignmentProblemID: existingDoubt.AssignmentProblemID,
-		MemberID:            resolvedByMemberID,
+	isSameOrg, err := s.queries.ValidateDoubtResolverOrg(ctx, db.ValidateDoubtResolverOrgParams{
+		ResolverMemberID: resolvedByMemberID,
+		DoubtID:          doubtID,
 	})
 	if err != nil {
 		return nil, err
 	}
-	if !inOrg {
-		return nil, errors.New("RESOLVER_NOT_IN_ORGANIZATION")
+	if !isSameOrg {
+		return nil, errors.New("RESOLVER_NOT_IN_SAME_ORG")
 	}
 
 	// Set resolved to true, resolved_by, resolved_at
