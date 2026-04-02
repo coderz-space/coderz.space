@@ -10,6 +10,7 @@ import (
 
 	"github.com/coderz-space/coderz.space/internal/common/logger"
 	"github.com/coderz-space/coderz.space/internal/common/utils"
+	"github.com/coderz-space/coderz.space/internal/common/email"
 	"github.com/coderz-space/coderz.space/internal/config"
 	db "github.com/coderz-space/coderz.space/internal/db/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -18,12 +19,13 @@ import (
 )
 
 type Service struct {
-	queries db.Querier
+	queries *db.Queries
 	config  *config.Config
+	emailService email.Service
 }
 
-func NewService(queries db.Querier, config *config.Config) *Service {
-	return &Service{queries: queries, config: config}
+func NewService(queries *db.Queries, config *config.Config, emailService email.Service) *Service {
+	return &Service{queries: queries, config: config, emailService: emailService}
 }
 
 func (s *Service) Signup(ctx context.Context, req SignupRequest) (*AuthResponseData, error) {

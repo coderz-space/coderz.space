@@ -11,30 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const checkResolverInOrganization = `-- name: CheckResolverInOrganization :one
-SELECT EXISTS(
-    SELECT 1
-    FROM assignment_problems ap
-    JOIN assignments a ON ap.assignment_id = a.id
-    JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
-    JOIN bootcamps b ON be.bootcamp_id = b.id
-    JOIN organization_members om ON b.organization_id = om.organization_id
-    WHERE ap.id = $1 AND om.id = $2
-)
-`
-
-type CheckResolverInOrganizationParams struct {
-	AssignmentProblemID pgtype.UUID `db:"assignment_problem_id" json:"assignment_problem_id"`
-	MemberID            pgtype.UUID `db:"member_id" json:"member_id"`
-}
-
-func (q *Queries) CheckResolverInOrganization(ctx context.Context, arg CheckResolverInOrganizationParams) (bool, error) {
-	row := q.db.QueryRow(ctx, checkResolverInOrganization, arg.AssignmentProblemID, arg.MemberID)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
-}
-
 const countDoubtsByBootcamp = `-- name: CountDoubtsByBootcamp :one
 SELECT COUNT(*) FROM doubts d
 JOIN assignment_problems ap ON d.assignment_problem_id = ap.id
@@ -773,4 +749,28 @@ func (q *Queries) ValidateAssignmentProblemOwnership(ctx context.Context, arg Va
 	var is_owner bool
 	err := row.Scan(&is_owner)
 	return is_owner, err
+}
+
+const validateDoubtResolverOrg = `-- name: ValidateDoubtResolverOrg :one
+SELECT EXISTS(
+    SELECT 1 FROM doubts d
+    JOIN assignment_problems ap ON d.assignment_problem_id = ap.id
+    JOIN assignments a ON ap.assignment_id = a.id
+    JOIN bootcamp_enrollments be ON a.bootcamp_enrollment_id = be.id
+    JOIN organization_members mentee_om ON be.organization_member_id = mentee_om.id
+    JOIN organization_members resolver_om ON resolver_om.id = $1
+    WHERE d.id = $2 AND mentee_om.organization_id = resolver_om.organization_id
+) as is_same_org
+`
+
+type ValidateDoubtResolverOrgParams struct {
+	ResolverMemberID pgtype.UUID `db:"resolver_member_id" json:"resolver_member_id"`
+	DoubtID          pgtype.UUID `db:"doubt_id" json:"doubt_id"`
+}
+
+func (q *Queries) ValidateDoubtResolverOrg(ctx context.Context, arg ValidateDoubtResolverOrgParams) (bool, error) {
+	row := q.db.QueryRow(ctx, validateDoubtResolverOrg, arg.ResolverMemberID, arg.DoubtID)
+	var is_same_org bool
+	err := row.Scan(&is_same_org)
+	return is_same_org, err
 }

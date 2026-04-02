@@ -262,7 +262,7 @@ func (q *Queries) GetAssignmentGroup(ctx context.Context, id pgtype.UUID) (Assig
 }
 
 const getAssignmentProblem = `-- name: GetAssignmentProblem :one
-SELECT ap.id, ap.assignment_id, ap.problem_id, ap.status, ap.solution_link, ap.notes, ap.completed_at, ap.created_at, ap.updated_at, ap.resources, ap.app_progress_status, p.title, p.difficulty
+SELECT ap.id, ap.assignment_id, ap.problem_id, ap.status, ap.solution_link, ap.notes, ap.completed_at, ap.created_at, ap.updated_at, p.title, p.difficulty
 FROM assignment_problems ap
 JOIN problems p ON ap.problem_id = p.id
 WHERE ap.assignment_id = $1 AND ap.problem_id = $2
@@ -570,7 +570,7 @@ func (q *Queries) ListAssignmentGroupsByBootcamp(ctx context.Context, arg ListAs
 }
 
 const listAssignmentProblemsStatus = `-- name: ListAssignmentProblemsStatus :many
-SELECT ap.id, ap.assignment_id, ap.problem_id, ap.status, ap.solution_link, ap.notes, ap.completed_at, ap.created_at, ap.updated_at, ap.resources, ap.app_progress_status, p.title, p.difficulty
+SELECT ap.id, ap.assignment_id, ap.problem_id, ap.status, ap.solution_link, ap.notes, ap.completed_at, ap.created_at, ap.updated_at, p.title, p.difficulty
 FROM assignment_problems ap
 JOIN problems p ON ap.problem_id = p.id
 WHERE ap.assignment_id = $1

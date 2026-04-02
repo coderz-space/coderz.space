@@ -4,6 +4,7 @@ import (
 	"github.com/coderz-space/coderz.space/internal/config"
 	"github.com/coderz-space/coderz.space/internal/db"
 	db_sqlc "github.com/coderz-space/coderz.space/internal/db/sqlc"
+	"github.com/coderz-space/coderz.space/internal/common/email"
 	"github.com/coderz-space/coderz.space/internal/modules/analytics"
 	"github.com/coderz-space/coderz.space/internal/modules/app"
 	"github.com/coderz-space/coderz.space/internal/modules/assignment"
@@ -67,8 +68,11 @@ func NewContainer(config *config.Config, logger *zap.Logger) (*Container, error)
 
 	queries := db_sqlc.New(pool)
 
+	// Initialize email service
+	emailService := email.NewService(config)
+
 	// Initialize auth module
-	authService := auth.NewService(queries, config)
+	authService := auth.NewService(queries, config, emailService)
 	authHandler := auth.NewHandler(authService)
 
 	// Initialize organization module
