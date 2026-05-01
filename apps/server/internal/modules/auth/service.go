@@ -193,14 +193,26 @@ func (s *Service) ForgotPassword(ctx context.Context, req ForgotPasswordRequest)
 		return err
 	}
 
-	// TODO: Send email with reset token
-	// For now, we just log it (in production, send via email service)
-	// Email would contain a link like: https://app.com/reset-password?token={resetToken}
+	// Send password reset email
+	if err := s.emailService.SendPasswordResetEmail(user.Email.String, resetToken); err != nil {
+		// Log the error but don't fail the request - email service might be unavailable
+		logger.Error("Failed to send password reset email",
+			zap.String("event", "password_reset_email_failed"),
+			zap.String("email", user.Email.String),
+			zap.Error(err),
+		)
+		// For development/testing fallback, still log the reset link
+		if s.config.Environment == config.Development {
+			logger.Info("Password reset link (development fallback)",
+				zap.String("email", user.Email.String),
+				zap.String("reset_link", fmt.Sprintf("%s/reset-password?token=%s", s.config.FrontendOrigin, resetToken)),
+			)
+		}
+	}
+
 	logger.Info("Password reset requested",
-		zap.String("event", "password_reset_email_mock"),
+		zap.String("event", "password_reset_email_sent"),
 		zap.String("email", user.Email.String),
-		zap.String("reset_token", resetToken),
-		zap.String("reset_link", fmt.Sprintf("%s/reset-password?token=%s", s.config.FrontendOrigin, resetToken)),
 	)
 
 	return nil

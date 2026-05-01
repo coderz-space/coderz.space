@@ -53,6 +53,11 @@ services:
             MIN_DB_CONNS: ${MIN_DB_CONNS:-2}
             MAX_DB_CONN_LIFETIME: ${MAX_DB_CONN_LIFETIME:-1h}
             MAX_DB_CONN_IDLE_TIME: ${MAX_DB_CONN_IDLE_TIME:-30m}
+            SMTP_HOST: ${SMTP_HOST:-}
+            SMTP_PORT: ${SMTP_PORT:-587}
+            SMTP_USER: ${SMTP_USER:-}
+            SMTP_PASS: ${SMTP_PASS:-}
+            SMTP_FROM: ${SMTP_FROM:-}
         depends_on:
             postgres:
                 condition: service_healthy
